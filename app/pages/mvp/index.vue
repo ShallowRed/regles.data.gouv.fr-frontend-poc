@@ -104,7 +104,7 @@ const latestUpdates = [...rulesMock]
                       v-model="searchQuery"
                       class="fr-input"
                       type="search"
-                      placeholder="Ex. RSA, impôt sur le revenu, pass Culture"
+                      placeholder="Ex. quotient familial, crédit d'impôt recherche, droit de vote"
                     >
                     <button
                       type="submit"
@@ -138,14 +138,14 @@ const latestUpdates = [...rulesMock]
 
         <div class="mt-7 flex flex-wrap gap-3">
           <NuxtLink
-            to="/mvp/regles/pass-culture-eligibilite"
+            to="/mvp/regles/prestagri"
             class="inline-flex items-center gap-2 border border-[#000091] text-[#000091] rounded-full px-4 py-1.5 text-sm no-underline bg-none bg-white hover:bg-[#f5f5fe]"
           >
             <span
               class="fr-icon-flashlight-line fr-icon--sm"
               aria-hidden="true"
             />
-            <span><strong>En ce moment</strong>&nbsp;: les règles du pass Culture sont référencées</span>
+            <span><strong>En ce moment</strong>&nbsp;: les règles Prest'Agri (Catala) sont exécutables via API</span>
           </NuxtLink>
           <NuxtLink
             to="/mvp/regles/"

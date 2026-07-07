@@ -23,6 +23,7 @@ export type RuleDomain
     | 'logement'
     | 'culture'
     | 'sante'
+    | 'citoyennete'
 
 /**
  * Niveau de maturité d'une règle.
@@ -47,6 +48,67 @@ export type RegulatoryPosition
     | 'aide-au-remplissage'
     | 'assistance-administration'
     | 'rescrit-certifie'
+
+/**
+ * Régime de certification d'une règle. Le catalogue assume plusieurs régimes
+ * (variantes de schéma selon les propriétés de la règle) plutôt qu'une promesse uniforme.
+ * - frontiere : règle packageable (propriétaire clair, dépendances peu profondes).
+ *   L'administration certifie le comportement entrées → sorties sur des faits déclarés,
+ *   à une version donnée (sémantique du rescrit). Les cas de tests sont l'artefact de certification.
+ * - implementation : règle du cœur systémique (chaîne de dépendances transitive : SMIC,
+ *   bases ressources…). L'unité cataloguée est « la règle telle que calculée par telle
+ *   implémentation à tel snapshot » ; l'unité certifiable est le couple tests + snapshot.
+ * - referencement : entrée simplement référencée (métadonnées descriptives, ni code ni tests publiés).
+ */
+export type CertificationRegime = 'frontiere' | 'implementation' | 'referencement'
+
+/**
+ * Nature d'une entrée à la frontière de la règle. Un badge « certifiée » doit dire ce qu'il
+ * couvre : la certification porte sur les faits déclarés, pas sur la provenance amont.
+ * - declaration : fait déclaré par l'usager, non vérifié.
+ * - donnee-attestee : donnée administrative avec un propriétaire institutionnel
+ *   (ex. RFR servi par la DGFiP via API Particulier). Logique Evidence de CCCEV.
+ * - sortie-regle : résultat d'une autre règle ou paramètre législatif partagé (ex. SMIC).
+ * - contexte : paramètre d'exécution qui change la règle appliquée (ex. type d'élection).
+ */
+export type BoundaryKind = 'declaration' | 'donnee-attestee' | 'sortie-regle' | 'contexte'
+
+/** Entrée de la règle, classée à sa frontière. */
+export interface RuleBoundaryInput {
+  id: string
+  label: string
+  kind: BoundaryKind
+  /** Définition juridique sourcée (reprise de cprmv:definition quand issue du profil data). */
+  definition?: string
+  /** Pour une donnée attestée : qui l'atteste, et par quel canal. */
+  evidenceSource?: { label: string, url?: string }
+  required?: boolean
+}
+
+/** Sortie produite par la règle (dont les sorties d'explicabilité, « utiles pour expliquer un refus »). */
+export interface RuleOutput {
+  id: string
+  label: string
+  definition?: string
+  /** Sortie d'explicabilité (trace de calcul) plutôt que résultat principal. */
+  isExplanation?: boolean
+}
+
+/**
+ * Mapping opérationnel recensé. Le catalogue ne rédige pas de dictionnaire de
+ * correspondances : il recense des mappings qui tournent (exercés par une CI qui casse
+ * quand ils deviennent faux), avec propriétaire et statut.
+ */
+export interface OperationalMapping {
+  label: string
+  /** Espace de départ (ex. « formulaire déclaratif aides-simplifiées »). */
+  from: string
+  /** Espace d'arrivée (ex. « entités/périodes OpenFisca France »). */
+  to: string
+  artifactUrl: string
+  maintainedBy: string
+  ciStatus?: 'passing' | 'failing' | 'unknown'
+}
 
 /** Certification d'un résultat par une administration. */
 export interface Certification {
@@ -97,4 +159,25 @@ export interface Rule {
   dependsOn?: string[]
   /** Certification éventuelle (rescrit ou validation formelle). */
   certification?: Certification
+  /** Régime de certification applicable (variantes de schéma selon les propriétés de la règle). */
+  certificationRegime?: CertificationRegime
+  /** Frontière de la règle : entrées classées par nature (déclaration, donnée attestée, sortie de règle, contexte). */
+  boundary?: RuleBoundaryInput[]
+  /** Sorties produites, dont les sorties d'explicabilité. */
+  outputs?: RuleOutput[]
+  /** Mappings opérationnels recensés (jamais rédigés par le catalogue). */
+  operationalMappings?: OperationalMapping[]
+  /**
+   * Bloc d'extension namespacé par moteur. Les opinions ontologiques (entités, périodes)
+   * restent locales au moteur, jamais dans le socle commun de métadonnées.
+   */
+  engineProfile?: Record<string, Record<string, unknown>>
+  /**
+   * Champs du schéma catalogue sans équivalent dans le profil metadata.jsonld source.
+   * Renseigné par l'adaptateur JSON-LD : outil de discussion pour co-écrire le profil
+   * avec l'équipe data (la « couche confiance » est l'apport du front au profil).
+   */
+  profileGaps?: string[]
+  /** Chemin de la fiche metadata.jsonld source, quand l'entrée en est issue. */
+  metadataSourcePath?: string
 }

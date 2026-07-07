@@ -1,10 +1,23 @@
 /**
- * Cas de test attaché à une règle (entrées attendues / résultat attendu).
- * Permet la validation N2 et l'illustration de la vue de traçabilité juridique.
+ * Cas de test attaché à une règle.
+ *
+ * Doctrine (ontologie localisée) : le catalogue ne définit pas de format de situation
+ * universel - décrire une situation exigerait les entités et périodes du moteur, donc son
+ * ontologie. Chaque règle publie ses tests dans le format natif de son moteur, et le
+ * catalogue norme l'ENVELOPPE sociale du test : intention, provenance, validateur, statut.
+ * Coût assumé : pas de transposition automatique d'un cas de test entre moteurs.
  */
 
 /** Valeur scalaire pouvant être passée en entrée d'une règle. */
 export type RuleTestValue = string | number | boolean | null
+
+/** Format natif du cas de test, dans l'espace de noms du moteur. */
+export type RuleTestNativeFormat
+  = | 'openfisca-yaml'
+    | 'publicodes-yaml'
+    | 'catala-assert'
+    | 'pytest'
+    | 'autre'
 
 export interface RuleTest {
   id: string
@@ -12,16 +25,31 @@ export interface RuleTest {
   ruleId: string
   /** Libellé court du cas (par exemple « Lycéen 17 ans, premier achat ») */
   label: string
-  /** Résumé en une phrase de l'hypothèse testée */
+  /** Intention du test en langage naturel (l'hypothèse testée). */
   scenario: string
-  /** Entrées clés-valeurs (clés selon le moteur) */
-  inputs: Record<string, RuleTestValue>
-  /** Résultat attendu (généralement un montant, un booléen ou un statut) */
-  expected: RuleTestValue
+  /**
+   * Entrées clés-valeurs à visée pédagogique (affichage). Optionnelles : la référence
+   * qui fait foi est le test natif (`nativeRef`), pas cette projection plate.
+   */
+  inputs?: Record<string, RuleTestValue>
+  /** Résultat attendu affiché (montant, booléen, statut). */
+  expected?: RuleTestValue
   /** Unité du résultat attendu si numérique (par exemple `EUR`, `mois`) */
   expectedUnit?: string
-  /** Source du cas : administration officielle, communauté tierce */
-  source: 'administration' | 'communaute' | 'jurisprudence'
+  /** Provenance du cas. */
+  source: 'administration' | 'communaute' | 'jurisprudence' | 'circulaire' | 'cas-reel-anonymise'
   /** Statut de validation du cas */
   status: 'valide' | 'en_revue' | 'echec'
+  /** Qui a validé ce cas (administration compétente, CI du dépôt source...). */
+  validatedBy?: string
+  /** Date de validation (ISO 8601). */
+  validatedAt?: string
+  /** Ancre légale visée par le cas (version du texte). */
+  legalAnchor?: string
+  /** Tolérance d'écart acceptée sur le résultat, si numérique. */
+  tolerance?: string
+  /** Format natif du test dans l'espace de noms du moteur. */
+  nativeFormat?: RuleTestNativeFormat
+  /** Lien vers le test natif qui fait foi (dépôt source, idéalement pinné). */
+  nativeRef?: string
 }

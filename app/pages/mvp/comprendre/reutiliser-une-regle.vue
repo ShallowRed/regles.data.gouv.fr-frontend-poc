@@ -197,10 +197,10 @@ const modes = [
           </p>
           <div class="flex flex-wrap gap-3 pt-2">
             <NuxtLink
-              to="/mvp/regles/rsa-eligibilite?tab=api"
+              to="/mvp/regles/prestagri?tab=api"
               class="fr-btn btn-on-dark--solid"
             >
-              Exemple : l'API du RSA
+              Exemple : l'API Prest'Agri
             </NuxtLink>
             <NuxtLink
               to="/mvp/regles/"

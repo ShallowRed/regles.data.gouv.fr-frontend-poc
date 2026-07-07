@@ -28,7 +28,7 @@ const guarantees = [
   },
 ]
 
-/* --- Frise des versions du RSA, pour illustrer « l'état du droit à une date donnée » --- */
+/* --- Frise des versions de Prest'Agri, pour illustrer « l'état du droit à une date donnée » --- */
 const dateFormatter = new Intl.DateTimeFormat('fr-FR', { year: 'numeric', month: 'long' })
 const kindMeta: Record<string, { label: string, dot: string }> = {
   majeur: { label: 'Évolution majeure', dot: 'bg-[#6e445a]' },
@@ -38,7 +38,7 @@ const kindMeta: Record<string, { label: string, dot: string }> = {
 }
 const rsaTimeline = computed(() =>
   ruleVersionsMock
-    .filter(v => v.ruleId === 'rsa-eligibilite')
+    .filter(v => v.ruleId === 'prestagri')
     .map(v => ({
       ...v,
       date: dateFormatter.format(new Date(v.publishedAt)),
@@ -223,10 +223,10 @@ const rsaTimeline = computed(() =>
           </p>
           <div class="flex flex-wrap gap-3 pt-2">
             <NuxtLink
-              to="/mvp/regles/rsa-eligibilite?tab=legal"
+              to="/mvp/regles/prestagri?tab=legal"
               class="fr-btn btn-on-dark--solid"
             >
-              Exemple : le RSA
+              Exemple : Prest'Agri
             </NuxtLink>
             <NuxtLink
               to="/mvp/regles/"

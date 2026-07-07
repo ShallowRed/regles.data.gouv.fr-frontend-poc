@@ -19,6 +19,7 @@ export const domainScale: DomainMeta[] = [
   { domain: 'logement', label: 'Logement & mobilité', icon: 'fr-icon-home-4-line' },
   { domain: 'culture', label: 'Culture & jeunesse', icon: 'fr-icon-palette-line' },
   { domain: 'sante', label: 'Santé', icon: 'fr-icon-first-aid-kit-line' },
+  { domain: 'citoyennete', label: 'Citoyenneté', icon: 'fr-icon-government-line' },
 ]
 
 const byDomain = Object.fromEntries(

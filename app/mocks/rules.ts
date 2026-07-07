@@ -1,389 +1,226 @@
-import type { Rule } from '~/types'
+import type { BoundaryKind, Rule, RuleBoundaryInput } from '~/types'
+import prestagriRaw from '~/data/jsonld/ministere-agriculture/prestagri/metadata.jsonld?raw'
+import droitVoteRaw from '~/data/jsonld/ministere-interieur/droits-civiques-elections/metadata.jsonld?raw'
+import { adaptJsonldGraph } from '~/utils/jsonld-adapter'
 import { legalReferencesMock } from './legal-references'
 import { organismsMock } from './organisms'
 
 /**
- * Vignettes représentatives, fictives mais conformes en structure.
- * Tête de gondole : règles à fort enjeu social (RSA, IR, allocation chômage) gérées
- * par des administrations régaliennes. Pass Culture conservé pour les écrans d'aperçu de calcul
- * et de documentation API.
+ * Démo resserrée : 5 entrées ancrées dans le réel, une par couple moteur × partenaire.
+ *
+ * - Prest'Agri (Catala, MASA) et Droit de vote (Python, Intérieur) sont construites via
+ *   l'adaptateur depuis les fiches metadata.jsonld réelles du dépôt data (vendorées dans
+ *   app/data/jsonld/). Leur champ `profileGaps` liste ce que le profil data ne couvre pas.
+ * - Entreprise-innovation (Publicodes, DGE) et Prime d'activité (OpenFisca) sont décrites
+ *   depuis leurs dépôts publics respectifs.
+ * - Le bonus QF pass Culture illustre le régime « référencement » : une entrée honnêtement
+ *   non exécutable.
+ *
+ * Aucune donnée inventée : quand une information manque, le champ est omis.
  */
-export const rulesMock: Rule[] = [
-  {
-    id: 'rsa-eligibilite',
-    slug: 'rsa-eligibilite',
-    title: 'Revenu de solidarité active - éligibilité',
-    shortDescription:
-      'Détermine si un foyer est éligible au RSA en fonction de la composition familiale, des revenus des trois derniers mois et de la situation administrative.',
-    nature: 'ouverte',
-    domain: 'solidarite',
-    engine: 'openfisca',
-    maturity: 'N3',
-    opposability: 'indicatif',
-    regulatoryPosition: 'aide-au-remplissage',
-    organism: organismsMock.cnaf!,
-    legalReferences: [
-      legalReferencesMock['code-action-sociale-L262-2']!,
-    ],
-    tags: ['minima-sociaux', 'rsa', 'cnaf', 'precarite'],
-    updatedAt: '2026-05-02',
-    version: '4.1.0',
-    apiUrl: 'https://api.caf.fr/v1/rsa/eligibilite',
-    officialSimulatorUrl: 'https://www.caf.fr/allocataires/aides-et-demarches/droits-et-prestations/vie-personnelle/le-revenu-de-solidarite-active-rsa',
-    sourceUrl: 'https://github.com/openfisca/openfisca-france',
-    capabilities: {
-      hasApiDocumentation: true,
-      hasCalculationPreview: true,
-      hasLegalTraceability: true,
-      hasPublicTestCases: false,
-    },
-    certification: {
-      byOrganismId: 'cnaf',
-      at: '2026-04-15',
-      ref: 'Note de service CNAF 2026-04-15',
-    },
-  },
-  {
-    id: 'impot-revenu-bareme',
-    slug: 'impot-revenu-bareme',
-    title: 'Impôt sur le revenu - barème progressif',
-    shortDescription:
-      'Calcule l\'impôt sur le revenu net à partir du revenu fiscal de référence, du quotient familial et du barème progressif annuel.',
-    nature: 'ouverte',
-    domain: 'fiscalite',
-    engine: 'openfisca',
-    maturity: 'N3',
-    opposability: 'indicatif',
-    regulatoryPosition: 'simulation-indicative',
-    organism: organismsMock.dgfip!,
-    legalReferences: [
-      legalReferencesMock['cgi-art-197']!,
-    ],
-    tags: ['fiscalite', 'impot-revenu', 'dgfip', 'foyer-fiscal'],
-    updatedAt: '2026-01-10',
-    version: '2026.1.0',
-    apiUrl: 'https://api.impots.gouv.fr/v1/simulateur-ir',
-    officialSimulatorUrl: 'https://simulateur-ir-ifi.impots.gouv.fr/',
-    sourceUrl: 'https://github.com/openfisca/openfisca-france',
-    capabilities: {
-      hasApiDocumentation: true,
-      hasCalculationPreview: true,
-      hasLegalTraceability: true,
-      hasPublicTestCases: false,
-    },
-  },
-  {
-    id: 'allocation-chomage-are',
-    slug: 'allocation-chomage-are',
-    title: 'Allocation chômage - aide au retour à l\'emploi',
-    shortDescription:
-      'Référence le calcul de l\'ARE en fonction du salaire journalier de référence, de la durée d\'affiliation et des plafonds de la convention Unédic 2024.',
-    nature: 'hybride',
-    domain: 'emploi',
-    engine: 'publicodes',
-    maturity: 'N2',
-    opposability: 'indicatif',
-    regulatoryPosition: 'assistance-administration',
-    organism: organismsMock['france-travail']!,
-    legalReferences: [
-      legalReferencesMock['convention-unedic-2024']!,
-    ],
-    tags: ['emploi', 'chomage', 'are', 'france-travail'],
-    updatedAt: '2026-03-22',
-    version: '1.2.0',
-    sourceUrl: 'https://github.com/france-travail/regles-are',
-    capabilities: {
-      hasApiDocumentation: true,
-      hasCalculationPreview: true,
-      hasLegalTraceability: true,
-      hasPublicTestCases: true,
-    },
-  },
-  {
-    id: 'liquidation-retraite-regime-general',
-    slug: 'liquidation-retraite-regime-general',
-    title: 'Retraite de base - liquidation du régime général',
-    shortDescription:
-      'Expose les conditions et interfaces de calcul de la liquidation du régime général. Le moteur officiel reste interne à l\'administration.',
-    nature: 'fermee',
-    domain: 'retraite',
-    engine: 'proprietaire',
-    maturity: 'N3',
-    opposability: 'opposable',
-    regulatoryPosition: 'rescrit-certifie',
-    organism: organismsMock.cnav!,
-    legalReferences: [
-      legalReferencesMock['code-secu-sociale-L512-3']!,
-    ],
-    tags: ['retraite', 'liquidation', 'regime-general', 'service-ferme'],
-    updatedAt: '2026-04-28',
-    version: '7.0.2',
-    apiUrl: 'https://api-pnds.exemple.gouv.fr/v1/retraite/liquidation',
-    officialSimulatorUrl: 'https://www.info-retraite.fr/portail-services/#/estimateur',
-    capabilities: {
-      hasApiDocumentation: true,
-      hasCalculationPreview: false,
-      hasLegalTraceability: false,
-      hasPublicTestCases: false,
-    },
-    certification: {
-      byOrganismId: 'cnav',
-      at: '2026-02-21',
-      ref: 'Décision de certification interne DR-2026-44',
-    },
-  },
-  {
-    id: 'pass-culture-eligibilite',
-    slug: 'pass-culture-eligibilite',
-    title: 'Pass Culture - éligibilité jeune 15 à 18 ans',
-    shortDescription:
-      'Détermine si une personne est éligible au Pass Culture en fonction de son âge, de sa résidence et de la date de la demande.',
-    nature: 'ouverte',
-    domain: 'culture',
-    engine: 'publicodes',
-    maturity: 'N3',
-    opposability: 'indicatif',
-    regulatoryPosition: 'simulation-indicative',
-    organism: organismsMock['pass-culture']!,
-    legalReferences: [
-      legalReferencesMock['decret-2021-628']!,
-      legalReferencesMock['loi-2017-261']!,
-    ],
-    tags: ['jeunesse', 'culture', 'pass-culture', 'eligibilite'],
-    updatedAt: '2026-04-12',
-    version: '2.4.0',
-    apiUrl: 'https://api.pass.culture.fr/v2/eligibilite',
-    officialSimulatorUrl: 'https://pass.culture.fr/',
-    sourceUrl: 'https://github.com/pass-culture/regles-eligibilite',
-    capabilities: {
-      hasApiDocumentation: true,
-      hasCalculationPreview: true,
-      hasLegalTraceability: true,
-      hasPublicTestCases: true,
-    },
-  },
-  {
-    id: 'pass-culture-credit',
-    slug: 'pass-culture-credit',
-    title: 'Pass Culture - calcul du crédit alloué',
-    shortDescription:
-      'Calcule le crédit Pass Culture initial d\'un bénéficiaire en fonction de son âge à l\'activation, avec les paliers par tranche.',
-    nature: 'ouverte',
-    domain: 'culture',
-    engine: 'publicodes',
-    maturity: 'N2',
-    opposability: 'indicatif',
-    regulatoryPosition: 'simulation-indicative',
-    organism: organismsMock['pass-culture']!,
-    legalReferences: [
-      legalReferencesMock['decret-2021-628']!,
-    ],
-    tags: ['jeunesse', 'culture', 'pass-culture', 'credit'],
-    updatedAt: '2026-03-04',
-    version: '1.6.0',
-    sourceUrl: 'https://github.com/pass-culture/regles-credit',
-    capabilities: {
-      hasApiDocumentation: false,
-      hasCalculationPreview: true,
-      hasLegalTraceability: true,
-      hasPublicTestCases: true,
-    },
-    dependsOn: ['pass-culture-eligibilite'],
-  },
-  {
-    id: 'pass-culture-bonification-zone',
-    slug: 'pass-culture-bonification-zone',
-    title: 'Pass Culture - bonification zonale (QPV / outre-mer)',
-    shortDescription:
-      'Référence la majoration de crédit prévue pour les bénéficiaires résidant en QPV ou en outre-mer. Métadonnées CPRMV en cours de complétion.',
-    nature: 'hybride',
-    domain: 'culture',
-    engine: 'publicodes',
-    maturity: 'N1',
-    opposability: 'indicatif',
-    regulatoryPosition: 'simulation-indicative',
-    organism: organismsMock['ministere-culture']!,
-    legalReferences: [
-      legalReferencesMock['arrete-2022-pass-bonifie']!,
-    ],
-    tags: ['jeunesse', 'culture', 'pass-culture', 'bonification', 'territoire'],
-    updatedAt: '2026-02-15',
-    version: '0.3.0',
-    capabilities: {
-      hasApiDocumentation: false,
-      hasCalculationPreview: false,
-      hasLegalTraceability: false,
-      hasPublicTestCases: false,
-    },
-    dependsOn: ['pass-culture-credit'],
-  },
-  {
-    id: 'apl-eligibilite',
-    slug: 'apl-eligibilite',
-    title: 'Aide personnalisée au logement - éligibilité et montant',
-    shortDescription:
-      'Évalue le droit à l\'APL et estime son montant à partir des ressources du foyer, de la zone géographique et du loyer plafonné.',
-    nature: 'ouverte',
-    domain: 'logement',
-    engine: 'openfisca',
-    maturity: 'N3',
-    opposability: 'indicatif',
-    regulatoryPosition: 'aide-au-remplissage',
-    organism: organismsMock.cnaf!,
-    legalReferences: [
-      legalReferencesMock['ccffh-L823-1']!,
-    ],
-    tags: ['logement', 'apl', 'cnaf', 'aides'],
-    updatedAt: '2026-05-18',
-    version: '3.5.0',
-    apiUrl: 'https://api.caf.fr/v1/apl/eligibilite',
-    officialSimulatorUrl: 'https://wwwd.caf.fr/wps/portal/caffr/aidesetdemarches/lesservicesenligne/estimervosdroits/lelogement',
-    sourceUrl: 'https://github.com/openfisca/openfisca-france',
-    capabilities: {
-      hasApiDocumentation: true,
-      hasCalculationPreview: true,
-      hasLegalTraceability: true,
-      hasPublicTestCases: true,
-    },
-  },
-  {
-    id: 'aspa-minimum-vieillesse',
-    slug: 'aspa-minimum-vieillesse',
-    title: 'Allocation de solidarité aux personnes âgées (ASPA)',
-    shortDescription:
-      'Détermine l\'éligibilité au minimum vieillesse et le montant différentiel selon les ressources et la situation familiale du demandeur.',
-    nature: 'ouverte',
-    domain: 'retraite',
-    engine: 'openfisca',
-    maturity: 'N2',
-    opposability: 'indicatif',
-    regulatoryPosition: 'simulation-indicative',
-    organism: organismsMock.cnav!,
-    legalReferences: [
-      legalReferencesMock['code-secu-sociale-L815-1']!,
-    ],
-    tags: ['retraite', 'aspa', 'minimum-vieillesse', 'cnav'],
-    updatedAt: '2026-02-28',
-    version: '1.4.0',
-    sourceUrl: 'https://github.com/openfisca/openfisca-france',
-    capabilities: {
-      hasApiDocumentation: false,
-      hasCalculationPreview: true,
-      hasLegalTraceability: true,
-      hasPublicTestCases: true,
-    },
-  },
-  {
-    id: 'cmu-participation-forfaitaire',
-    slug: 'cmu-participation-forfaitaire',
-    title: 'Participation forfaitaire et franchises médicales',
-    shortDescription:
-      'Référence le calcul des participations forfaitaires et franchises plafonnées appliquées aux remboursements de l\'assurance maladie.',
-    nature: 'fermee',
-    domain: 'sante',
-    engine: 'proprietaire',
-    maturity: 'N1',
-    opposability: 'opposable',
-    regulatoryPosition: 'assistance-administration',
-    organism: organismsMock.cnam!,
-    legalReferences: [
-      legalReferencesMock['code-secu-sociale-L160-14']!,
-    ],
-    tags: ['sante', 'assurance-maladie', 'franchise', 'cnam'],
-    updatedAt: '2026-01-30',
-    version: '5.2.0',
-    apiUrl: 'https://api.ameli.fr/v1/participation-forfaitaire',
-    capabilities: {
-      hasApiDocumentation: true,
-      hasCalculationPreview: false,
-      hasLegalTraceability: false,
-      hasPublicTestCases: false,
-    },
-  },
-  {
-    id: 'tarification-solidaire-eau-paris',
-    slug: 'tarification-solidaire-eau-paris',
-    title: 'Tarification solidaire de l\'eau - Ville de Paris',
-    shortDescription:
-      'Calcule l\'aide à l\'accès à l\'eau pour les foyers parisiens modestes selon le quotient familial et la composition du ménage.',
-    nature: 'ouverte',
-    domain: 'solidarite',
-    engine: 'publicodes',
-    maturity: 'N3',
-    opposability: 'indicatif',
-    regulatoryPosition: 'simulation-indicative',
-    organism: organismsMock['ville-paris']!,
-    legalReferences: [
-      legalReferencesMock['deliberation-paris-2025']!,
-    ],
-    tags: ['solidarite', 'eau', 'collectivite', 'tarification', 'paris'],
-    updatedAt: '2026-04-05',
-    version: '1.1.0',
-    sourceUrl: 'https://github.com/ville-de-paris/regles-tarification-eau',
-    capabilities: {
-      hasApiDocumentation: true,
-      hasCalculationPreview: true,
-      hasLegalTraceability: true,
-      hasPublicTestCases: true,
-    },
-  },
-  {
-    id: 'aide-achat-velo-grenoble',
-    slug: 'aide-achat-velo-grenoble',
-    title: 'Aide à l\'achat d\'un vélo - Grenoble-Alpes Métropole',
-    shortDescription:
-      'Détermine le montant de l\'aide métropolitaine à l\'achat d\'un vélo selon le type de cycle, les ressources et le cumul avec le bonus national.',
-    nature: 'ouverte',
-    domain: 'logement',
-    engine: 'publicodes',
-    maturity: 'N3',
-    opposability: 'indicatif',
-    regulatoryPosition: 'simulation-indicative',
-    organism: organismsMock['metropole-grenoble']!,
-    legalReferences: [
-      legalReferencesMock['deliberation-grenoble-velo']!,
-    ],
-    tags: ['mobilite', 'velo', 'collectivite', 'aides', 'grenoble'],
-    updatedAt: '2026-03-12',
-    version: '2.0.0',
-    sourceUrl: 'https://github.com/grenoble-metropole/aide-velo',
-    capabilities: {
-      hasApiDocumentation: false,
-      hasCalculationPreview: true,
-      hasLegalTraceability: true,
-      hasPublicTestCases: true,
-    },
-  },
-  {
-    id: 'prime-activite-eligibilite',
-    slug: 'prime-activite-eligibilite',
-    title: 'Prime d\'activité - éligibilité et montant',
-    shortDescription:
-      'Référence le calcul de la prime d\'activité à partir des revenus professionnels, de la composition du foyer et de la bonification individuelle.',
-    nature: 'hybride',
-    domain: 'emploi',
-    engine: 'openfisca',
-    maturity: 'N2',
-    opposability: 'indicatif',
-    regulatoryPosition: 'aide-au-remplissage',
-    organism: organismsMock.cnaf!,
-    legalReferences: [
-      legalReferencesMock['code-travail-L5422-1']!,
-    ],
-    tags: ['emploi', 'prime-activite', 'cnaf', 'revenus'],
-    updatedAt: '2026-05-09',
-    version: '2.1.0',
-    sourceUrl: 'https://github.com/openfisca/openfisca-france',
-    capabilities: {
-      hasApiDocumentation: false,
-      hasCalculationPreview: true,
-      hasLegalTraceability: true,
-      hasPublicTestCases: true,
-    },
-  },
-]
 
-/** Accès par slug pour la résolution des routes dynamiques. */
-export const ruleBySlug = Object.fromEntries(
-  rulesMock.map(rule => [rule.slug, rule]),
-) as Record<string, Rule>
+/** Requalifie la frontière issue de l'adaptateur (kind par défaut : déclaration). */
+function qualifyBoundary(
+  draft: RuleBoundaryInput[],
+  overrides: Record<string, Partial<RuleBoundaryInput> & { kind?: BoundaryKind }>,
+): RuleBoundaryInput[] {
+  return draft.map(input => ({ ...input, ...overrides[input.id] }))
+}
+
+const prestagriAdaptation = adaptJsonldGraph(prestagriRaw)
+const droitVoteAdaptation = adaptJsonldGraph(droitVoteRaw)
+
+const prestagri: Rule = {
+  ...prestagriAdaptation.base as Rule,
+  id: 'prestagri',
+  slug: 'prestagri',
+  title: 'Prest\'Agri - quotient familial et aide à la scolarité',
+  nature: 'ouverte',
+  domain: 'solidarite',
+  engine: 'catala',
+  maturity: 'N3',
+  opposability: 'indicatif',
+  regulatoryPosition: 'assistance-administration',
+  organism: organismsMock['ministere-agriculture']!,
+  legalReferences: [legalReferencesMock['note-service-masa-qf']!],
+  tags: ['catala', 'quotient-familial', 'aide-scolarite', 'agents-publics', 'betagouv'],
+  updatedAt: '2026-06-26',
+  certificationRegime: 'frontiere',
+  boundary: qualifyBoundary(prestagriAdaptation.boundaryDraft, {
+    agent_revenu: {
+      kind: 'donnee-attestee',
+      evidenceSource: { label: 'Revenu fiscal de référence (DGFiP, mobilisable via API Particulier)', url: 'https://particulier.api.gouv.fr' },
+    },
+    conjoint_revenu: {
+      kind: 'donnee-attestee',
+      evidenceSource: { label: 'Revenu fiscal de référence du conjoint (DGFiP)' },
+    },
+  }),
+  outputs: prestagriAdaptation.outputs,
+  capabilities: {
+    hasApiDocumentation: true,
+    hasCalculationPreview: true,
+    hasPublicTestCases: true,
+  },
+  profileGaps: prestagriAdaptation.gaps,
+  metadataSourcePath: 'app/data/jsonld/ministere-agriculture/prestagri/metadata.jsonld',
+}
+
+const droitVote: Rule = {
+  ...droitVoteAdaptation.base as Rule,
+  id: 'droits-civiques-elections',
+  slug: 'droits-civiques-elections',
+  nature: 'ouverte',
+  domain: 'citoyennete',
+  maturity: 'N2',
+  opposability: 'indicatif',
+  regulatoryPosition: 'simulation-indicative',
+  organism: organismsMock['ministere-interieur']!,
+  legalReferences: [
+    legalReferencesMock['code-electoral-L2-L7']!,
+    legalReferencesMock['constitution-art-88-3']!,
+  ],
+  tags: ['python', 'regalgo', 'droit-de-vote', 'code-electoral'],
+  updatedAt: '2026-06-25',
+  certificationRegime: 'frontiere',
+  boundary: qualifyBoundary(droitVoteAdaptation.boundaryDraft, {
+    inscrit_listes_electorales: {
+      kind: 'donnee-attestee',
+      evidenceSource: { label: 'Répertoire électoral unique (Insee) - téléservice « interroger sa situation électorale »', url: 'https://www.service-public.fr/particuliers/vosdroits/services-en-ligne-et-formulaires/ISE' },
+    },
+    type_election: { kind: 'contexte' },
+  }),
+  outputs: droitVoteAdaptation.outputs,
+  capabilities: {
+    hasPublicTestCases: true,
+  },
+  profileGaps: droitVoteAdaptation.gaps,
+  metadataSourcePath: 'app/data/jsonld/ministere-interieur/droits-civiques-elections/metadata.jsonld',
+}
+
+const entrepriseInnovation: Rule = {
+  id: 'entreprise-innovation',
+  slug: 'entreprise-innovation',
+  title: 'Aides fiscales à l\'innovation - CIR, CII, CICo, JEI, JEU, JEC',
+  shortDescription:
+    'Éligibilité et montant des six dispositifs fiscaux de soutien à l\'innovation des entreprises. '
+    + 'Modélisation Publicodes coconstruite avec un expert métier de la DGFiP, exposée en iframe sur '
+    + 'entreprendre.service-public.fr (DILA).',
+  nature: 'ouverte',
+  domain: 'fiscalite',
+  engine: 'publicodes',
+  maturity: 'N3',
+  opposability: 'indicatif',
+  regulatoryPosition: 'simulation-indicative',
+  organism: organismsMock.dge!,
+  legalReferences: [
+    legalReferencesMock['cgi-244-quater-b']!,
+    legalReferencesMock['cgi-44-sexies-0-a']!,
+  ],
+  tags: ['cir', 'cii', 'jei', 'innovation', 'publicodes', 'entreprises'],
+  updatedAt: '2025-09-17',
+  version: 'main (2025-09-17)',
+  sourceUrl: 'https://github.com/betagouv/publicodes-entreprise-innovation',
+  capabilities: {
+    hasCalculationPreview: true,
+    hasLegalTraceability: true,
+  },
+  certificationRegime: 'frontiere',
+  boundary: [
+    { id: 'natureActivite', label: 'Nature de l\'activité', kind: 'declaration', definition: 'Activité commerciale, industrielle, agricole ou artisanale (conditionne l\'éligibilité au CIR).', required: true },
+    { id: 'regimeFiscal', label: 'Régime fiscal', kind: 'declaration', definition: 'Imposition au régime réel ou condition d\'exonération (CGI, art. 244 quater B).', required: true },
+    { id: 'depensesRecherche', label: 'Dépenses de recherche (métropole et DOM)', kind: 'declaration', definition: 'Assiette du crédit d\'impôt : 30 % jusqu\'à 100 M€ puis 5 % en métropole, 50 % dans les DOM.', required: true },
+  ],
+  operationalMappings: [
+    {
+      label: 'Formulaire déclaratif → variables Publicodes',
+      from: 'survey-schema aides-simplifiées (entreprise-innovation.json)',
+      to: 'règles publicodes-entreprise-innovation',
+      artifactUrl: 'https://github.com/betagouv/aides-simplifiees-app/blob/main/public/forms/entreprise-innovation.json',
+      maintainedBy: 'aides-simplifiées (service en cours de fermeture)',
+      ciStatus: 'unknown',
+    },
+  ],
+  profileGaps: ['fiche metadata.jsonld absente du dépôt data : entrée décrite depuis le dépôt source public'],
+}
+
+const primeActivite: Rule = {
+  id: 'prime-activite-openfisca',
+  slug: 'prime-activite-openfisca',
+  title: 'Prime d\'activité - telle que calculée par openfisca-france',
+  shortDescription:
+    'Prestation du cœur socio-fiscal : sa chaîne de dépendances (SMIC, bases ressources, définitions '
+    + 'de revenus) n\'a pas de porteur unique. Elle est cataloguée comme implémentation : le couple '
+    + 'suite de tests + snapshot openfisca-france fait foi, pas la règle dans l\'abstrait.',
+  nature: 'ouverte',
+  domain: 'solidarite',
+  engine: 'openfisca',
+  maturity: 'N2',
+  opposability: 'indicatif',
+  regulatoryPosition: 'simulation-indicative',
+  organism: organismsMock.cnaf!,
+  legalReferences: [legalReferencesMock['css-L841-1']!],
+  tags: ['prime-activite', 'openfisca', 'minima-sociaux', 'cnaf'],
+  updatedAt: '2026-07-07',
+  version: 'openfisca-france (suivi continu)',
+  sourceUrl: 'https://github.com/openfisca/openfisca-france',
+  capabilities: {
+    hasPublicTestCases: true,
+  },
+  certificationRegime: 'implementation',
+  boundary: [
+    { id: 'salaire_de_base', label: 'Salaires des 3 derniers mois', kind: 'declaration', definition: 'Revenus d\'activité déclarés par l\'usager sur le trimestre de référence.', required: true },
+    { id: 'rfr', label: 'Revenu fiscal de référence', kind: 'donnee-attestee', evidenceSource: { label: 'DGFiP, mobilisable via API Particulier', url: 'https://particulier.api.gouv.fr' } },
+    { id: 'montant_forfaitaire', label: 'Montant forfaitaire et SMIC', kind: 'sortie-regle', definition: 'Paramètres législatifs partagés du cœur socio-fiscal, maintenus dans openfisca-france ; aucun porteur administratif unique.' },
+  ],
+  operationalMappings: [
+    {
+      label: 'Situation déclarative → entités et périodes OpenFisca',
+      from: 'formulaire déclaratif aides-simplifiées (description plate)',
+      to: 'entités individu / famille / foyer fiscal / ménage, variables périodisées',
+      artifactUrl: 'https://github.com/betagouv/aides-simplifiees-app/blob/main/inertia/services/openfisca/dispatchers.ts',
+      maintainedBy: 'aides-simplifiées (service en cours de fermeture)',
+      ciStatus: 'unknown',
+    },
+  ],
+  engineProfile: {
+    openfisca: {
+      entities: ['individu', 'famille', 'foyer_fiscal', 'menage'],
+      periodes: 'variables mensuelles, bases ressources trimestrielles, paramètres législatifs datés',
+    },
+  },
+  profileGaps: ['fiche metadata.jsonld absente du dépôt data : entrée décrite depuis le dépôt source public'],
+}
+
+const passCultureBonusQf: Rule = {
+  id: 'pass-culture-bonus-qf',
+  slug: 'pass-culture-bonus-qf',
+  title: 'Pass Culture - bonification selon le quotient familial',
+  shortDescription:
+    'Bonus de 50 € du pass Culture conditionné au quotient familial (décret n° 2025-195). '
+    + 'L\'implémentation officielle n\'est pas publiée : l\'entrée est référencée sur la seule base du texte, '
+    + 'sans code ni cas de tests. Une spécification d\'extraction indépendante existe.',
+  nature: 'fermee',
+  domain: 'culture',
+  engine: 'autre',
+  maturity: 'N0',
+  opposability: 'indicatif',
+  regulatoryPosition: 'simulation-indicative',
+  organism: organismsMock['pass-culture']!,
+  legalReferences: [
+    legalReferencesMock['decret-2025-195']!,
+    legalReferencesMock['decret-2021-628']!,
+  ],
+  tags: ['pass-culture', 'quotient-familial', 'jeunesse'],
+  updatedAt: '2026-04-04',
+  version: 'non publiée',
+  certificationRegime: 'referencement',
+}
+
+export const rulesMock: Rule[] = [
+  prestagri,
+  droitVote,
+  entrepriseInnovation,
+  primeActivite,
+  passCultureBonusQf,
+]

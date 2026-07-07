@@ -1,14 +1,15 @@
 import type { ExplanationNode } from '~/components/business/RuleSimulationPreview.vue'
 
 /**
- * Aperçus de calcul pré-calculés, par règle exécutable.
+ * Aperçus de calcul, par règle exécutable.
  *
- * Conformément à la doctrine du POC, aucun calcul réel n'est effectué : on expose
- * un cas d'exemple représentatif avec son résultat indicatif et l'arbre
- * d'explicabilité (« comment ce résultat a été obtenu »), en langage courant.
+ * Démo resserrée : l'aperçu Prest'Agri reproduit un appel réel à l'API de production
+ * (GET api.prest-agri.beta.gouv.fr/quotient_familial, exécuté le 2026-07-07), y compris
+ * sa trace d'explication Catala. L'aperçu entreprise-innovation applique le barème réel
+ * du fichier cir.publicodes à une assiette d'exemple.
  *
- * Les règles dont le moteur est fermé (propriétaire) n'ont pas d'aperçu intégré :
- * leur absence d'entrée ici est volontaire et gérée par la fiche.
+ * TODO (stretch) : exécuter publicodes-entreprise-innovation dans le navigateur pour un
+ * aperçu calculé en direct plutôt que dérivé du barème.
  */
 export interface RulePreview {
   /** Description en une ligne de la situation d'exemple. */
@@ -24,273 +25,45 @@ export interface RulePreview {
 }
 
 export const rulePreviewsMock: Record<string, RulePreview> = {
-  'rsa-eligibilite': {
-    situation: 'Personne seule, sans activité, ressources nulles sur les 3 derniers mois.',
+  'prestagri': {
+    situation: 'Agent du ministère, revenu fiscal de référence de 30 000 €, 2 enfants à charge.',
     inputs: [
-      { label: 'Composition du foyer', value: '1 personne, sans enfant' },
-      { label: 'Ressources des 3 derniers mois', value: '0 €' },
-      { label: 'Situation', value: 'Sans emploi, résident en métropole' },
+      { label: 'Revenu fiscal de référence annuel', value: '30 000 €' },
+      { label: 'Enfants à charge', value: '2' },
     ],
-    result: { value: 'Éligible', label: 'Droit au RSA', unit: ': 635,71 €/mois estimés' },
-    computedAt: '2026-05-02',
+    result: { value: '833,33 €', label: 'Quotient familial mensuel' },
+    computedAt: '2026-07-07',
     explanation: [
       {
-        label: 'Montant forfaitaire (personne seule)',
-        value: '635,71 €',
-        source: 'CASF art. L. 262-2 : barème 2026',
+        label: 'Unités du foyer',
+        value: '3,0',
+        source: 'Note de service MASA : agent + majorations pour enfants à charge',
       },
       {
-        label: 'Ressources prises en compte',
-        value: '0 €',
-        source: 'Moyenne des 3 derniers mois',
-        children: [
-          { label: 'Revenus d\'activité', value: '0 €' },
-          { label: 'Autres prestations', value: '0 €' },
-        ],
-      },
-      {
-        label: 'RSA = forfait − ressources',
-        value: '635,71 € − 0 € = 635,71 €',
-        source: 'OpenFisca France : variable rsa',
+        label: 'Quotient familial = revenu / (12 × unités)',
+        value: '30 000,00 / (12 × 3,0) = 833,33 €',
+        source: 'Trace d\'explication renvoyée par l\'API Prest\'Agri (règles Catala) : « 30000.00/ (12 x 3.0) »',
       },
     ],
   },
-  'impot-revenu-bareme': {
-    situation: 'Couple marié, 2 parts, revenu net imposable de 45 000 €.',
+  'entreprise-innovation': {
+    situation: 'Entreprise industrielle au régime réel, 500 000 € de dépenses de recherche en métropole.',
     inputs: [
-      { label: 'Foyer fiscal', value: '2 parts (couple sans personne à charge)' },
-      { label: 'Revenu net imposable', value: '45 000 €' },
-      { label: 'Année des revenus', value: '2025' },
+      { label: 'Nature de l\'activité', value: 'Industrielle (régime réel)' },
+      { label: 'Dépenses de recherche éligibles', value: '500 000 € (métropole)' },
     ],
-    result: { value: '3 196', unit: '€', label: 'Impôt sur le revenu estimé' },
-    computedAt: '2026-01-10',
+    result: { value: '150 000 €', label: 'Crédit d\'impôt recherche' },
+    computedAt: '2026-07-07',
     explanation: [
       {
-        label: 'Quotient familial (revenu ÷ parts)',
-        value: '45 000 € ÷ 2 = 22 500 €',
-        source: 'CGI art. 197',
+        label: 'Éligibilité au CIR',
+        value: 'Oui',
+        source: 'cir.publicodes : « cir . eligibilite » (activité commerciale, industrielle ou agricole au régime réel)',
       },
       {
-        label: 'Application du barème progressif par tranche',
-        value: 'sur 22 500 €',
-        children: [
-          { label: 'Jusqu\'à 11 497 €', value: '0 %', source: '0 €' },
-          { label: 'De 11 497 € à 22 500 €', value: '11 %', source: '1 210 €' },
-        ],
-      },
-      {
-        label: 'Impôt par part × nombre de parts',
-        value: '1 598 € × 2 = 3 196 €',
-        source: 'OpenFisca France : variable impot_revenu',
-      },
-    ],
-  },
-  'allocation-chomage-are': {
-    situation: 'Fin de CDI après 24 mois, salaire journalier de référence de 64,50 €.',
-    inputs: [
-      { label: 'Durée d\'affiliation', value: '24 mois' },
-      { label: 'Salaire journalier de référence', value: '64,50 €' },
-      { label: 'Convention applicable', value: 'Unédic 2024' },
-    ],
-    result: { value: '40,20', unit: '€/jour', label: 'Allocation journalière estimée' },
-    computedAt: '2026-03-22',
-    explanation: [
-      {
-        label: 'Partie fixe + partie proportionnelle',
-        value: '13,11 € + 40 % × 64,50 €',
-        source: 'Convention Unédic 2024',
-      },
-      {
-        label: 'Comparaison au plancher (57 % du SJR)',
-        value: 'max(38,91 € ; 36,77 €) = 38,91 €',
-        children: [
-          { label: 'Formule fixe + proportionnelle', value: '38,91 €' },
-          { label: 'Plancher 57 % du SJR', value: '36,77 €' },
-        ],
-      },
-      {
-        label: 'Allocation retenue (après plafonds)',
-        value: '40,20 €/jour',
-        source: 'Publicodes : règle allocation journalière',
-      },
-    ],
-  },
-  'apl-eligibilite': {
-    situation: 'Étudiant locataire en zone 2, loyer de 480 €, ressources de 400 €/mois.',
-    inputs: [
-      { label: 'Statut', value: 'Locataire, logement conventionné' },
-      { label: 'Zone géographique', value: 'Zone 2' },
-      { label: 'Loyer mensuel', value: '480 €' },
-      { label: 'Ressources mensuelles', value: '400 €' },
-    ],
-    result: { value: 'Éligible', label: 'Droit à l\'APL', unit: ': 196 €/mois estimés' },
-    computedAt: '2026-05-18',
-    explanation: [
-      {
-        label: 'Loyer retenu (plafonné selon la zone)',
-        value: 'min(480 € ; 332 €) = 332 €',
-        source: 'CCH art. L. 823-1 : plafonds zone 2',
-      },
-      {
-        label: 'Participation personnelle (selon ressources)',
-        value: '136 €',
-        source: 'Barème CNAF 2026',
-      },
-      {
-        label: 'APL = loyer plafonné − participation',
-        value: '332 € − 136 € = 196 €',
-        source: 'OpenFisca France : variable aide_logement',
-      },
-    ],
-  },
-  'aspa-minimum-vieillesse': {
-    situation: 'Personne seule de 67 ans, pension de retraite de 700 €/mois.',
-    inputs: [
-      { label: 'Âge', value: '67 ans' },
-      { label: 'Situation familiale', value: 'Personne seule' },
-      { label: 'Ressources mensuelles', value: '700 € (pension)' },
-    ],
-    result: { value: '361,57', unit: '€/mois', label: 'Complément ASPA estimé' },
-    computedAt: '2026-02-28',
-    explanation: [
-      {
-        label: 'Plafond ASPA (personne seule)',
-        value: '1 061,57 €/mois',
-        source: 'CSS art. L. 815-1 : barème 2026',
-      },
-      {
-        label: 'Ressources prises en compte',
-        value: '700 €',
-      },
-      {
-        label: 'ASPA = plafond − ressources (différentiel)',
-        value: '1 061,57 € − 700 € = 361,57 €',
-        source: 'OpenFisca France : variable aspa',
-      },
-    ],
-  },
-  'pass-culture-eligibilite': {
-    situation: 'Lycéenne de 17 ans, résidant en métropole, première demande.',
-    inputs: [
-      { label: 'Âge', value: '17 ans' },
-      { label: 'Résidence', value: 'Métropole' },
-      { label: 'Date de la demande', value: '1er avril 2026' },
-    ],
-    result: { value: 'Éligible', label: 'Éligibilité au pass Culture' },
-    computedAt: '2026-04-12',
-    explanation: [
-      {
-        label: 'Condition d\'âge (15 à 18 ans)',
-        value: '17 ans → remplie',
-        source: 'Décret n° 2021-628, art. 2',
-      },
-      {
-        label: 'Condition de résidence',
-        value: 'Métropole → remplie',
-        source: 'pass culture . résidence éligible',
-      },
-      {
-        label: 'Éligibilité = âge ET résidence',
-        value: 'vrai ET vrai = éligible',
-        source: 'Publicodes : pass culture . éligible',
-      },
-    ],
-  },
-  'pass-culture-credit': {
-    situation: 'Bénéficiaire activant son crédit à 18 ans.',
-    inputs: [
-      { label: 'Âge à l\'activation', value: '18 ans' },
-    ],
-    result: { value: '300', unit: '€', label: 'Crédit pass Culture initial' },
-    computedAt: '2026-03-04',
-    explanation: [
-      {
-        label: 'Palier applicable selon l\'âge',
-        value: '18 ans → palier majeur',
-        source: 'Décret n° 2021-628',
-        children: [
-          { label: '15 ans', value: '20 €' },
-          { label: '16–17 ans', value: '30 €' },
-          { label: '18 ans', value: '300 €' },
-        ],
-      },
-      {
-        label: 'Crédit attribué',
-        value: '300 €',
-        source: 'Publicodes : pass culture . crédit',
-      },
-    ],
-  },
-  'tarification-solidaire-eau-paris': {
-    situation: 'Famille de 4 personnes, quotient familial de 700.',
-    inputs: [
-      { label: 'Composition', value: '2 adultes, 2 enfants' },
-      { label: 'Quotient familial', value: '700' },
-      { label: 'Commune', value: 'Paris' },
-    ],
-    result: { value: '96', unit: '€/an', label: 'Aide à l\'accès à l\'eau estimée' },
-    computedAt: '2026-04-05',
-    explanation: [
-      {
-        label: 'Tranche de quotient familial',
-        value: 'QF 700 → tranche 2 (≤ 900)',
-        source: 'Délibération 2025 DLH du Conseil de Paris',
-      },
-      {
-        label: 'Montant par personne du foyer',
-        value: '24 € × 4 = 96 €',
-        source: 'Publicodes : tarif solidaire eau',
-      },
-    ],
-  },
-  'aide-achat-velo-grenoble': {
-    situation: 'Achat d\'un vélo à assistance électrique, foyer non imposable.',
-    inputs: [
-      { label: 'Type de vélo', value: 'Vélo à assistance électrique' },
-      { label: 'Imposition du foyer', value: 'Non imposable' },
-      { label: 'Cumul bonus national', value: 'Oui' },
-    ],
-    result: { value: '400', unit: '€', label: 'Aide métropolitaine estimée' },
-    computedAt: '2026-03-12',
-    explanation: [
-      {
-        label: 'Taux selon le type de vélo',
-        value: '50 % du prix, plafonné',
-        source: 'Délibération métropolitaine du 7 février 2025',
-      },
-      {
-        label: 'Majoration foyer non imposable',
-        value: '+ 100 €',
-      },
-      {
-        label: 'Aide attribuée (dans la limite du plafond)',
-        value: '400 €',
-        source: 'Publicodes : aide vélo',
-      },
-    ],
-  },
-  'prime-activite-eligibilite': {
-    situation: 'Personne seule, salaire net de 1 200 €/mois.',
-    inputs: [
-      { label: 'Composition du foyer', value: '1 personne' },
-      { label: 'Revenus professionnels', value: '1 200 €/mois' },
-    ],
-    result: { value: '186', unit: '€/mois', label: 'Prime d\'activité estimée' },
-    computedAt: '2026-05-09',
-    explanation: [
-      {
-        label: 'Montant forfaitaire + bonification individuelle',
-        value: '622 € + 167 €',
-        source: 'Barème prime d\'activité 2026',
-      },
-      {
-        label: 'Prise en compte des revenus (61 %)',
-        value: '− 732 €',
-      },
-      {
-        label: 'Prime = forfait + bonif − ressources',
-        value: '186 €/mois',
-        source: 'OpenFisca France : variable ppa',
+        label: 'Barème métropole : 30 % jusqu\'à 100 M€',
+        value: '500 000 € × 30 % = 150 000 €',
+        source: 'cir.publicodes : « cir . creditMetropole » (barème 30 % / 5 %, CGI art. 244 quater B)',
       },
     ],
   },

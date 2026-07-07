@@ -51,7 +51,7 @@ export const demos: Demo[] = [
     title: 'Fiche règle canonique',
     publicCible: 'Cercle 2 et 3',
     hypothesis: 'Une meme fiche couvre description, API, traceabilite et tests selon la regle',
-    route: '/mvp/regles/rsa-eligibilite',
+    route: '/mvp/regles/prestagri',
     status: 'done',
   },
   {
@@ -61,7 +61,7 @@ export const demos: Demo[] = [
     title: 'Fiche règle - onglet tracabilite',
     publicCible: 'Cercle 2',
     hypothesis: 'La traçabilité texte légal vers code est immédiatement compréhensible',
-    route: '/mvp/regles/pass-culture-eligibilite?tab=traceability',
+    route: '/mvp/regles/entreprise-innovation?tab=traceability',
     status: 'done',
   },
   {
@@ -71,7 +71,7 @@ export const demos: Demo[] = [
     title: 'Fiche règle - onglet simulation',
     publicCible: 'Cercle 1 et 3',
     hypothesis: 'Le bandeau d\'opposabilité distingue clairement aperçu indicatif et résultat opposable',
-    route: '/mvp/regles/pass-culture-credit?tab=simulation',
+    route: '/mvp/regles/prestagri?tab=simulation',
     status: 'done',
   },
   {
@@ -81,7 +81,7 @@ export const demos: Demo[] = [
     title: 'Fiche règle - onglet API',
     publicCible: 'Cercle 1 (AMI)',
     hypothesis: 'L\'integration API est lisible sans sortir de la fiche',
-    route: '/mvp/regles/rsa-eligibilite?tab=api',
+    route: '/mvp/regles/prestagri?tab=api',
     status: 'done',
   },
   {

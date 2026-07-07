@@ -67,4 +67,22 @@ export const organismsMock: Record<string, Organism> = {
     acronym: 'Ville de Paris',
     url: 'https://www.paris.fr',
   },
+  'ministere-agriculture': {
+    id: 'ministere-agriculture',
+    name: 'Ministère de l\'Agriculture et de la Souveraineté alimentaire',
+    acronym: 'MASA',
+    url: 'https://agriculture.gouv.fr',
+  },
+  'ministere-interieur': {
+    id: 'ministere-interieur',
+    name: 'Ministère de l\'Intérieur',
+    acronym: 'Ministère de l\'Intérieur',
+    url: 'https://www.interieur.gouv.fr',
+  },
+  'dge': {
+    id: 'dge',
+    name: 'Direction générale des Entreprises',
+    acronym: 'DGE',
+    url: 'https://www.entreprises.gouv.fr',
+  },
 }

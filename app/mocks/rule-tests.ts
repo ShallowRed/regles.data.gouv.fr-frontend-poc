@@ -1,160 +1,85 @@
 import type { RuleTest } from '~/types'
 
 /**
- * Cas de tests publics publies par certaines administrations.
- * Leur absence sur une regle ne signifie pas absence de validation interne.
+ * Cas de tests de la démo resserrée.
+ *
+ * Doctrine : le test natif (dans le format du moteur, lié par `nativeRef`) fait foi ;
+ * le catalogue norme l'enveloppe (intention, provenance, validateur, statut). Les
+ * `inputs`/`expected` plats sont une projection pédagogique, pas le test lui-même.
+ *
+ * Les deux cas Prest'Agri sont des appels réels à l'API de production
+ * (api.prest-agri.beta.gouv.fr), exécutés le 2026-07-07.
  */
 export const ruleTestsMock: RuleTest[] = [
-  // Règle éligibilité (N3) - 5 cas
   {
-    id: 'test-eligibilite-1',
-    ruleId: 'pass-culture-eligibilite',
-    label: 'Jeune 17 ans, résident métropole',
-    scenario: 'Lycéenne de 17 ans résidant en métropole, première activation.',
-    inputs: { age: 17, residence: 'metropole', date_demande: '2026-04-01' },
+    id: 'prestagri-qf-couple-2-enfants',
+    ruleId: 'prestagri',
+    label: 'Agent seul, 30 000 € de revenu, 2 enfants',
+    scenario: 'Quotient familial d\'un agent au revenu fiscal de référence de 30 000 € avec 2 enfants à charge.',
+    inputs: { agent_revenu: 30000, agent_enfants: 2 },
+    expected: '833.33',
+    expectedUnit: 'EUR',
+    source: 'administration',
+    status: 'valide',
+    validatedBy: 'API Prest\'Agri (calcul réel)',
+    validatedAt: '2026-07-07',
+    nativeFormat: 'catala-assert',
+    nativeRef: 'https://github.com/betagouv/prestagri/tree/478b3cc2ab28299c73b94fdd192b0559ae5873b8/catala',
+  },
+  {
+    id: 'prestagri-qf-parent-isole',
+    ruleId: 'prestagri',
+    label: 'Même situation, parent isolé',
+    scenario: 'La majoration parent isolé ajoute une unité au foyer : le quotient familial baisse de 833,33 € à 625 €.',
+    inputs: { agent_revenu: 30000, agent_enfants: 2, parent_isole: true },
+    expected: '625.0',
+    expectedUnit: 'EUR',
+    source: 'administration',
+    status: 'valide',
+    validatedBy: 'API Prest\'Agri (calcul réel)',
+    validatedAt: '2026-07-07',
+    nativeFormat: 'catala-assert',
+    nativeRef: 'https://github.com/betagouv/prestagri/tree/478b3cc2ab28299c73b94fdd192b0559ae5873b8/catala',
+  },
+  {
+    id: 'droit-vote-cas-nominal',
+    ruleId: 'droits-civiques-elections',
+    label: 'Française de 25 ans, inscrite, capacité civique',
+    scenario: 'Cas nominal documenté dans la fiche : nationalité française, 25 ans, capacité civique, inscrite sur les listes.',
+    inputs: { nationalite_francaise: true, age: 25, capacite_civique: true, inscrit_listes_electorales: true },
     expected: true,
-    source: 'administration',
+    source: 'communaute',
     status: 'valide',
+    validatedBy: 'Suite pytest du dépôt source (commit pinné)',
+    legalAnchor: 'Code électoral, art. L. 2, L. 3, L. 5 à L. 7',
+    nativeFormat: 'pytest',
+    nativeRef: 'https://github.com/qloridant/regalgo-civique-droit-vote/blob/13d9f80ca21d47f55aef9710e6288e94ea10ccc6/tests/test_algorithm.py',
   },
   {
-    id: 'test-eligibilite-2',
-    ruleId: 'pass-culture-eligibilite',
-    label: 'Jeune 14 ans (sous le seuil)',
-    scenario: 'Adolescent de 14 ans, hors plage d\'éligibilité.',
-    inputs: { age: 14, residence: 'metropole', date_demande: '2026-04-01' },
-    expected: false,
-    source: 'administration',
-    status: 'valide',
-  },
-  {
-    id: 'test-eligibilite-3',
-    ruleId: 'pass-culture-eligibilite',
-    label: 'Jeune 19 ans (au-dessus du seuil)',
-    scenario: 'Jeune adulte de 19 ans, hors plage.',
-    inputs: { age: 19, residence: 'metropole', date_demande: '2026-04-01' },
-    expected: false,
-    source: 'administration',
-    status: 'valide',
-  },
-  {
-    id: 'test-eligibilite-4',
-    ruleId: 'pass-culture-eligibilite',
-    label: 'Jeune 18 ans, résident Mayotte',
-    scenario: 'Cas limite documenté par un aidant : 18 ans le jour de la demande, outre-mer.',
-    inputs: { age: 18, residence: 'mayotte', date_demande: '2026-04-01' },
+    id: 'droit-vote-ue-municipales',
+    ruleId: 'droits-civiques-elections',
+    label: 'Citoyenne UE domiciliée en France, élections municipales',
+    scenario: 'La citoyenneté UE combinée au domicile en France ouvre le droit de vote aux municipales (Constitution, art. 88-3).',
+    inputs: { citoyennete_ue: true, domicile_france: true, age: 30, capacite_civique: true, inscrit_listes_electorales: true, type_election: 'municipale' },
     expected: true,
     source: 'communaute',
     status: 'en_revue',
+    legalAnchor: 'Constitution, art. 88-3 ; Code électoral, art. L.O. 227-1',
+    nativeFormat: 'pytest',
+    nativeRef: 'https://github.com/qloridant/regalgo-civique-droit-vote/blob/13d9f80ca21d47f55aef9710e6288e94ea10ccc6/tests/test_algorithm.py',
   },
   {
-    id: 'test-eligibilite-5',
-    ruleId: 'pass-culture-eligibilite',
-    label: 'Jeune 17 ans, résident étranger',
-    scenario: 'Résidence hors France, le jeune ne doit pas être éligible.',
-    inputs: { age: 17, residence: 'etranger', date_demande: '2026-04-01' },
-    expected: false,
-    source: 'administration',
-    status: 'valide',
-  },
-  // Règle crédit (N2) - 4 cas
-  {
-    id: 'test-credit-1',
-    ruleId: 'pass-culture-credit',
-    label: 'Activation à 15 ans',
-    scenario: 'Premier crédit pour un bénéficiaire activant à 15 ans.',
-    inputs: { age_activation: 15 },
-    expected: 20,
-    expectedUnit: 'EUR',
-    source: 'administration',
-    status: 'valide',
-  },
-  {
-    id: 'test-credit-2',
-    ruleId: 'pass-culture-credit',
-    label: 'Activation à 16 ans',
-    scenario: 'Palier intermédiaire à 16 ans.',
-    inputs: { age_activation: 16 },
-    expected: 30,
-    expectedUnit: 'EUR',
-    source: 'administration',
-    status: 'valide',
-  },
-  {
-    id: 'test-credit-3',
-    ruleId: 'pass-culture-credit',
-    label: 'Activation à 18 ans (montant majeur)',
-    scenario: 'Activation au jour des 18 ans, crédit complet.',
-    inputs: { age_activation: 18 },
-    expected: 300,
-    expectedUnit: 'EUR',
-    source: 'administration',
-    status: 'valide',
-  },
-  {
-    id: 'test-credit-4',
-    ruleId: 'pass-culture-credit',
-    label: 'Activation tardive 17 ans 11 mois',
-    scenario: 'Cas borderline signalé par un éducateur PJJ.',
-    inputs: { age_activation: 17.92 },
-    expected: 30,
-    expectedUnit: 'EUR',
+    id: 'prime-activite-suite-native',
+    ruleId: 'prime-activite-openfisca',
+    label: 'Suite de tests native openfisca-france',
+    scenario:
+      'Les cas de tests vivent dans le format YAML d\'openfisca-france (variables périodisées, entités '
+      + 'composées) : les transposer dans un format plat leur ferait perdre leur sens. Le catalogue référence '
+      + 'la suite native et son statut d\'exécution.',
     source: 'communaute',
-    status: 'echec',
-  },
-  // Règle bonification zonale (N1) - 2 cas
-  {
-    id: 'test-are-1',
-    ruleId: 'allocation-chomage-are',
-    label: 'ARE - ouverture de droits standard',
-    scenario: 'Demandeur avec 24 mois d\'affiliation et salaire de reference stable.',
-    inputs: { mois_affiliation: 24, sjr: 64.5 },
-    expected: 40.2,
-    expectedUnit: 'EUR',
-    source: 'administration',
     status: 'valide',
-  },
-  {
-    id: 'test-are-2',
-    ruleId: 'allocation-chomage-are',
-    label: 'ARE - plafond conventionnel',
-    scenario: 'Controle du plafond journalier selon convention Unedic 2024.',
-    inputs: { mois_affiliation: 36, sjr: 220 },
-    expected: 165,
-    expectedUnit: 'EUR',
-    source: 'communaute',
-    status: 'en_revue',
-  },
-  {
-    id: 'test-bonification-1',
-    ruleId: 'pass-culture-bonification-zone',
-    label: 'Résident QPV (Aubervilliers)',
-    scenario: 'Bénéficiaire résidant en quartier prioritaire de la politique de la ville.',
-    inputs: { code_postal: '93300', zonage: 'QPV' },
-    expected: 50,
-    expectedUnit: 'EUR',
-    source: 'administration',
-    status: 'en_revue',
-  },
-  {
-    id: 'test-bonification-2',
-    ruleId: 'pass-culture-bonification-zone',
-    label: 'Résident outre-mer (La Réunion)',
-    scenario: 'Cas outre-mer documenté en atelier communautaire.',
-    inputs: { code_postal: '97400', zonage: 'outre-mer' },
-    expected: 80,
-    expectedUnit: 'EUR',
-    source: 'communaute',
-    status: 'en_revue',
+    validatedBy: 'Intégration continue openfisca-france',
+    nativeFormat: 'openfisca-yaml',
+    nativeRef: 'https://github.com/openfisca/openfisca-france/tree/master/tests',
   },
 ]
-
-export const ruleTestsByRule = ruleTestsMock.reduce<Record<string, RuleTest[]>>(
-  (acc, test) => {
-    if (!acc[test.ruleId]) {
-      acc[test.ruleId] = []
-    }
-    acc[test.ruleId]!.push(test)
-    return acc
-  },
-  {},
-)
