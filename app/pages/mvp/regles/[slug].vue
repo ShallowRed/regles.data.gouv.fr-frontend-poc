@@ -1232,7 +1232,7 @@ useHead(() => ({ title: title.value }))
 
                     <div class="space-y-1.5">
                       <div class="flex flex-wrap items-center gap-2">
-                        <span class="fr-text--sm mb-0 font-bold text-gray-900">v{{ v.version }}</span>
+                        <span class="fr-text--sm mb-0 font-bold text-gray-900">{{ formatRuleVersion(v.version) }}</span>
                         <span
                           class="fr-badge fr-badge--sm"
                           :class="(v.kindMeta as {

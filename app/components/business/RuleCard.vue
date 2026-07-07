@@ -153,7 +153,7 @@ const availableServices = computed(() => {
           </li>
         </ul>
         <p class="fr-text--xs mb-0 text-gray-500 m-0 mt-auto">
-          v{{ rule.version }} · maj {{ updatedLabel }}
+          {{ formatRuleVersion(rule.version) }} · maj {{ updatedLabel }}
         </p>
       </div>
     </div>

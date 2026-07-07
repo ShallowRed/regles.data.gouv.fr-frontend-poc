@@ -34,6 +34,14 @@ const natureMeta: Record<RuleNature, { label: string, badgeClass: string, meanin
 
 export const ruleNatureMeta = (nature: RuleNature) => natureMeta[nature]
 
+/**
+ * Affichage d'une version : préfixe « v » seulement pour les versions numériques (semver).
+ * Les règles en régime implémentation portent des versions descriptives
+ * (« openfisca-france (suivi continu) », « main (2025-09-17) ») qu'on affiche telles quelles.
+ */
+export const formatRuleVersion = (version: string): string =>
+  /^\d/.test(version) ? `v${version}` : version
+
 const baseTabs: RuleFicheTab[] = [
   { key: 'description', label: 'Présentation' },
   { key: 'legal', label: 'Bases légales' },

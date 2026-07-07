@@ -159,7 +159,7 @@ const rsaTimeline = computed(() =>
                   aria-hidden="true"
                 />
                 <div class="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-                  <span class="fr-text--sm mb-0 font-bold text-gray-900 tabular-nums">v{{ v.version }}</span>
+                  <span class="fr-text--sm mb-0 font-bold text-gray-900 tabular-nums">{{ formatRuleVersion(v.version) }}</span>
                   <span class="fr-text--xs mb-0 text-gray-500">{{ v.date }}</span>
                   <span class="fr-text--xs mb-0 text-gray-400">·</span>
                   <span class="fr-text--xs mb-0 text-gray-500">{{ v.meta!.label }}</span>
