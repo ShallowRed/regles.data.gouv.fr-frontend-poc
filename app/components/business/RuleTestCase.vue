@@ -1,8 +1,10 @@
 <script setup lang="ts">
 /**
- * Carte d'un cas de test attaché à une règle (traçabilité juridique).
- * Présente inputs, résultat attendu, source (administration / communauté),
- * statut (validé / en revue / échec).
+ * Carte d'un cas de test attaché à une règle.
+ *
+ * Le test natif (format du moteur, lié par `nativeRef`) fait foi ; la carte présente
+ * l'enveloppe normée par le catalogue (intention, provenance, validateur, statut) et,
+ * quand elle existe, la projection pédagogique plate (inputs / résultat attendu).
  */
 import type { RuleTest } from '~/types/rule-test'
 
@@ -29,16 +31,39 @@ const sourceLabel = computed(() => {
       return 'Communauté'
     case 'jurisprudence':
       return 'Jurisprudence'
+    case 'circulaire':
+      return 'Circulaire'
+    case 'cas-reel-anonymise':
+      return 'Cas réel anonymisé'
     default:
       return 'Source inconnue'
   }
 })
 
+const nativeFormatLabel = computed(() => {
+  switch (props.test.nativeFormat) {
+    case 'openfisca-yaml':
+      return 'YAML OpenFisca'
+    case 'publicodes-yaml':
+      return 'YAML Publicodes'
+    case 'catala-assert':
+      return 'Assertions Catala'
+    case 'pytest':
+      return 'pytest'
+    default:
+      return props.test.nativeFormat
+  }
+})
+
+const hasFlatProjection = computed(() =>
+  props.test.inputs !== undefined || props.test.expected !== undefined,
+)
+
 const expectedDisplay = computed(() => {
   const e = props.test.expected
   if (typeof e === 'boolean')
     return e ? 'éligible' : 'non éligible'
-  if (e === null)
+  if (e === null || e === undefined)
     return '∅'
   return props.test.expectedUnit ? `${e} ${props.test.expectedUnit}` : String(e)
 })
@@ -56,6 +81,10 @@ const expectedDisplay = computed(() => {
             {{ statusBadge.label }}
           </span>
           <span class="fr-tag fr-tag--sm">{{ sourceLabel }}</span>
+          <span
+            v-if="nativeFormatLabel"
+            class="fr-tag fr-tag--sm"
+          >{{ nativeFormatLabel }}</span>
         </div>
         <h3 class="fr-card__title fr-h6 m-0">
           {{ test.label }}
@@ -64,7 +93,10 @@ const expectedDisplay = computed(() => {
           {{ test.scenario }}
         </p>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+        <div
+          v-if="hasFlatProjection"
+          class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3"
+        >
           <div>
             <p class="fr-text--xs uppercase tracking-wide text-gray-500 m-0 mb-1">
               Entrées
@@ -87,6 +119,26 @@ const expectedDisplay = computed(() => {
             </p>
           </div>
         </div>
+
+        <ul class="list-none p-0 mt-3 mb-0 space-y-1 fr-text--xs text-gray-600">
+          <li v-if="test.validatedBy">
+            Validé par : {{ test.validatedBy }}<template v-if="test.validatedAt"> ({{ test.validatedAt }})</template>
+          </li>
+          <li v-if="test.legalAnchor">
+            Texte visé : {{ test.legalAnchor }}
+          </li>
+          <li v-if="test.nativeRef">
+            <NuxtLink
+              :to="test.nativeRef"
+              :external="true"
+              target="_blank"
+              rel="noopener"
+              class="fr-link fr-text--xs"
+            >
+              Test natif qui fait foi (dépôt source)
+            </NuxtLink>
+          </li>
+        </ul>
       </div>
     </div>
   </article>

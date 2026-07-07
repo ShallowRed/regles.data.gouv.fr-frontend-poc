@@ -10,6 +10,66 @@ const engineTag = computed(() => (rule.value ? engineTagFor(rule.value) : null))
 
 const primaryReference = computed(() => rule.value?.legalReferences[0])
 
+/** Métadonnées d'affichage du régime de certification (doctrine : plusieurs régimes assumés). */
+const regimeMeta = computed(() => {
+  const regime = rule.value?.certificationRegime
+  if (!regime)
+    return null
+  const meta = {
+    'frontiere': {
+      label: 'Certifiable à la frontière',
+      badgeClass: 'fr-badge--green-emeraude',
+      hint: 'L\'administration certifie le comportement entrées → sorties sur des faits déclarés, à une version donnée (sémantique du rescrit). La provenance amont des entrées n\'est pas couverte.',
+    },
+    'implementation': {
+      label: 'Cataloguée comme implémentation',
+      badgeClass: 'fr-badge--blue-cumulus',
+      hint: 'Règle du cœur socio-fiscal, sans porteur unique de sa chaîne de dépendances : le couple suite de tests + snapshot d\'implémentation fait foi, pas la règle dans l\'abstrait.',
+    },
+    'referencement': {
+      label: 'Simplement référencée',
+      badgeClass: 'fr-badge--grey',
+      hint: 'Métadonnées descriptives seules : ni code ni cas de tests publiés.',
+    },
+  } as const
+  return meta[regime]
+})
+
+/** Présentation des natures d'entrées à la frontière de la règle. */
+const boundaryKindMeta: Record<string, { label: string, icon: string, description: string }> = {
+  'declaration': {
+    label: 'Faits déclarés',
+    icon: 'fr-icon-edit-line',
+    description: 'Déclarés par l\'usager, non vérifiés. La certification porte sur ces faits tels que déclarés.',
+  },
+  'donnee-attestee': {
+    label: 'Données attestées',
+    icon: 'fr-icon-checkbox-circle-line',
+    description: 'Attestées par une administration propriétaire, mobilisables via une API.',
+  },
+  'sortie-regle': {
+    label: 'Sorties d\'autres règles',
+    icon: 'fr-icon-git-merge-line',
+    description: 'Paramètres partagés ou résultats d\'autres règles : hors du périmètre certifié par cette entrée.',
+  },
+  'contexte': {
+    label: 'Paramètres de contexte',
+    icon: 'fr-icon-settings-5-line',
+    description: 'Changent la règle appliquée (par exemple le type d\'élection).',
+  },
+}
+
+/** Entrées de la frontière groupées par nature, dans l'ordre déclaré ci-dessus. */
+const boundaryGroups = computed(() => {
+  const boundary = rule.value?.boundary ?? []
+  return Object.entries(boundaryKindMeta)
+    .map(([kind, meta]) => ({ kind, meta, inputs: boundary.filter(b => b.kind === kind) }))
+    .filter(group => group.inputs.length > 0)
+})
+
+/** Sorties d'explicabilité (« utiles pour expliquer un refus »). */
+const explanationOutputs = computed(() => (rule.value?.outputs ?? []).filter(o => o.isExplanation))
+
 /** Aperçu de calcul pré-calculé (cas d'exemple), si la règle en expose un. */
 const preview = computed(() => (rule.value ? rulePreviewsMock[rule.value.slug] : undefined))
 
@@ -289,6 +349,15 @@ useHead(() => ({ title: title.value }))
                 :hint="engineTag.hint"
               />
             </li>
+            <li v-if="regimeMeta">
+              <p
+                class="fr-badge fr-badge--sm m-0"
+                :class="regimeMeta.badgeClass"
+                :title="regimeMeta.hint"
+              >
+                {{ regimeMeta.label }}
+              </p>
+            </li>
             <!-- <li class="fr-text--xs mb-0 fr-m-0 text-gray-500 ml-1">v{{ rule.version }}</li> -->
           </ul>
         </header>
@@ -414,6 +483,121 @@ useHead(() => ({ title: title.value }))
                     </li>
                   </ul>
                 </div>
+
+                <!-- Frontière de la règle : ce que la certification couvre, et ce qu'elle ne couvre pas -->
+                <div
+                  v-if="boundaryGroups.length"
+                  class="space-y-3"
+                >
+                  <h2 class="fr-h6 m-0">
+                    La frontière de la règle
+                  </h2>
+                  <p class="fr-text--sm text-gray-600 m-0 max-w-2xl">
+                    Un résultat certifié couvre le comportement de la règle sur ses entrées, pas la
+                    provenance de celles-ci. Chaque entrée est donc classée selon sa nature.
+                  </p>
+                  <div class="space-y-4">
+                    <div
+                      v-for="group in boundaryGroups"
+                      :key="group.kind"
+                      class="border border-gray-200 rounded p-4 space-y-2"
+                    >
+                      <p class="flex items-center gap-2 fr-text--sm mb-0 font-bold text-gray-900 m-0">
+                        <span
+                          :class="group.meta.icon"
+                          class="fr-icon--sm text-[#000091]"
+                          aria-hidden="true"
+                        />
+                        {{ group.meta.label }}
+                      </p>
+                      <p class="fr-text--xs mb-0 text-gray-600 m-0">
+                        {{ group.meta.description }}
+                      </p>
+                      <ul class="list-none p-0 m-0 space-y-1">
+                        <li
+                          v-for="input in group.inputs"
+                          :key="input.id"
+                          class="fr-text--sm mb-0 text-gray-700"
+                        >
+                          <strong>{{ input.label }}</strong><span v-if="input.required" aria-hidden="true"> *</span>
+                          <span v-if="input.definition" class="text-gray-600"> - {{ input.definition }}</span>
+                          <template v-if="input.evidenceSource">
+                            <br>
+                            <span class="fr-text--xs text-gray-600">
+                              Attestée par : {{ input.evidenceSource.label }}
+                            </span>
+                          </template>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                  <p
+                    v-if="explanationOutputs.length"
+                    class="fr-text--sm mb-0 text-gray-700 m-0"
+                  >
+                    <span
+                      class="fr-icon-questionnaire-line fr-icon--sm text-[#000091]"
+                      aria-hidden="true"
+                    />
+                    En plus du résultat, cette règle produit une trace d'explication
+                    <template v-for="(output, i) in explanationOutputs" :key="output.id"><template v-if="i > 0">, </template><code class="fr-text--xs">{{ output.id }}</code></template>
+                    - utile pour expliquer un refus.
+                  </p>
+                </div>
+
+                <!-- Mappings opérationnels recensés (jamais rédigés par le catalogue) -->
+                <div
+                  v-if="rule.operationalMappings?.length"
+                  class="space-y-3"
+                >
+                  <h2 class="fr-h6 m-0">
+                    Mappings opérationnels recensés
+                  </h2>
+                  <p class="fr-text--sm text-gray-600 m-0 max-w-2xl">
+                    Le catalogue ne rédige pas de dictionnaire de correspondances : il recense des
+                    mappings qui tournent, avec leur mainteneur et leur statut d'intégration continue.
+                  </p>
+                  <ul class="list-none p-0 m-0 space-y-2">
+                    <li
+                      v-for="mapping in rule.operationalMappings"
+                      :key="mapping.artifactUrl"
+                      class="border border-gray-200 rounded p-3 fr-text--sm mb-0"
+                    >
+                      <NuxtLink
+                        :to="mapping.artifactUrl"
+                        :external="true"
+                        target="_blank"
+                        rel="noopener"
+                        class="font-medium"
+                      >
+                        {{ mapping.label }}
+                      </NuxtLink>
+                      <span class="block fr-text--xs text-gray-600 mt-1 mb-0">
+                        {{ mapping.from }} → {{ mapping.to }} · maintenu par {{ mapping.maintainedBy }}
+                        <template v-if="mapping.ciStatus && mapping.ciStatus !== 'unknown'"> · CI : {{ mapping.ciStatus === 'passing' ? 'au vert' : 'en échec' }}</template>
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+
+                <!-- Note technique : écarts entre le profil metadata.jsonld source et le schéma catalogue -->
+                <details
+                  v-if="rule.profileGaps?.length"
+                  class="border border-dashed border-gray-300 rounded p-3"
+                >
+                  <summary class="fr-text--xs mb-0 text-gray-600 cursor-pointer">
+                    Note technique : champs sans équivalent dans la fiche source
+                    <template v-if="rule.metadataSourcePath"> ({{ rule.metadataSourcePath }})</template>
+                  </summary>
+                  <ul class="fr-text--xs text-gray-600 mt-2 mb-0 pl-5 space-y-1">
+                    <li
+                      v-for="gap in rule.profileGaps"
+                      :key="gap"
+                    >
+                      {{ gap }}
+                    </li>
+                  </ul>
+                </details>
               </section>
 
               <!-- Rail méta : présent uniquement dans Présentation -->

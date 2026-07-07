@@ -224,3 +224,7 @@ export const rulesMock: Rule[] = [
   primeActivite,
   passCultureBonusQf,
 ]
+
+export const ruleBySlug = Object.fromEntries(
+  rulesMock.map(rule => [rule.slug, rule]),
+) as Record<string, Rule>
