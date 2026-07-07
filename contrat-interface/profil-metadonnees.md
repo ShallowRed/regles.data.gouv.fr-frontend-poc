@@ -124,3 +124,23 @@ les fiches du POC). Illustrées sur des cas réels dans [propositions/](proposit
 3. Validation : contrôles structurels du script en attendant les shapes SHACL CPSV-AP 3.2.0
    (outillage prêt dans `qloridant/vocabulaire-commun`, tutoriel 04) en CI du dépôt data,
    étendues au namespace `rdgf:` une fois le profil stabilisé.
+
+## 9. Alignement avec schema.data.gouv.fr (outillage partagé)
+
+Le modèle cible est celui, éprouvé et actif, de schema.data.gouv.fr - avec lequel l'équipe
+partagera des outils. Correspondances et trajectoire :
+
+| schema.data.gouv.fr | Équivalent règles | Quand |
+|---|---|---|
+| `repertoires.yml` (PR de quelques lignes : url git, type, email) | registre `regles.yml` avec `type: publicodes / openfisca / catala / python / other` ; les fiches migrent à terme chez les producteurs (la fiche Prest'Agri a sa place dans `betagouv/prestagri`) | cible ; aujourd'hui fiches centralisées dans `site/` = état transitoire assumé |
+| tags git semver, doc générée par version | `rdgf:versionEvent`, « l'état du droit à une date donnée » | dès le profil |
+| type « other » dégradé (doc seule, zéro contrôle) | régime `referencement` (section 3) - le précédent valide l'approche multi-régimes | déjà fait |
+| validation des schémas par la moulinette + `errors.json` | contrôles structurels de `sync-data-repo.mjs` + `rapport-conformite.md` (embryon direct de l'étape validation du futur DAG) | déjà fait |
+| DAG Airflow quotidien (`datagouvfr_data_pipelines/schema/`) | un dossier `regles/` dans le même monorepo, pas une infra nouvelle | prématuré (2 fiches) ; les formats ci-dessus le préparent |
+| Validata (validation des données contre les schémas) | **« Validata des règles »** : rejouer les suites de tests natives contre les implémentations et publier le statut - c'est le chantier preuves avec OpenFisca | S2 2026 |
+| issues labellisées « en investigation / en construction » → page « schémas en cours » | même mécanisme pour les règles en cours de référencement | quand le repo data s'ouvre |
+| boucle producteurs passive (notifications désactivées, point faible assumé) | à inverser : pour un catalogue de règles, la confiance est le produit - rapports et statuts de tests actifs et publics (badges par fiche) | doctrine, dès maintenant |
+
+À corriger au passage : le README de `datagouv/regles.data.gouv.fr` pointe
+`etalab/dag_schema_data_gouv_fr`, **archivé depuis mars 2023** ; le pipeline actif vit dans
+`datagouv/datagouvfr_data_pipelines/schema/`.
