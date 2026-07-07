@@ -16,17 +16,17 @@ const regimeMeta = computed(() => {
   if (!regime)
     return null
   const meta = {
-    'frontiere': {
+    frontiere: {
       label: 'Certifiable à la frontière',
       badgeClass: 'fr-badge--green-emeraude',
       hint: 'L\'administration certifie le comportement entrées → sorties sur des faits déclarés, à une version donnée (sémantique du rescrit). La provenance amont des entrées n\'est pas couverte.',
     },
-    'implementation': {
+    implementation: {
       label: 'Cataloguée comme implémentation',
       badgeClass: 'fr-badge--blue-cumulus',
       hint: 'Règle du cœur socio-fiscal, sans porteur unique de sa chaîne de dépendances : le couple suite de tests + snapshot d\'implémentation fait foi, pas la règle dans l\'abstrait.',
     },
-    'referencement': {
+    referencement: {
       label: 'Simplement référencée',
       badgeClass: 'fr-badge--grey',
       hint: 'Métadonnées descriptives seules : ni code ni cas de tests publiés.',
@@ -519,8 +519,14 @@ useHead(() => ({ title: title.value }))
                           :key="input.id"
                           class="fr-text--sm mb-0 text-gray-700"
                         >
-                          <strong>{{ input.label }}</strong><span v-if="input.required" aria-hidden="true"> *</span>
-                          <span v-if="input.definition" class="text-gray-600"> - {{ input.definition }}</span>
+                          <strong>{{ input.label }}</strong><span
+                            v-if="input.required"
+                            aria-hidden="true"
+                          > *</span>
+                          <span
+                            v-if="input.definition"
+                            class="text-gray-600"
+                          > - {{ input.definition }}</span>
                           <template v-if="input.evidenceSource">
                             <br>
                             <span class="fr-text--xs text-gray-600">
@@ -540,7 +546,14 @@ useHead(() => ({ title: title.value }))
                       aria-hidden="true"
                     />
                     En plus du résultat, cette règle produit une trace d'explication
-                    <template v-for="(output, i) in explanationOutputs" :key="output.id"><template v-if="i > 0">, </template><code class="fr-text--xs">{{ output.id }}</code></template>
+                    <template
+                      v-for="(output, i) in explanationOutputs"
+                      :key="output.id"
+                    >
+                      <template v-if="i > 0">
+                        ,
+                      </template><code class="fr-text--xs">{{ output.id }}</code>
+                    </template>
                     - utile pour expliquer un refus.
                   </p>
                 </div>
@@ -587,7 +600,9 @@ useHead(() => ({ title: title.value }))
                 >
                   <summary class="fr-text--xs mb-0 text-gray-600 cursor-pointer">
                     Note technique : champs sans équivalent dans la fiche source
-                    <template v-if="rule.metadataSourcePath"> ({{ rule.metadataSourcePath }})</template>
+                    <template v-if="rule.metadataSourcePath">
+                      ({{ rule.metadataSourcePath }})
+                    </template>
                   </summary>
                   <ul class="fr-text--xs text-gray-600 mt-2 mb-0 pl-5 space-y-1">
                     <li
@@ -741,8 +756,15 @@ useHead(() => ({ title: title.value }))
                   </p>
                 </div>
 
+                <!-- Aperçu exécuté en direct : moteur Publicodes chargé dans la page -->
+                <RuleLiveCalculation
+                  v-if="rule.slug === 'entreprise-innovation'"
+                  :opposability="rule.opposability"
+                  :source="primaryReference?.label"
+                />
+
                 <!-- Aperçu pré-calculé : moteur ouvert / exécutable -->
-                <template v-if="preview">
+                <template v-else-if="preview">
                   <!-- Situation d'exemple -->
                   <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 md:p-5">
                     <p class="fr-text--xs uppercase tracking-wide text-gray-500 m-0 mb-3">
