@@ -1,0 +1,143 @@
+{
+  "@context": {
+    "cpsv": "http://purl.org/vocab/cpsv#",
+    "cv": "http://data.europa.eu/m8g/",
+    "dct": "http://purl.org/dc/terms/",
+    "eli": "http://data.europa.eu/eli/ontology#",
+    "skos": "http://www.w3.org/2004/02/skos/core#",
+    "schema": "http://schema.org/",
+    "foaf": "http://xmlns.com/foaf/0.1/",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "cprmv": "https://regels.overheid.nl/def/cprmv#",
+    "rdgf": "https://regles.data.gouv.fr/def/catalogue#",
+    "id": "@id",
+    "type": "@type",
+    "title": { "@id": "dct:title", "@language": "fr" },
+    "description": { "@id": "dct:description", "@language": "fr" }
+  },
+  "@graph": [
+    {
+      "id": "https://regles.data.gouv.fr/regles/cnaf/prime-activite/openfisca-france",
+      "type": "cpsv:PublicService",
+
+      "dct:identifier": "solidarite.prime-activite.openfisca-france",
+      "title": "Prime d'activité - telle que calculée par openfisca-france",
+      "description": "Prestation du cœur socio-fiscal : sa chaîne de dépendances (SMIC, bases ressources, définitions de revenus) n'a pas de porteur unique. Elle est cataloguée en régime implémentation : le couple suite de tests + snapshot openfisca-france fait foi, pas la règle dans l'abstrait.",
+
+      "cv:hasCompetentAuthority": { "id": "https://regles.data.gouv.fr/regles/cnaf/prime-activite/openfisca-france#organisation" },
+
+      "cv:hasLegalResource": [
+        {
+          "id": "https://www.legifrance.gouv.fr/codes/id/LEGITEXT000006073189/",
+          "type": "eli:LegalResource",
+          "title": "Code de la sécurité sociale",
+          "dct:coverage": "Art. L. 841-1 et suivants (prime d'activité)"
+        }
+      ],
+
+      "cv:hasChannel": { "id": "https://regles.data.gouv.fr/regles/cnaf/prime-activite/openfisca-france#channel" },
+
+      "dct:source": [
+        { "id": "https://github.com/openfisca/openfisca-france" },
+        { "id": "https://github.com/openfisca/openfisca-france/tree/master/tests" }
+      ],
+
+      "cv:hasInput": [
+        {
+          "type": "cprmv:Parameter",
+          "dct:identifier": "salaire_de_base",
+          "dct:title": "Salaires des 3 derniers mois",
+          "cprmv:definition": "Revenus d'activité déclarés par l'usager sur le trimestre de référence.",
+          "cprmv:type": "xsd:decimal",
+          "schema:valueRequired": true,
+          "rdgf:boundaryKind": "declaration"
+        },
+        {
+          "type": "cprmv:Parameter",
+          "dct:identifier": "rfr",
+          "dct:title": "Revenu fiscal de référence",
+          "cprmv:definition": "Revenu fiscal de référence du foyer.",
+          "cprmv:type": "xsd:decimal",
+          "rdgf:boundaryKind": "donnee-attestee",
+          "rdgf:evidenceSource": {
+            "type": "rdgf:EvidenceSource",
+            "dct:title": "DGFiP, mobilisable via API Particulier",
+            "foaf:page": { "id": "https://particulier.api.gouv.fr" }
+          }
+        },
+        {
+          "type": "cprmv:Parameter",
+          "dct:identifier": "montant_forfaitaire",
+          "dct:title": "Montant forfaitaire et SMIC",
+          "cprmv:definition": "Paramètres législatifs partagés du cœur socio-fiscal, maintenus dans openfisca-france ; aucun porteur administratif unique.",
+          "cprmv:type": "xsd:decimal",
+          "rdgf:boundaryKind": "sortie-regle"
+        }
+      ],
+
+      "cpsv:produces": [
+        {
+          "type": ["cv:Output", "cprmv:Rule"],
+          "dct:identifier": "ppa",
+          "dct:title": "Montant mensuel de la prime d'activité",
+          "cprmv:definition": "Variable openfisca-france `ppa`, calculée par entité famille sur des périodes mensuelles avec bases ressources trimestrielles.",
+          "cprmv:type": "xsd:decimal"
+        }
+      ],
+
+      "dct:subject": ["prime-activite", "minima-sociaux", "openfisca", "cnaf"],
+
+      "rdgf:maturity": "N2",
+      "rdgf:certificationRegime": "implementation",
+      "rdgf:implementationSnapshot": {
+        "type": "rdgf:ImplementationSnapshot",
+        "schema:codeRepository": "https://github.com/openfisca/openfisca-france",
+        "rdgf:ref": "suivi continu (préciser un tag/SHA au moment de la certification)"
+      },
+      "rdgf:testCase": [
+        {
+          "type": "rdgf:TestCase",
+          "rdgf:intent": "Suite de tests native openfisca-france : variables périodisées et entités composées, non transposables dans un format plat sans perte de sens.",
+          "rdgf:provenance": "communaute",
+          "rdgf:validatedBy": "Intégration continue openfisca-france",
+          "rdgf:status": "valide",
+          "rdgf:nativeFormat": "openfisca-yaml",
+          "rdgf:nativeRef": { "id": "https://github.com/openfisca/openfisca-france/tree/master/tests" }
+        }
+      ],
+      "rdgf:operationalMapping": [
+        {
+          "type": "rdgf:OperationalMapping",
+          "dct:title": "Situation déclarative → entités et périodes OpenFisca",
+          "rdgf:from": "formulaire déclaratif aides-simplifiées (description plate)",
+          "rdgf:to": "entités individu / famille / foyer fiscal / ménage, variables périodisées",
+          "rdgf:artifact": { "id": "https://github.com/betagouv/aides-simplifiees-app/blob/main/inertia/services/openfisca/dispatchers.ts" },
+          "rdgf:maintainedBy": "aides-simplifiées (service en cours de fermeture)",
+          "rdgf:ciStatus": "unknown"
+        }
+      ],
+      "rdgf:engineProfile": {
+        "type": "rdgf:EngineProfile",
+        "rdgf:engine": "openfisca",
+        "rdgf:entities": ["individu", "famille", "foyer_fiscal", "menage"],
+        "rdgf:periods": "variables mensuelles, bases ressources trimestrielles, paramètres législatifs datés"
+      }
+    },
+
+    {
+      "id": "https://regles.data.gouv.fr/regles/cnaf/prime-activite/openfisca-france#organisation",
+      "type": "cv:PublicOrganisation",
+      "skos:prefLabel": { "@value": "Caisse nationale des allocations familiales", "@language": "fr" }
+    },
+
+    {
+      "id": "https://regles.data.gouv.fr/regles/cnaf/prime-activite/openfisca-france#channel",
+      "type": "cv:Channel",
+      "dct:identifier": "prime-activite-channel-openfisca",
+      "dct:type": { "@type": "skos:Concept", "skos:prefLabel": { "@value": "Moteur de microsimulation (Python, exécution serveur)", "@language": "fr" } },
+      "dct:description": { "@value": "Calcul via openfisca-france (paquet Python) ; exposition API possible via openfisca-core web-api.", "@language": "fr" },
+      "foaf:page": { "id": "https://github.com/openfisca/openfisca-france" },
+      "cv:ownedBy": { "id": "https://regles.data.gouv.fr/regles/cnaf/prime-activite/openfisca-france#organisation" }
+    }
+  ]
+}

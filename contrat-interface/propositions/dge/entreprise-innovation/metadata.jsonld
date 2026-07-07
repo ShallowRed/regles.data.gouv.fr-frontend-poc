@@ -1,0 +1,142 @@
+{
+  "@context": {
+    "cpsv": "http://purl.org/vocab/cpsv#",
+    "cv": "http://data.europa.eu/m8g/",
+    "dct": "http://purl.org/dc/terms/",
+    "eli": "http://data.europa.eu/eli/ontology#",
+    "skos": "http://www.w3.org/2004/02/skos/core#",
+    "schema": "http://schema.org/",
+    "foaf": "http://xmlns.com/foaf/0.1/",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "cprmv": "https://regels.overheid.nl/def/cprmv#",
+    "rdgf": "https://regles.data.gouv.fr/def/catalogue#",
+    "id": "@id",
+    "type": "@type",
+    "title": { "@id": "dct:title", "@language": "fr" },
+    "description": { "@id": "dct:description", "@language": "fr" }
+  },
+  "@graph": [
+    {
+      "id": "https://regles.data.gouv.fr/regles/dge/entreprise-innovation/v1",
+      "type": "cpsv:PublicService",
+
+      "dct:identifier": "fiscalite.entreprise-innovation.v1",
+      "title": "Aides fiscales à l'innovation - CIR, CII, CICo, JEI, JEU, JEC",
+      "description": "Éligibilité et montant des six dispositifs fiscaux de soutien à l'innovation des entreprises. Modélisation Publicodes coconstruite avec un expert métier de la DGFiP, exposée en iframe sur entreprendre.service-public.fr (DILA).",
+
+      "cv:hasCompetentAuthority": { "id": "https://regles.data.gouv.fr/regles/dge/entreprise-innovation/v1#organisation" },
+
+      "cv:hasLegalResource": [
+        {
+          "id": "https://www.legifrance.gouv.fr/codes/id/LEGITEXT000006069577/",
+          "type": "eli:LegalResource",
+          "title": "Code général des impôts",
+          "dct:coverage": "Art. 244 quater B (CIR, CII, CICo), art. 44 sexies-0 A (JEI, JEU, JEC)"
+        }
+      ],
+
+      "cv:hasChannel": { "id": "https://regles.data.gouv.fr/regles/dge/entreprise-innovation/v1#channel" },
+
+      "dct:source": [
+        { "id": "https://github.com/betagouv/publicodes-entreprise-innovation/tree/fc8e9a8ac572b03d75504a2aba39d5633c0b25ea/src/dispositifs" }
+      ],
+
+      "cv:hasInput": [
+        {
+          "type": "cprmv:Parameter",
+          "dct:identifier": "natureActivite",
+          "dct:title": "Nature de l'activité",
+          "cprmv:definition": "Activité commerciale, industrielle, agricole ou artisanale (conditionne l'éligibilité au CIR, art. 244 quater B).",
+          "cprmv:type": "xsd:string",
+          "schema:valueRequired": true,
+          "rdgf:boundaryKind": "declaration"
+        },
+        {
+          "type": "cprmv:Parameter",
+          "dct:identifier": "regimeFiscal",
+          "dct:title": "Régime fiscal",
+          "cprmv:definition": "Imposition au régime réel ou condition d'exonération (art. 244 quater B).",
+          "cprmv:type": "xsd:string",
+          "schema:valueRequired": true,
+          "rdgf:boundaryKind": "declaration"
+        },
+        {
+          "type": "cprmv:Parameter",
+          "dct:identifier": "depensesRecherche",
+          "dct:title": "Dépenses de recherche (métropole et DOM)",
+          "cprmv:definition": "Assiette du crédit d'impôt : 30 % jusqu'à 100 M€ puis 5 % en métropole, 50 % dans les DOM.",
+          "cprmv:type": "xsd:decimal",
+          "schema:valueRequired": true,
+          "rdgf:boundaryKind": "declaration"
+        }
+      ],
+
+      "cpsv:produces": [
+        {
+          "type": ["cv:Output", "cprmv:Rule"],
+          "dct:identifier": "value",
+          "dct:title": "Éligibilité et montants par dispositif",
+          "cprmv:definition": "Pour chacun des six dispositifs : statut d'éligibilité et, le cas échéant, montant du crédit d'impôt.",
+          "cprmv:type": "xsd:string"
+        },
+        {
+          "type": ["cv:Output", "cprmv:Rule"],
+          "dct:identifier": "explications",
+          "dct:title": "Explications d'inéligibilité",
+          "cprmv:definition": "Règles publicodes « . explications » : texte expliquant pourquoi un dispositif n'est pas ouvert - utile pour expliquer un refus."
+        }
+      ],
+
+      "dct:subject": ["innovation", "cir", "cii", "jei", "credit-impot", "entreprises"],
+
+      "rdgf:maturity": "N3",
+      "rdgf:certificationRegime": "frontiere",
+      "rdgf:operationalMapping": [
+        {
+          "type": "rdgf:OperationalMapping",
+          "dct:title": "Formulaire déclaratif → variables Publicodes",
+          "rdgf:from": "survey-schema aides-simplifiées (entreprise-innovation.json)",
+          "rdgf:to": "règles publicodes-entreprise-innovation",
+          "rdgf:artifact": { "id": "https://github.com/betagouv/aides-simplifiees-app/blob/main/public/forms/entreprise-innovation.json" },
+          "rdgf:maintainedBy": "aides-simplifiées (service en cours de fermeture)",
+          "rdgf:ciStatus": "unknown"
+        }
+      ],
+      "rdgf:versionEvent": [
+        {
+          "type": "rdgf:VersionEvent",
+          "rdgf:version": "main (2025-09-17)",
+          "rdgf:date": "2025-09-17",
+          "rdgf:kind": "majeur",
+          "dct:description": "Publication du dépôt betagouv : un fichier Publicodes par dispositif, coconstruits avec un expert métier DGFiP.",
+          "rdgf:triggeredBy": { "id": "https://www.legifrance.gouv.fr/codes/id/LEGITEXT000006069577/" }
+        }
+      ]
+    },
+
+    {
+      "id": "https://regles.data.gouv.fr/regles/dge/entreprise-innovation/v1#organisation",
+      "type": "cv:PublicOrganisation",
+      "skos:prefLabel": { "@value": "Direction générale des Entreprises", "@language": "fr" }
+    },
+
+    {
+      "id": "https://regles.data.gouv.fr/regles/dge/entreprise-innovation/v1#channel",
+      "type": "cv:Channel",
+      "dct:identifier": "entreprise-innovation-channel-publicodes",
+      "dct:type": { "@type": "skos:Concept", "skos:prefLabel": { "@value": "Bibliothèque de règles Publicodes (dépôt git)", "@language": "fr" } },
+      "dct:description": { "@value": "Règles YAML Publicodes exécutables côté client (navigateur) ou serveur via le paquet publicodes.", "@language": "fr" },
+      "foaf:page": { "id": "https://github.com/betagouv/publicodes-entreprise-innovation" },
+      "cv:ownedBy": { "id": "https://regles.data.gouv.fr/regles/dge/entreprise-innovation/v1#organisation" }
+    },
+
+    {
+      "id": "https://github.com/betagouv/publicodes-entreprise-innovation#source-code",
+      "type": "schema:SoftwareSourceCode",
+      "schema:name": "publicodes-entreprise-innovation",
+      "schema:description": "Modélisation Publicodes des six dispositifs fiscaux de soutien à l'innovation (CIR, CII, CICo, JEI, JEU, JEC), un fichier par dispositif dans src/dispositifs/.",
+      "schema:codeRepository": "https://github.com/betagouv/publicodes-entreprise-innovation/tree/fc8e9a8ac572b03d75504a2aba39d5633c0b25ea",
+      "schema:programmingLanguage": "Publicodes"
+    }
+  ]
+}

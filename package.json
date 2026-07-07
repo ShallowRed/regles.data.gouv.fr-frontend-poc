@@ -12,7 +12,9 @@
     "postinstall": "nuxt prepare",
     "typecheck": "nuxt typecheck",
     "lint": "eslint .",
-    "lint:fix": "eslint --fix ."
+    "lint:fix": "eslint --fix .",
+    "sync:data": "node scripts/sync-data-repo.mjs",
+    "check:contrat": "node --experimental-strip-types scripts/check-contrat.mjs"
   },
   "dependencies": {
     "@gouvfr/dsfr": "^1.13.2",

@@ -111,20 +111,34 @@ export function adaptJsonldGraph(raw: string): JsonldAdaptation {
   })
   const apiUrl = apiChannel ? nodeId(apiChannel['foaf:page']) : undefined
 
-  // Entrées → frontière (kind par défaut : déclaration ; requalification côté catalogue).
+  // Entrées → frontière. Si la fiche porte l'extension rdgf:boundaryKind (profil couche
+  // confiance), on la lit ; sinon kind par défaut `declaration`, requalifiable côté catalogue.
   const seen = new Set<string>()
+  let boundaryQualified = false
   const boundaryDraft: RuleBoundaryInput[] = leaves.flatMap(leaf =>
     asArray(leaf['cv:hasInput'] as JsonldNode | JsonldNode[]).flatMap((param) => {
       const id = String(param['dct:identifier'] ?? '')
       if (!id || seen.has(id))
         return []
       seen.add(id)
+      const declaredKind = literal(param['rdgf:boundaryKind']) as RuleBoundaryInput['kind'] | undefined
+      if (declaredKind)
+        boundaryQualified = true
+      const evidence = param['rdgf:evidenceSource'] as JsonldNode | undefined
       return [{
         id,
         label: inputLabel(param),
-        kind: 'declaration' as const,
+        kind: declaredKind ?? ('declaration' as const),
         definition: literal(param['cprmv:definition']),
         required: param['schema:valueRequired'] === true,
+        ...(evidence
+          ? {
+              evidenceSource: {
+                label: literal(evidence['dct:title']) ?? '',
+                url: nodeId(evidence['foaf:page']),
+              },
+            }
+          : {}),
       }]
     }),
   )
@@ -145,6 +159,15 @@ export function adaptJsonldGraph(raw: string): JsonldAdaptation {
 
   const languages = sourceCode ? asArray(sourceCode['schema:programmingLanguage'] as string | string[]) : []
 
+  // Extensions « couche confiance » (profil rdgf:, cf. contrat-interface/profil-metadonnees.md).
+  // Quand la fiche les porte, l'adaptateur les lit et le gap correspondant disparaît :
+  // profileGaps → zéro est l'indicateur de convergence du contrat d'interface.
+  const maturity = literal(parent?.['rdgf:maturity']) as Rule['maturity'] | undefined
+  const certificationRegime = literal(parent?.['rdgf:certificationRegime']) as Rule['certificationRegime'] | undefined
+  const hasTestEnvelope = leaves.some(leaf => asArray(leaf['rdgf:testCase']).length > 0)
+    || asArray(parent?.['rdgf:testCase']).length > 0
+  const hasVersionEvents = asArray(parent?.['rdgf:versionEvent']).length > 0
+
   const base: Partial<Rule> = {
     title,
     shortDescription: description ?? '',
@@ -157,18 +180,26 @@ export function adaptJsonldGraph(raw: string): JsonldAdaptation {
     capabilities: {
       hasApiDocumentation: Boolean(apiUrl),
     },
+    ...(maturity ? { maturity } : {}),
+    ...(certificationRegime ? { certificationRegime } : {}),
   }
 
-  // Champs du schéma catalogue toujours absents du profil data actuel : c'est la
-  // « couche confiance », l'apport du front à la co-écriture du profil.
+  // Champs du schéma catalogue absents de la fiche : c'est la « couche confiance »,
+  // l'apport du front à la co-écriture du profil. Chaque gap disparaît quand la fiche
+  // adopte l'extension rdgf: correspondante.
+  if (!maturity)
+    gaps.push('niveau de maturité (échelle N0-N3) - rdgf:maturity')
+  if (!certificationRegime)
+    gaps.push('régime de certification (frontière / implémentation / référencement) - rdgf:certificationRegime')
+  if (!boundaryQualified)
+    gaps.push('qualification de la frontière des entrées (déclaration / donnée attestée / sortie de règle) - rdgf:boundaryKind')
+  if (!hasTestEnvelope)
+    gaps.push('cas de tests structurés (seuls des liens bruts dct:source vers les fichiers de tests) - rdgf:testCase')
+  if (!hasVersionEvents)
+    gaps.push('historique de versions lié aux textes déclencheurs - rdgf:versionEvent')
   gaps.push(
-    'niveau de maturité (échelle N0-N3)',
-    'régime de certification (frontière / implémentation / référencement)',
     'nature de publication (ouverte / hybride / fermée)',
     'position réglementaire (simulation → rescrit)',
-    'qualification de la frontière des entrées (déclaration / donnée attestée / sortie de règle)',
-    'cas de tests structurés (seuls des liens bruts dct:source vers les fichiers de tests)',
-    'historique de versions lié aux textes déclencheurs',
     'date de dernière mise à jour',
   )
 

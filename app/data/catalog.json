@@ -1,0 +1,47 @@
+{
+  "$schema": "contrat-interface/profil-metadonnees.md#index",
+  "description": "Index de catalogue généré depuis le dépôt data (pièce manquante du contrat d'interface, générée côté POC en attendant d'être produite côté data).",
+  "source": {
+    "repository": "datagouv/regles.data.gouv.fr (privé)",
+    "commit": "29774e5acf49ee8334587315988a0164f1f34f63",
+    "commitDate": "2026-07-07T17:31:05+02:00"
+  },
+  "syncedAt": "2026-07-07T22:46:09.224Z",
+  "entries": [
+    {
+      "organisation": "Ministère Agriculture",
+      "organisationSlug": "ministere-agriculture",
+      "slug": "prestagri",
+      "title": "Prest'Agri - moteur de calcul",
+      "identifier": null,
+      "version": "0.1.0",
+      "languages": [
+        "Python",
+        "Catala"
+      ],
+      "sourcePath": "site/Ministère Agriculture/prestagri/metadata.jsonld",
+      "localPath": "app/data/jsonld/ministere-agriculture/prestagri/metadata.jsonld",
+      "conformite": {
+        "errors": 0,
+        "warnings": 7
+      }
+    },
+    {
+      "organisation": "Ministère Intérieur",
+      "organisationSlug": "ministere-interieur",
+      "slug": "droits-civiques-elections",
+      "title": "Droit de vote en France",
+      "identifier": "civique.droit-vote.v1",
+      "version": "1.0.0",
+      "languages": [
+        "Python"
+      ],
+      "sourcePath": "site/Ministère Intérieur/droits-civiques-elections/metadata.jsonld",
+      "localPath": "app/data/jsonld/ministere-interieur/droits-civiques-elections/metadata.jsonld",
+      "conformite": {
+        "errors": 0,
+        "warnings": 1
+      }
+    }
+  ]
+}
