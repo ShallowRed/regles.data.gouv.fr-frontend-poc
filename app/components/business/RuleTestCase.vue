@@ -8,7 +8,27 @@
  */
 import type { RuleTest } from '~/types/rule-test'
 
-const props = defineProps<{ test: RuleTest }>()
+const props = defineProps<{
+  test: RuleTest
+  /** Résultat du dernier rejeu automatique (pnpm verify:rules), adossé à ce cas par testId. */
+  verification?: { status: string, got: unknown, checkedAt: string }
+}>()
+
+/** Bandeau de vérification automatique, distinct du statut déclaré de l'enveloppe. */
+const autoCheck = computed(() => {
+  const v = props.verification
+  if (!v)
+    return null
+  const conforme = v.status === 'conforme'
+  return {
+    conforme,
+    label: conforme ? 'Rejoué conforme' : 'Rejeu en échec',
+    cls: conforme ? 'fr-badge--success' : 'fr-badge--error',
+    detail: conforme
+      ? `Rejoué automatiquement le ${v.checkedAt}, résultat conforme au cas.`
+      : `Rejoué automatiquement le ${v.checkedAt} : le moteur ne renvoie plus le résultat attendu (obtenu : ${v.got ?? '∅'}).`,
+  }
+})
 
 const statusBadge = computed(() => {
   switch (props.test.status) {
@@ -92,6 +112,18 @@ const expectedDisplay = computed(() => {
         <p class="fr-card__desc text-sm text-gray-700 mt-2">
           {{ test.scenario }}
         </p>
+
+        <div
+          v-if="autoCheck"
+          class="flex flex-wrap items-center gap-2 mt-3 rounded border p-2"
+          :class="autoCheck.conforme ? 'border-[#18753c]/30 bg-[#dffee6]/40' : 'border-[#b34000]/30 bg-[#fff4ed]'"
+        >
+          <span
+            class="fr-badge fr-badge--sm"
+            :class="autoCheck.cls"
+          >{{ autoCheck.label }}</span>
+          <span class="fr-text--xs mb-0 text-gray-700">{{ autoCheck.detail }}</span>
+        </div>
 
         <div
           v-if="hasFlatProjection"

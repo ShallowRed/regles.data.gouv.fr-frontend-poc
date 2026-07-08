@@ -1,6 +1,6 @@
 {
   "checkedAt": "2026-07-08",
-  "method": "rejeu des cas de l'enveloppe + contrôle de dérive fiche/API (openapi), pilotés par la fiche metadata.jsonld",
+  "method": "rejeu des cas de l'enveloppe (rest-get + openfisca-post) + contrôle de dérive fiche/API, adossé par testId aux cas datés/versionnés",
   "schemaChecks": [
     {
       "ruleId": "prestagri",
@@ -32,6 +32,8 @@
       "expected": "833.33",
       "got": null,
       "status": "echec",
+      "period": null,
+      "engineVersion": "prestagri 0.1.0",
       "url": "https://api.prest-agri.beta.gouv.fr/quotient_familial?agent_revenu=30000&agent_enfants=2"
     },
     {
@@ -41,7 +43,20 @@
       "expected": "625.0",
       "got": null,
       "status": "echec",
+      "period": null,
+      "engineVersion": "prestagri 0.1.0",
       "url": "https://api.prest-agri.beta.gouv.fr/quotient_familial?agent_revenu=30000&agent_enfants=2&parent_isole=true"
+    },
+    {
+      "ruleId": "prime-activite-openfisca",
+      "testId": "prime-activite-celibataire-1000",
+      "label": "Célibataire, 1 000 € net/mois",
+      "expected": "224.39",
+      "got": 224.38591,
+      "status": "conforme",
+      "period": "2025-03",
+      "engineVersion": "france-169.15.0",
+      "url": "https://api.fr.openfisca.org/latest/calculate (POST, ppa 2025-03)"
     }
   ]
 }

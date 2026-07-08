@@ -184,6 +184,17 @@ const tests = computed(() => {
 })
 
 /**
+ * Résultat de vérification automatique par cas (adossé par testId), avec la date du dernier
+ * run. Chaque carte de cas porte ainsi son propre statut « vérifié le / en échec ».
+ */
+const verificationByTestId = computed<Record<string, { status: string, got: unknown, checkedAt: string }>>(() => {
+  const map: Record<string, { status: string, got: unknown, checkedAt: string }> = {}
+  for (const entry of verificationData.results ?? [])
+    map[entry.testId] = { status: entry.status, got: entry.got, checkedAt: verificationData.checkedAt }
+  return map
+})
+
+/**
  * Statut de la vérification automatique (pnpm verify:rules) : rejeu daté des cas de
  * l'enveloppe contre l'API déclarée dans la fiche. Le fichier est produit par le script,
  * jamais édité à la main.
@@ -1238,7 +1249,10 @@ useHead(() => ({ title: title.value }))
                       v-for="t in tests"
                       :key="t.id"
                     >
-                      <RuleTestCase :test="t" />
+                      <RuleTestCase
+                        :test="t"
+                        :verification="verificationByTestId[t.id]"
+                      />
                     </li>
                   </ul>
                 </template>
