@@ -30,10 +30,10 @@ Constaté dans les deux fiches existantes, directement consommable par le front 
 | `title`, `description` (fr) | DC | obligatoires | |
 | `dct:version` | DC | obligatoire | semver ; aujourd'hui absent des sous-services Prest'Agri |
 | `dct:valid` | DC | optionnel | période indicative ; ne prétend pas couvrir le droit transitoire (c'est une règle, pas une métadonnée) |
-| `cv:hasCompetentAuthority` → `cv:PublicOrganisation` | CPSV-AP | obligatoire, **décrit dans le graphe** | aujourd'hui référencé sans nœud dans Prest'Agri |
+| `cv:hasCompetentAuthority` → `cv:PublicOrganisation` | CPSV-AP | obligatoire, **décrit dans le graphe** | aujourd'hui référencé sans nœud dans Prest'Agri ; les shapes exigent aussi `dct:spatial` sur l'organisation et le type `org:Organization` (cible de `cv:ownedBy`) |
 | `cv:hasLegalResource` (ELI, `dct:coverage` par articles) | CPSV-AP/ELI | obligatoire | le motif « id Légifrance + coverage article par article » de la fiche droit de vote est le bon |
 | `cv:hasChannel` | CPSV-AP | obligatoire | package, API, dépôt git |
-| `cv:hasInput` → `cprmv:Parameter` (types XSD, `cprmv:definition` sourcée) | CPRMV (sous-ensemble descriptif) | obligatoire | le typage reste volontairement superficiel : **pas d'entités ni de périodes dans le socle** (cf. section 7) |
+| `cpsv:hasInput` → `["cv:Evidence", "cprmv:Parameter"]` (types XSD, `cprmv:definition` sourcée) | CPSV-AP + CPRMV (sous-ensemble descriptif) | obligatoire | **tranché** : la propriété CPSV-AP 3.2.0 est `cpsv:hasInput` (shape officielle : `shacl:path <http://purl.org/vocab/cpsv#hasInput>`, `shacl:class cv:Evidence`), pas `cv:hasInput` ; d'où le double typage `cv:Evidence` (exigé par la shape) + `cprmv:Parameter` (geste CPRMV, cf. section 6 bis). Le typage reste volontairement superficiel : **pas d'entités ni de périodes dans le socle** (cf. section 7) |
 | `cpsv:produces` → `cprmv:Rule` | CPRMV | obligatoire | dont la sortie d'explicabilité (`explanation`, `metadata.conditions`) - motif à généraliser : « utile pour expliquer un refus » |
 | `schema:SoftwareSourceCode` pinné à un SHA | schema.org | obligatoire si code publié | |
 | `schema:HowTo` | schema.org | optionnel | |
@@ -45,12 +45,31 @@ Générés automatiquement par `scripts/sync-data-repo.mjs` à chaque synchronis
 
 - **Schéma d'URI des services** : `https://regles.gouv.fr/algo/...` (droit de vote) vs
   `https://github.com/betagouv/prestagri#...` (Prest'Agri). Proposition section 4.
-- **`cv:hasInput` vs `cpsv:hasInput`** : trancher selon la référence CPSV-AP 3.2.0 et s'y tenir.
+- **`cv:hasInput` vs `cpsv:hasInput`** : **tranché** en faveur de `cpsv:hasInput`, vérifié dans les
+  shapes officielles 3.2.0 (`shacl:path <http://purl.org/vocab/cpsv#hasInput>` ; `cv:hasInput`
+  n'existe pas sur Public Service, le namespace m8g ne définit que `hasInputType`). Les entrées
+  doivent porter le type `cv:Evidence` (`shacl:class` de la shape).
 - **`type` vs `@type` sur les paramètres** : normaliser (le `@context` mappe déjà `type` → `@type`,
   autant l'utiliser partout).
+- **Titres et descriptions balisés langue** : les shapes exigent `rdf:langString` sur `dct:title` ;
+  seuls les alias `title` / `description` du `@context` portent `@language: fr`, une clé `dct:title`
+  écrite en toutes lettres produit un littéral sans langue (violation constatée sur les 4 fiches).
+  Convention : utiliser les alias partout, y compris sur les paramètres et sorties.
+- **Composition de services** : `dct:hasPart` / `dct:isPartOf` entre services (motif Prest'Agri)
+  est hors profil CPSV-AP (`dct:isPartOf` y attend un `dcat:Dataset`, violation constatée). Le lien
+  natif pour « le service B utilise le service A » est `dct:requires` (`shacl:class cpsv:PublicService`),
+  qui converge avec `rdgf:boundaryKind: sortie-regle` côté entrées. L'unité de référencement est la
+  frontière certifiable (le sous-service), pas le dépôt : un nœud parent sans titre ni autorité n'a
+  pas à être un `cpsv:PublicService`.
 - **Dossiers avec espaces et accents** (`site/Ministère Intérieur/...`) : inutilisables en
   routes front, cf. section 4.
 - **Autorité compétente non décrite** (Prest'Agri) et **bases légales absentes** des sous-services.
+
+> Vérification effective : le rejeu des shapes SHACL officielles (`cpsv-ap-SHACL.ttl`, 3.2.0) sur les
+> quatre fiches donne `conforms: false` partout avant corrections ; les deux fiches de
+> [propositions/](propositions/) sont corrigées et passent (`conforms: true`). Les écarts des fiches
+> réelles (hasInput, `cv:ownedBy` → `org:Organization`, `dct:spatial` obligatoire sur l'organisation,
+> langues, composition) sont matière à co-écriture, pas des corrections unilatérales côté front.
 
 ## 3. Régimes de certification : des variantes de profil, pas un moule unique
 
@@ -76,6 +95,15 @@ C'est la traduction en profil de la mise en garde OpenFisca : sur le cœur socio
 - **URI canonique de service** : `https://regles.data.gouv.fr/regles/<org-slug>/<rule-slug>/<variante>`
   - le domaine cible du produit, même si rien n'y répond encore (les URI JSON-LD sont des
   identifiants, pas des liens). Les URI GitHub restent en `dct:source`/`schema:codeRepository`.
+- **Partage des rôles entre les trois axes de version** : l'URI porte la **lignée** (`/v1`, ou la
+  variante d'implémentation pour le régime implémentation) ; `dct:version` porte le **semver à
+  l'intérieur de la lignée** ; `rdgf:versionEvent` porte l'**historique daté** relié aux textes
+  déclencheurs. Une rupture de frontière (entrées/sorties incompatibles) crée une nouvelle URI ;
+  tout le reste est un incrément de `dct:version`. Deux implémentations de la même règle = deux
+  fiches (deux variantes d'URI), reliées par `cv:relatedService`.
+- **Entrées et sorties adressables** : donner aux paramètres qualifiés un `@id` de fragment
+  (`<uri-service>#input-<identifiant>`) plutôt qu'un blank node, pour permettre la référence
+  croisée et le suivi d'un paramètre entre deux versions de fiche.
 
 ## 5. Index de catalogue (`catalog.json`)
 
@@ -99,8 +127,37 @@ les fiches du POC). Illustrées sur des cas réels dans [propositions/](proposit
 | `rdgf:testCase` | service | nœud enveloppe : `intent`, `provenance`, `validatedBy`, `validatedAt`, `legalAnchor`, `tolerance`, `status`, `nativeFormat`, `nativeRef` | le test natif fait foi ; le catalogue norme l'enveloppe sociale, jamais le format de situation (ontologie localisée) |
 | `rdgf:operationalMapping` | service | nœud { from, to, artifact, maintainedBy, ciStatus } | recenser des mappings qui tournent, ne jamais rédiger de dictionnaire |
 | `rdgf:implementationSnapshot` | service (régime `implementation`) | nœud { repository, ref } | l'unité certifiable du régime implémentation |
-| `rdgf:engineProfile` | service | nœud namespacé par moteur | les opinions ontologiques (entités, périodes OpenFisca) restent locales au moteur |
+| `rdgf:engineProfile` | service | **littéral JSON** (`"@type": "@json"` dans le `@context`, JSON-LD 1.1 → `rdf:JSON`) | les opinions ontologiques (entités, périodes OpenFisca) restent locales au moteur. En nœud RDF, l'ordre des listes serait perdu et toute clé moteur non déclarée dans le `@context` produirait un IRI bidon ou disparaîtrait en silence (vérifié à l'expansion) ; le littéral JSON préserve la structure et assume l'opacité : le catalogue ne norme pas l'intérieur du bloc |
 | `rdgf:versionEvent` | service | nœud { version, date, kind, triggeredBy → ELI } | historique de versions lié aux textes déclencheurs |
+
+Conventions d'écriture qui conditionnent la validité RDF (vérifiées à l'expansion `jsonld`) :
+
+- **`cprmv:type` doit être déclaré `"@type": "@id"` dans le `@context`**, sinon `"xsd:decimal"`
+  s'expanse en littéral texte de onze caractères au lieu de l'IRI du datatype XSD.
+- **Les valeurs d'énumération rdgf: restent des chaînes nues en v1** (`frontiere`, `declaration`,
+  `N0`-`N3`...) : consommables en JSON sans résolution, contraignables par `sh:in`. Une promotion
+  ultérieure en concepts SKOS reste possible sans rupture.
+- **Aucune clé non mappée** : une clé à préfixe non déclaré fuit en IRI invalide, une clé nue
+  disparaît sans erreur (comportement JSON-LD standard). La moulinette doit comparer les clés du
+  document aux triples produits par l'expansion et rejeter tout écart.
+
+## 6 bis. Dette CPRMV (assumée, à porter à Bas)
+
+Le sous-ensemble CPRMV des fiches repose sur un vocabulaire en **working draft** (CPRMV 0.4.1,
+avril 2026, https://acc.cprmv.open-regels.nl/respec/) et l'écart est documenté plutôt que caché :
+
+- le namespace utilisé (`https://regels.overheid.nl/def/cprmv#`) ne déréférence pas et ne
+  correspond pas aux URL de la spec (`https://standaarden.open-regels.nl/standards/cprmv/0.4.1/`) ;
+  à re-pinner quand Bas publie le namespace définitif ;
+- `cprmv:Parameter` y est défini comme **sous-classe de Rule** (« a Rule that forms a parameter »,
+  un élément paramétrique revalorisé plus souvent que le reste : un montant, un barème), pas comme
+  variable d'entrée - notre usage est un contresens à discuter ;
+- `cprmv:type` n'existe pas dans le draft (seul `cprmv:definition` y est).
+
+D'où la position du profil : le **porteur sémantique des entrées est `cv:Evidence`** (CPSV-AP/CCCEV,
+spec UE stable), `cprmv:Parameter` est un typage secondaire assumé comme geste d'interopérabilité
+GovTech4All. La spec CPRMV définit par ailleurs `TestCase` / `TestSet` : convergence possible avec
+`rdgf:testCase` à explorer.
 
 ## 7. Ce que le profil n'ajoutera pas (exclusions volontaires)
 
