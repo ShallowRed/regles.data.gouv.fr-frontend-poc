@@ -14,7 +14,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
     "sync:data": "node scripts/sync-data-repo.mjs",
-    "check:contrat": "node --experimental-strip-types scripts/check-contrat.mjs"
+    "check:contrat": "node --experimental-strip-types scripts/check-contrat.mjs",
+    "docs:fiches": "node scripts/generate-fiche-doc.mjs app/data/jsonld/*/*/metadata.jsonld contrat-interface/propositions/*/*/metadata.jsonld"
   },
   "dependencies": {
     "@gouvfr/dsfr": "^1.13.2",

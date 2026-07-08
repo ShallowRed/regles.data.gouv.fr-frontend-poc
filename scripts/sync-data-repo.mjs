@@ -21,6 +21,7 @@ import { execSync } from 'node:child_process'
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { generateFicheDoc } from './generate-fiche-doc.mjs'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const dataRepo = resolve(process.argv[2] ?? join(root, '..', 'regles.data.gouv.fr'))
@@ -137,6 +138,9 @@ for (const relPath of ficheFiles) {
   mkdirSync(dirname(dest), { recursive: true })
   cpSync(abs, dest)
 
+  // Doc générée à côté de la fiche vendorée (préfiguration de la moulinette).
+  writeFileSync(join(dirname(dest), 'documentation.md'), generateFicheDoc(doc, { sourcePath: relPath }))
+
   const graph = doc['@graph'] ?? []
   const services = graph.filter(n => types(n).includes('cpsv:PublicService'))
   const parent = services.find(n => n['dct:hasPart']) ?? services[0]
@@ -203,7 +207,16 @@ for (const row of reportRows) {
 mkdirSync(dirname(outReport), { recursive: true })
 writeFileSync(outReport, `${lines.join('\n')}\n`)
 
+// ── Doc générée pour les fiches de proposition (profil rdgf: complet) ───────
+const propositionFiles = execSync('find contrat-interface/propositions -name metadata.jsonld', { cwd: root, encoding: 'utf8' })
+  .trim().split('\n').filter(Boolean).sort()
+for (const relPath of propositionFiles) {
+  const doc = JSON.parse(readFileSync(join(root, relPath), 'utf8'))
+  writeFileSync(join(root, dirname(relPath), 'documentation.md'), generateFicheDoc(doc, { sourcePath: relPath }))
+}
+
 console.log(`${entries.length} fiche(s) synchronisée(s) depuis ${dataRepo}`)
+console.log(`${propositionFiles.length} doc(s) de proposition générée(s)`)
 console.log(`- index    : ${relative(root, outCatalog)}`)
 console.log(`- rapport  : ${relative(root, outReport)}`)
 for (const e of entries)
