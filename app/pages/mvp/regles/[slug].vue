@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import verificationData from '~/data/verification.json'
+
 const route = useRoute()
 
 const slug = computed(() => String(route.params.slug ?? ''))
@@ -72,6 +74,15 @@ const explanationOutputs = computed(() => (rule.value?.outputs ?? []).filter(o =
 
 /** Aperçu de calcul pré-calculé (cas d'exemple), si la règle en expose un. */
 const preview = computed(() => (rule.value ? rulePreviewsMock[rule.value.slug] : undefined))
+
+/**
+ * Formulaire « essayer cette règle », généré depuis la fiche metadata.jsonld
+ * (paramètres typés + endpoint du canal). Prest'Agri seulement pour l'instant :
+ * seule règle dont l'API déclarée est appelable depuis le navigateur.
+ */
+const tryItForm = computed(() =>
+  rule.value?.slug === 'prestagri' ? prestagriQuotientFamilialForm : null,
+)
 
 /** Appariements texte légal ↔ code pour la traçabilité, résolus avec leur référence. */
 const traceabilityMappings = computed(() => {
@@ -170,6 +181,31 @@ const versions = computed(() => {
 const tests = computed(() => {
   const r = rule.value
   return r ? ruleTestsMock.filter(t => t.ruleId === r.id) : []
+})
+
+/**
+ * Statut de la vérification automatique (pnpm verify:rules) : rejeu daté des cas de
+ * l'enveloppe contre l'API déclarée dans la fiche. Le fichier est produit par le script,
+ * jamais édité à la main.
+ */
+const autoVerification = computed(() => {
+  const r = rule.value
+  if (!r)
+    return null
+  const results = verificationData.results.filter(entry => entry.ruleId === r.id)
+  const schemaCheck = verificationData.schemaChecks?.find(entry => entry.ruleId === r.id)
+  if (!results.length && !schemaCheck)
+    return null
+  const passing = results.filter(entry => entry.status === 'conforme').length
+  return {
+    checkedAt: verificationData.checkedAt,
+    total: results.length,
+    passing,
+    allPassing: results.length > 0 && passing === results.length,
+    drift: schemaCheck?.drift === true,
+    declaredNotAccepted: schemaCheck?.declaredNotAccepted ?? [],
+    acceptedNotDeclared: schemaCheck?.acceptedNotDeclared ?? [],
+  }
 })
 
 /** Décompte des cas de test par statut, pour la barre de synthèse. */
@@ -795,6 +831,13 @@ useHead(() => ({ title: title.value }))
                     :computed-at="formatDate(preview.computedAt)"
                   />
 
+                  <!-- Formulaire généré depuis la fiche, exécuté contre l'API déclarée -->
+                  <RuleTryIt
+                    v-if="tryItForm"
+                    :form="tryItForm"
+                    :source-path="rule.metadataSourcePath"
+                  />
+
                   <p
                     v-if="rule.officialSimulatorUrl"
                     class="fr-text--sm mb-0 text-gray-600 m-0"
@@ -1074,6 +1117,45 @@ useHead(() => ({ title: title.value }))
                 </div>
 
                 <template v-if="tests.length">
+                  <!-- Vérification automatique : rejeu des cas + contrôle de dérive fiche/API -->
+                  <div
+                    v-if="autoVerification"
+                    class="rounded-lg border p-4 space-y-2"
+                    :class="autoVerification.drift || !autoVerification.allPassing
+                      ? 'border-[#b34000]/30 bg-[#fff4ed]'
+                      : 'border-[#18753c]/30 bg-[#dffee6]/40'"
+                  >
+                    <div class="flex flex-wrap items-center gap-2">
+                      <span
+                        class="fr-badge fr-badge--sm"
+                        :class="autoVerification.drift || !autoVerification.allPassing ? 'fr-badge--warning' : 'fr-badge--success'"
+                      >
+                        {{ autoVerification.drift ? 'Dérive détectée' : autoVerification.allPassing ? 'Vérifiée automatiquement' : 'Vérification en échec' }}
+                      </span>
+                      <span class="fr-text--sm mb-0 text-gray-700">
+                        Dernier contrôle automatique le {{ formatDate(autoVerification.checkedAt) }}.
+                      </span>
+                    </div>
+                    <p
+                      v-if="autoVerification.drift"
+                      class="fr-text--sm mb-0 text-gray-700 m-0"
+                    >
+                      L'API du producteur n'accepte plus les paramètres déclarés par la fiche
+                      (<code class="fr-text--xs">{{ autoVerification.declaredNotAccepted.join(', ') }}</code>).
+                      Elle attend désormais
+                      <code class="fr-text--xs">{{ autoVerification.acceptedNotDeclared.slice(0, 3).join(', ') }}…</code>
+                      La fiche de référencement doit être mise à jour par le producteur&nbsp;: c'est
+                      exactement le type d'écart que la vérification continue rend visible.
+                    </p>
+                    <p
+                      v-else
+                      class="fr-text--sm mb-0 text-gray-700 m-0"
+                    >
+                      {{ autoVerification.passing }}/{{ autoVerification.total }} cas rejoués conformes
+                      contre l'API déclarée dans la fiche.
+                    </p>
+                  </div>
+
                   <!-- Barre de synthèse : statuts + sources -->
                   <div class="rounded-lg border border-gray-200 overflow-hidden">
                     <div class="grid grid-cols-2 sm:grid-cols-4 divide-x divide-gray-200">

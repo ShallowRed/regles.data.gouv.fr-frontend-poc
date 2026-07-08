@@ -1,0 +1,47 @@
+{
+  "checkedAt": "2026-07-08",
+  "method": "rejeu des cas de l'enveloppe + contrôle de dérive fiche/API (openapi), pilotés par la fiche metadata.jsonld",
+  "schemaChecks": [
+    {
+      "ruleId": "prestagri",
+      "endpoint": "https://api.prest-agri.beta.gouv.fr/quotient_familial",
+      "drift": true,
+      "declaredNotAccepted": [
+        "agent_revenu",
+        "agent_enfants",
+        "conjoint_revenu",
+        "conjoint_enfants",
+        "personne_ou_enfant_porteur_handicap"
+      ],
+      "acceptedNotDeclared": [
+        "foyer_fiscal_agent_revenu",
+        "foyer_fiscal_agent_membres",
+        "foyer_fiscal_conjoint_revenu",
+        "foyer_fiscal_conjoint_membres",
+        "foyer_fiscal_etudiant_revenu",
+        "foyer_fiscal_etudiant_membres",
+        "beneficiaire_porteur_handicap"
+      ]
+    }
+  ],
+  "results": [
+    {
+      "ruleId": "prestagri",
+      "testId": "prestagri-qf-couple-2-enfants",
+      "label": "Agent seul, 30 000 € de revenu, 2 enfants",
+      "expected": "833.33",
+      "got": null,
+      "status": "echec",
+      "url": "https://api.prest-agri.beta.gouv.fr/quotient_familial?agent_revenu=30000&agent_enfants=2"
+    },
+    {
+      "ruleId": "prestagri",
+      "testId": "prestagri-qf-parent-isole",
+      "label": "Même situation, parent isolé",
+      "expected": "625.0",
+      "got": null,
+      "status": "echec",
+      "url": "https://api.prest-agri.beta.gouv.fr/quotient_familial?agent_revenu=30000&agent_enfants=2&parent_isole=true"
+    }
+  ]
+}
