@@ -51,9 +51,22 @@ const nodeId = (value: unknown): string | undefined => {
   return undefined
 }
 
+/** Titre d'un nœud : alias `title` du @context (langue fr) ou clé `dct:title` historique. */
+const nodeTitle = (node: JsonldNode): string | undefined =>
+  literal(node.title) ?? literal(node['dct:title'])
+
 /** Slug lisible depuis un identifiant de paramètre. */
 const inputLabel = (param: JsonldNode): string =>
-  literal(param['dct:title']) ?? String(param['dct:identifier'] ?? '')
+  nodeTitle(param) ?? String(param['dct:identifier'] ?? '')
+
+/**
+ * Entrées du service : `cpsv:hasInput` (la propriété CPSV-AP 3.2.0, tranchée au contrat)
+ * avec lecture de `cv:hasInput` (motif historique des premières fiches).
+ */
+const serviceInputs = (leaf: JsonldNode): JsonldNode[] => [
+  ...asArray(leaf['cpsv:hasInput'] as JsonldNode | JsonldNode[]),
+  ...asArray(leaf['cv:hasInput'] as JsonldNode | JsonldNode[]),
+]
 
 const engineFromLanguages = (languages: string[]): RuleEngine => {
   const lower = languages.map(l => l.toLowerCase())
@@ -116,7 +129,7 @@ export function adaptJsonldGraph(raw: string): JsonldAdaptation {
   const seen = new Set<string>()
   let boundaryQualified = false
   const boundaryDraft: RuleBoundaryInput[] = leaves.flatMap(leaf =>
-    asArray(leaf['cv:hasInput'] as JsonldNode | JsonldNode[]).flatMap((param) => {
+    serviceInputs(leaf).flatMap((param) => {
       const id = String(param['dct:identifier'] ?? '')
       if (!id || seen.has(id))
         return []
@@ -134,7 +147,7 @@ export function adaptJsonldGraph(raw: string): JsonldAdaptation {
         ...(evidence
           ? {
               evidenceSource: {
-                label: literal(evidence['dct:title']) ?? '',
+                label: nodeTitle(evidence) ?? '',
                 url: nodeId(evidence['foaf:page']),
               },
             }
@@ -150,7 +163,7 @@ export function adaptJsonldGraph(raw: string): JsonldAdaptation {
       const definition = literal(output['cprmv:definition'])
       return {
         id,
-        label: literal(output['dct:title']) ?? id,
+        label: nodeTitle(output) ?? id,
         definition,
         isExplanation: id !== 'value',
       }

@@ -78,8 +78,10 @@ function checkFiche(doc, relPath) {
       warnings.push(`service ${label} : \`dct:version\` absent`)
 
     // Incohérences de vocabulaire relevées entre les fiches existantes.
-    if (leaf['cpsv:hasInput'] && leaf['cv:hasInput'])
-      warnings.push(`service ${label} : \`cv:hasInput\` ET \`cpsv:hasInput\` utilisés`)
+    // Point tranché au contrat : la propriété CPSV-AP 3.2.0 est cpsv:hasInput
+    // (shape officielle : shacl:path <http://purl.org/vocab/cpsv#hasInput>).
+    if (leaf['cv:hasInput'])
+      warnings.push(`service ${label} : \`cv:hasInput\` utilisé - la propriété CPSV-AP 3.2.0 est \`cpsv:hasInput\``)
     const params = asArray(leaf['cv:hasInput']).concat(asArray(leaf['cpsv:hasInput']))
     const withType = params.filter(p => p['@type']).length
     const withBareType = params.filter(p => p.type).length

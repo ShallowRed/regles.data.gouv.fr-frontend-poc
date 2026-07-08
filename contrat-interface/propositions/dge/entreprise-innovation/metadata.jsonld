@@ -7,13 +7,15 @@
     "skos": "http://www.w3.org/2004/02/skos/core#",
     "schema": "http://schema.org/",
     "foaf": "http://xmlns.com/foaf/0.1/",
+    "org": "http://www.w3.org/ns/org#",
     "xsd": "http://www.w3.org/2001/XMLSchema#",
     "cprmv": "https://regels.overheid.nl/def/cprmv#",
     "rdgf": "https://regles.data.gouv.fr/def/catalogue#",
     "id": "@id",
     "type": "@type",
     "title": { "@id": "dct:title", "@language": "fr" },
-    "description": { "@id": "dct:description", "@language": "fr" }
+    "description": { "@id": "dct:description", "@language": "fr" },
+    "cprmv:type": { "@id": "https://regels.overheid.nl/def/cprmv#type", "@type": "@id" }
   },
   "@graph": [
     {
@@ -41,29 +43,32 @@
         { "id": "https://github.com/betagouv/publicodes-entreprise-innovation/tree/fc8e9a8ac572b03d75504a2aba39d5633c0b25ea/src/dispositifs" }
       ],
 
-      "cv:hasInput": [
+      "cpsv:hasInput": [
         {
-          "type": "cprmv:Parameter",
+          "id": "https://regles.data.gouv.fr/regles/dge/entreprise-innovation/v1#input-natureActivite",
+          "type": ["cv:Evidence", "cprmv:Parameter"],
           "dct:identifier": "natureActivite",
-          "dct:title": "Nature de l'activité",
+          "title": "Nature de l'activité",
           "cprmv:definition": "Activité commerciale, industrielle, agricole ou artisanale (conditionne l'éligibilité au CIR, art. 244 quater B).",
           "cprmv:type": "xsd:string",
           "schema:valueRequired": true,
           "rdgf:boundaryKind": "declaration"
         },
         {
-          "type": "cprmv:Parameter",
+          "id": "https://regles.data.gouv.fr/regles/dge/entreprise-innovation/v1#input-regimeFiscal",
+          "type": ["cv:Evidence", "cprmv:Parameter"],
           "dct:identifier": "regimeFiscal",
-          "dct:title": "Régime fiscal",
+          "title": "Régime fiscal",
           "cprmv:definition": "Imposition au régime réel ou condition d'exonération (art. 244 quater B).",
           "cprmv:type": "xsd:string",
           "schema:valueRequired": true,
           "rdgf:boundaryKind": "declaration"
         },
         {
-          "type": "cprmv:Parameter",
+          "id": "https://regles.data.gouv.fr/regles/dge/entreprise-innovation/v1#input-depensesRecherche",
+          "type": ["cv:Evidence", "cprmv:Parameter"],
           "dct:identifier": "depensesRecherche",
-          "dct:title": "Dépenses de recherche (métropole et DOM)",
+          "title": "Dépenses de recherche (métropole et DOM)",
           "cprmv:definition": "Assiette du crédit d'impôt : 30 % jusqu'à 100 M€ puis 5 % en métropole, 50 % dans les DOM.",
           "cprmv:type": "xsd:decimal",
           "schema:valueRequired": true,
@@ -75,14 +80,14 @@
         {
           "type": ["cv:Output", "cprmv:Rule"],
           "dct:identifier": "value",
-          "dct:title": "Éligibilité et montants par dispositif",
+          "title": "Éligibilité et montants par dispositif",
           "cprmv:definition": "Pour chacun des six dispositifs : statut d'éligibilité et, le cas échéant, montant du crédit d'impôt.",
           "cprmv:type": "xsd:string"
         },
         {
           "type": ["cv:Output", "cprmv:Rule"],
           "dct:identifier": "explications",
-          "dct:title": "Explications d'inéligibilité",
+          "title": "Explications d'inéligibilité",
           "cprmv:definition": "Règles publicodes « . explications » : texte expliquant pourquoi un dispositif n'est pas ouvert - utile pour expliquer un refus."
         }
       ],
@@ -94,7 +99,7 @@
       "rdgf:operationalMapping": [
         {
           "type": "rdgf:OperationalMapping",
-          "dct:title": "Formulaire déclaratif → variables Publicodes",
+          "title": "Formulaire déclaratif → variables Publicodes",
           "rdgf:from": "survey-schema aides-simplifiées (entreprise-innovation.json)",
           "rdgf:to": "règles publicodes-entreprise-innovation",
           "rdgf:artifact": { "id": "https://github.com/betagouv/aides-simplifiees-app/blob/main/public/forms/entreprise-innovation.json" },
@@ -108,7 +113,7 @@
           "rdgf:version": "main (2025-09-17)",
           "rdgf:date": "2025-09-17",
           "rdgf:kind": "majeur",
-          "dct:description": "Publication du dépôt betagouv : un fichier Publicodes par dispositif, coconstruits avec un expert métier DGFiP.",
+          "description": "Publication du dépôt betagouv : un fichier Publicodes par dispositif, coconstruits avec un expert métier DGFiP.",
           "rdgf:triggeredBy": { "id": "https://www.legifrance.gouv.fr/codes/id/LEGITEXT000006069577/" }
         }
       ]
@@ -116,8 +121,9 @@
 
     {
       "id": "https://regles.data.gouv.fr/regles/dge/entreprise-innovation/v1#organisation",
-      "type": "cv:PublicOrganisation",
-      "skos:prefLabel": { "@value": "Direction générale des Entreprises", "@language": "fr" }
+      "type": ["cv:PublicOrganisation", "org:Organization"],
+      "skos:prefLabel": { "@value": "Direction générale des Entreprises", "@language": "fr" },
+      "dct:spatial": { "id": "http://publications.europa.eu/resource/authority/country/FRA", "type": "dct:Location" }
     },
 
     {
@@ -125,7 +131,7 @@
       "type": "cv:Channel",
       "dct:identifier": "entreprise-innovation-channel-publicodes",
       "dct:type": { "@type": "skos:Concept", "skos:prefLabel": { "@value": "Bibliothèque de règles Publicodes (dépôt git)", "@language": "fr" } },
-      "dct:description": { "@value": "Règles YAML Publicodes exécutables côté client (navigateur) ou serveur via le paquet publicodes.", "@language": "fr" },
+      "description": "Règles YAML Publicodes exécutables côté client (navigateur) ou serveur via le paquet publicodes.",
       "foaf:page": { "id": "https://github.com/betagouv/publicodes-entreprise-innovation" },
       "cv:ownedBy": { "id": "https://regles.data.gouv.fr/regles/dge/entreprise-innovation/v1#organisation" }
     },

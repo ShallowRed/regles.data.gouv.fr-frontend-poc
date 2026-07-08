@@ -7,13 +7,16 @@
     "skos": "http://www.w3.org/2004/02/skos/core#",
     "schema": "http://schema.org/",
     "foaf": "http://xmlns.com/foaf/0.1/",
+    "org": "http://www.w3.org/ns/org#",
     "xsd": "http://www.w3.org/2001/XMLSchema#",
     "cprmv": "https://regels.overheid.nl/def/cprmv#",
     "rdgf": "https://regles.data.gouv.fr/def/catalogue#",
     "id": "@id",
     "type": "@type",
     "title": { "@id": "dct:title", "@language": "fr" },
-    "description": { "@id": "dct:description", "@language": "fr" }
+    "description": { "@id": "dct:description", "@language": "fr" },
+    "cprmv:type": { "@id": "https://regels.overheid.nl/def/cprmv#type", "@type": "@id" },
+    "rdgf:engineProfile": { "@id": "https://regles.data.gouv.fr/def/catalogue#engineProfile", "@type": "@json" }
   },
   "@graph": [
     {
@@ -42,33 +45,36 @@
         { "id": "https://github.com/openfisca/openfisca-france/tree/master/tests" }
       ],
 
-      "cv:hasInput": [
+      "cpsv:hasInput": [
         {
-          "type": "cprmv:Parameter",
+          "id": "https://regles.data.gouv.fr/regles/cnaf/prime-activite/openfisca-france#input-salaire_de_base",
+          "type": ["cv:Evidence", "cprmv:Parameter"],
           "dct:identifier": "salaire_de_base",
-          "dct:title": "Salaires des 3 derniers mois",
+          "title": "Salaires des 3 derniers mois",
           "cprmv:definition": "Revenus d'activité déclarés par l'usager sur le trimestre de référence.",
           "cprmv:type": "xsd:decimal",
           "schema:valueRequired": true,
           "rdgf:boundaryKind": "declaration"
         },
         {
-          "type": "cprmv:Parameter",
+          "id": "https://regles.data.gouv.fr/regles/cnaf/prime-activite/openfisca-france#input-rfr",
+          "type": ["cv:Evidence", "cprmv:Parameter"],
           "dct:identifier": "rfr",
-          "dct:title": "Revenu fiscal de référence",
+          "title": "Revenu fiscal de référence",
           "cprmv:definition": "Revenu fiscal de référence du foyer.",
           "cprmv:type": "xsd:decimal",
           "rdgf:boundaryKind": "donnee-attestee",
           "rdgf:evidenceSource": {
             "type": "rdgf:EvidenceSource",
-            "dct:title": "DGFiP, mobilisable via API Particulier",
+            "title": "DGFiP, mobilisable via API Particulier",
             "foaf:page": { "id": "https://particulier.api.gouv.fr" }
           }
         },
         {
-          "type": "cprmv:Parameter",
+          "id": "https://regles.data.gouv.fr/regles/cnaf/prime-activite/openfisca-france#input-montant_forfaitaire",
+          "type": ["cv:Evidence", "cprmv:Parameter"],
           "dct:identifier": "montant_forfaitaire",
-          "dct:title": "Montant forfaitaire et SMIC",
+          "title": "Montant forfaitaire et SMIC",
           "cprmv:definition": "Paramètres législatifs partagés du cœur socio-fiscal, maintenus dans openfisca-france ; aucun porteur administratif unique.",
           "cprmv:type": "xsd:decimal",
           "rdgf:boundaryKind": "sortie-regle"
@@ -79,7 +85,7 @@
         {
           "type": ["cv:Output", "cprmv:Rule"],
           "dct:identifier": "ppa",
-          "dct:title": "Montant mensuel de la prime d'activité",
+          "title": "Montant mensuel de la prime d'activité",
           "cprmv:definition": "Variable openfisca-france `ppa`, calculée par entité famille sur des périodes mensuelles avec bases ressources trimestrielles.",
           "cprmv:type": "xsd:decimal"
         }
@@ -108,7 +114,7 @@
       "rdgf:operationalMapping": [
         {
           "type": "rdgf:OperationalMapping",
-          "dct:title": "Situation déclarative → entités et périodes OpenFisca",
+          "title": "Situation déclarative → entités et périodes OpenFisca",
           "rdgf:from": "formulaire déclaratif aides-simplifiées (description plate)",
           "rdgf:to": "entités individu / famille / foyer fiscal / ménage, variables périodisées",
           "rdgf:artifact": { "id": "https://github.com/betagouv/aides-simplifiees-app/blob/main/inertia/services/openfisca/dispatchers.ts" },
@@ -117,17 +123,17 @@
         }
       ],
       "rdgf:engineProfile": {
-        "type": "rdgf:EngineProfile",
-        "rdgf:engine": "openfisca",
-        "rdgf:entities": ["individu", "famille", "foyer_fiscal", "menage"],
-        "rdgf:periods": "variables mensuelles, bases ressources trimestrielles, paramètres législatifs datés"
+        "engine": "openfisca",
+        "entities": ["individu", "famille", "foyer_fiscal", "menage"],
+        "periods": "variables mensuelles, bases ressources trimestrielles, paramètres législatifs datés"
       }
     },
 
     {
       "id": "https://regles.data.gouv.fr/regles/cnaf/prime-activite/openfisca-france#organisation",
-      "type": "cv:PublicOrganisation",
-      "skos:prefLabel": { "@value": "Caisse nationale des allocations familiales", "@language": "fr" }
+      "type": ["cv:PublicOrganisation", "org:Organization"],
+      "skos:prefLabel": { "@value": "Caisse nationale des allocations familiales", "@language": "fr" },
+      "dct:spatial": { "id": "http://publications.europa.eu/resource/authority/country/FRA", "type": "dct:Location" }
     },
 
     {
@@ -135,7 +141,7 @@
       "type": "cv:Channel",
       "dct:identifier": "prime-activite-channel-openfisca",
       "dct:type": { "@type": "skos:Concept", "skos:prefLabel": { "@value": "Moteur de microsimulation (Python, exécution serveur)", "@language": "fr" } },
-      "dct:description": { "@value": "Calcul via openfisca-france (paquet Python) ; exposition API possible via openfisca-core web-api.", "@language": "fr" },
+      "description": "Calcul via openfisca-france (paquet Python) ; exposition API possible via openfisca-core web-api.",
       "foaf:page": { "id": "https://github.com/openfisca/openfisca-france" },
       "cv:ownedBy": { "id": "https://regles.data.gouv.fr/regles/cnaf/prime-activite/openfisca-france#organisation" }
     }
