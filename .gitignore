@@ -21,3 +21,6 @@ dist
 .idea
 
 docs/**
+# Contexte Claude Code local (workspace perso garden) — non versionné
+*.local.md
+.claude/settings.local.json
