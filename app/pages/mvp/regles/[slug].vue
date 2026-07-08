@@ -799,6 +799,13 @@ useHead(() => ({ title: title.value }))
                   :source="primaryReference?.label"
                 />
 
+                <!-- Régime implémentation : calcul délégué au moteur du producteur (OpenFisca) -->
+                <RuleOpenfiscaCalculation
+                  v-else-if="rule.slug === 'prime-activite-openfisca'"
+                  :entities="(rule.engineProfile?.openfisca?.entities as string[] | undefined)"
+                  :source-url="rule.sourceUrl"
+                />
+
                 <!-- Aperçu pré-calculé : moteur ouvert / exécutable -->
                 <template v-else-if="preview">
                   <!-- Situation d'exemple -->

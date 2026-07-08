@@ -164,10 +164,11 @@ const primeActivite: Rule = {
   updatedAt: '2026-07-07',
   version: 'openfisca-france (suivi continu)',
   sourceUrl: 'https://github.com/openfisca/openfisca-france',
+  certificationRegime: 'implementation',
   capabilities: {
     hasPublicTestCases: true,
+    hasCalculationPreview: true,
   },
-  certificationRegime: 'implementation',
   boundary: [
     { id: 'salaire_de_base', label: 'Salaires des 3 derniers mois', kind: 'declaration', definition: 'Revenus d\'activité déclarés par l\'usager sur le trimestre de référence.', required: true },
     { id: 'rfr', label: 'Revenu fiscal de référence', kind: 'donnee-attestee', evidenceSource: { label: 'DGFiP, mobilisable via API Particulier', url: 'https://particulier.api.gouv.fr' } },
