@@ -122,7 +122,23 @@ const expectedDisplay = computed(() => {
 
         <ul class="list-none p-0 mt-3 mb-0 space-y-1 fr-text--xs text-gray-600">
           <li v-if="test.validatedBy">
-            Validé par : {{ test.validatedBy }}<template v-if="test.validatedAt"> ({{ test.validatedAt }})</template>
+            Validé par : {{ test.validatedBy }}<template v-if="test.validatedAt">
+              ({{ test.validatedAt }})
+            </template>
+          </li>
+          <li v-if="test.period || test.engineVersion">
+            <template v-if="test.period">
+              Période législative : {{ test.period }}
+            </template>
+            <template v-if="test.period && test.engineVersion">
+              ·
+            </template>
+            <template v-if="test.engineVersion">
+              Moteur : {{ test.engineVersion }}
+            </template>
+          </li>
+          <li v-if="test.realCaseSource">
+            Dossier réel anonymisé : {{ test.realCaseSource }}
           </li>
           <li v-if="test.legalAnchor">
             Texte visé : {{ test.legalAnchor }}
@@ -139,6 +155,25 @@ const expectedDisplay = computed(() => {
             </NuxtLink>
           </li>
         </ul>
+
+        <ul
+          v-if="test.tags?.length"
+          class="flex flex-wrap gap-1 list-none p-0 mt-2 mb-0"
+        >
+          <li
+            v-for="tag in test.tags"
+            :key="tag"
+          >
+            <span class="fr-tag fr-tag--sm">{{ tag }}</span>
+          </li>
+        </ul>
+
+        <p
+          v-if="test.notes"
+          class="fr-text--xs mb-0 text-gray-500 m-0 mt-2 italic"
+        >
+          {{ test.notes }}
+        </p>
       </div>
     </div>
   </article>

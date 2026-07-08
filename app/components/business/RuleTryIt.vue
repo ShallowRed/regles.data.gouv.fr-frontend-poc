@@ -73,13 +73,19 @@ async function run() {
 
 <template>
   <div class="rounded-lg border border-[#000091]/30 bg-white p-4 md:p-5 space-y-4">
-    <div class="flex flex-wrap items-center gap-2">
-      <p class="fr-badge fr-badge--sm fr-badge--green-emeraude m-0">
-        Essayer avec vos valeurs
+    <div class="space-y-1">
+      <div class="flex flex-wrap items-center gap-2">
+        <p class="fr-badge fr-badge--sm fr-badge--blue-cumulus m-0">
+          Rejouer un cas
+        </p>
+        <span class="fr-text--xs mb-0 text-gray-600">
+          Formulaire généré depuis la fiche · exécuté par le moteur du producteur
+        </span>
+      </div>
+      <p class="fr-text--xs mb-0 text-gray-500 m-0">
+        Outil de vérification : rejouez un cas d'entrées contre la règle référencée. Résultat
+        indicatif attribué au producteur, sans valeur de décision administrative.
       </p>
-      <span class="fr-text--xs mb-0 text-gray-600">
-        Formulaire généré depuis la fiche de métadonnées · appel réel à l'API du producteur
-      </span>
     </div>
 
     <form

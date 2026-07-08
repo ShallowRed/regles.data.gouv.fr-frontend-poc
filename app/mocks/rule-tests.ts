@@ -1,14 +1,15 @@
 import type { RuleTest } from '~/types'
 
 /**
- * Cas de tests de la démo resserrée.
+ * Cas de tests de la démo resserrée - l'enveloppe de confiance.
  *
- * Doctrine : le test natif (dans le format du moteur, lié par `nativeRef`) fait foi ;
- * le catalogue norme l'enveloppe (intention, provenance, validateur, statut). Les
- * `inputs`/`expected` plats sont une projection pédagogique, pas le test lui-même.
+ * Format aligné sur `shared-test-cases` d'aides-simplifiées (period + version de moteur +
+ * provenance + validateur). Le test natif (`nativeRef`) fait foi ; le catalogue norme
+ * l'enveloppe. Les `inputs`/`expected` plats sont une projection pédagogique.
  *
- * Les deux cas Prest'Agri sont des appels réels à l'API de production
- * (api.prest-agri.beta.gouv.fr), exécutés le 2026-07-07.
+ * Anti-fabrication : les valeurs attendues sont des calculs réels (API Prest'Agri le
+ * 2026-07-07 ; API OpenFisca France le 2026-07-08 ; suite pytest regalgo au SHA pinné).
+ * Champs omis quand l'information n'est pas connue (pas de dossier réel inventé).
  */
 export const ruleTestsMock: RuleTest[] = [
   {
@@ -23,8 +24,11 @@ export const ruleTestsMock: RuleTest[] = [
     status: 'valide',
     validatedBy: 'API Prest\'Agri (calcul réel)',
     validatedAt: '2026-07-07',
+    engineVersion: 'prestagri 0.1.0',
+    tags: ['quotient-familial', 'agent-public'],
     nativeFormat: 'catala-assert',
     nativeRef: 'https://github.com/betagouv/prestagri/tree/478b3cc2ab28299c73b94fdd192b0559ae5873b8/catala',
+    notes: 'Validé contre l\'API le 2026-07-07 ; l\'API a depuis changé de schéma de paramètres (dérive détectée le 2026-07-08).',
   },
   {
     id: 'prestagri-qf-parent-isole',
@@ -38,6 +42,8 @@ export const ruleTestsMock: RuleTest[] = [
     status: 'valide',
     validatedBy: 'API Prest\'Agri (calcul réel)',
     validatedAt: '2026-07-07',
+    engineVersion: 'prestagri 0.1.0',
+    tags: ['quotient-familial', 'parent-isole'],
     nativeFormat: 'catala-assert',
     nativeRef: 'https://github.com/betagouv/prestagri/tree/478b3cc2ab28299c73b94fdd192b0559ae5873b8/catala',
   },
@@ -51,7 +57,9 @@ export const ruleTestsMock: RuleTest[] = [
     source: 'communaute',
     status: 'valide',
     validatedBy: 'Suite pytest du dépôt source (commit pinné)',
+    engineVersion: 'regalgo-civique-droit-vote 1.0.4',
     legalAnchor: 'Code électoral, art. L. 2, L. 3, L. 5 à L. 7',
+    tags: ['droit-de-vote', 'cas-nominal'],
     nativeFormat: 'pytest',
     nativeRef: 'https://github.com/qloridant/regalgo-civique-droit-vote/blob/13d9f80ca21d47f55aef9710e6288e94ea10ccc6/tests/test_algorithm.py',
   },
@@ -64,9 +72,29 @@ export const ruleTestsMock: RuleTest[] = [
     expected: true,
     source: 'communaute',
     status: 'en_revue',
+    engineVersion: 'regalgo-civique-droit-vote 1.0.4',
     legalAnchor: 'Constitution, art. 88-3 ; Code électoral, art. L.O. 227-1',
+    tags: ['droit-de-vote', 'citoyennete-ue', 'municipales'],
     nativeFormat: 'pytest',
     nativeRef: 'https://github.com/qloridant/regalgo-civique-droit-vote/blob/13d9f80ca21d47f55aef9710e6288e94ea10ccc6/tests/test_algorithm.py',
+  },
+  {
+    id: 'prime-activite-celibataire-1000',
+    ruleId: 'prime-activite-openfisca',
+    label: 'Célibataire, 1 000 € net/mois',
+    scenario: 'Prime d\'activité d\'un célibataire sans enfant, salaire de 1 000 € par mois sur le trimestre de référence.',
+    inputs: { salaire_de_base: 1000 },
+    expected: '224.39',
+    expectedUnit: 'EUR',
+    source: 'communaute',
+    status: 'valide',
+    validatedBy: 'API OpenFisca France (calcul réel)',
+    validatedAt: '2026-07-08',
+    period: '2025-03',
+    engineVersion: 'france-169.15.0',
+    tags: ['prime-activite', 'celibataire'],
+    nativeFormat: 'openfisca-yaml',
+    nativeRef: 'https://github.com/openfisca/openfisca-france/tree/master/tests',
   },
   {
     id: 'prime-activite-suite-native',
@@ -79,6 +107,8 @@ export const ruleTestsMock: RuleTest[] = [
     source: 'communaute',
     status: 'valide',
     validatedBy: 'Intégration continue openfisca-france',
+    engineVersion: 'france-169.15.0',
+    tags: ['prime-activite', 'suite-native'],
     nativeFormat: 'openfisca-yaml',
     nativeRef: 'https://github.com/openfisca/openfisca-france/tree/master/tests',
   },
