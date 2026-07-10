@@ -41,8 +41,8 @@ export const organismsMock: Record<string, Organism> = {
     id: 'pass-culture',
     // Casse officielle « pass Culture » ; la SAS (capitaux publics, 2019) est
     // l'opérateur du dispositif et le producteur de l'implémentation du bonus QF.
-    name: 'SAS pass Culture',
-    acronym: 'pass Culture',
+    name: 'Pass Culture',
+    acronym: 'Pass Culture',
     url: 'https://pass.culture.fr',
   },
   'ministere-culture': {
