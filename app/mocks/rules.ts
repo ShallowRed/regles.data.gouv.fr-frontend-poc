@@ -196,7 +196,7 @@ const primeActivite: Rule = {
 const passCultureBonusQf: Rule = {
   id: 'pass-culture-bonus-qf',
   slug: 'pass-culture-bonus-qf',
-  title: 'Pass Culture - bonification selon le quotient familial',
+  title: 'pass Culture - bonification selon le quotient familial',
   shortDescription:
     'Bonus de 50 € du pass Culture conditionné au quotient familial (décret n° 2025-195). '
     + 'L\'implémentation officielle n\'est pas publiée : l\'entrée est référencée sur la seule base du texte, '
