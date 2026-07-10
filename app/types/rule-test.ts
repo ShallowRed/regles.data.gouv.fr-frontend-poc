@@ -58,6 +58,12 @@ export interface RuleTest {
   nativeFormat?: RuleTestNativeFormat
   /** Lien vers le test natif qui fait foi (dépôt source, idéalement pinné). */
   nativeRef?: string
+  /**
+   * Variable cible du rejeu automatique, dans l'espace de noms du moteur
+   * (ex. `cir . montant` pour Publicodes). Comme `inputs`, elle reste
+   * moteur-namespacée : le catalogue ne norme pas les noms de variables.
+   */
+  targetVariable?: string
   /** Période législative visée (YYYY-MM) : l'état du droit à une date donnée. */
   period?: string
   /** Version du moteur ayant produit le résultat attendu (ex. `france-169.15.0`, `prestagri 0.1.0`). */
