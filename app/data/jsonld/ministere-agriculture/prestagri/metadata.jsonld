@@ -38,14 +38,78 @@
         { "id": "https://github.com/betagouv/prestagri/blob/478b3cc2ab28299c73b94fdd192b0559ae5873b8/backend/app/api/default.py#read_quotient_familial" }
       ],
       "cv:hasInput": [
-        { "@type": "cprmv:Parameter", "dct:identifier": "agent_revenu", "dct:title": "Revenu de l'agent", "cprmv:definition": "Revenu fiscal de référence annuel de l'agent, en euros.", "cprmv:type": "xsd:integer", "schema:valueRequired": true },
-        { "@type": "cprmv:Parameter", "dct:identifier": "agent_enfants", "dct:title": "Enfants de l'agent", "cprmv:definition": "Nombre d'enfants à charge de l'agent.", "cprmv:type": "xsd:integer", "schema:valueRequired": true },
-        { "@type": "cprmv:Parameter", "dct:identifier": "conjoint_revenu", "dct:title": "Revenu du conjoint", "cprmv:definition": "Revenu fiscal de référence annuel du conjoint, en euros (si vie à deux).", "cprmv:type": "xsd:integer", "schema:valueRequired": false },
-        { "@type": "cprmv:Parameter", "dct:identifier": "conjoint_enfants", "dct:title": "Enfants du conjoint", "cprmv:definition": "Nombre d'enfants à charge du conjoint.", "cprmv:type": "xsd:integer", "schema:valueRequired": false },
-        { "@type": "cprmv:Parameter", "dct:identifier": "personne_ou_enfant_porteur_handicap", "dct:title": "Handicap au foyer", "cprmv:definition": "Un membre du foyer (agent, enfant ou personne à charge) est porteur de handicap.", "cprmv:type": "xsd:boolean", "schema:valueRequired": false, "schema:defaultValue": false },
-        { "@type": "cprmv:Parameter", "dct:identifier": "garde_alternee", "dct:title": "Garde alternée", "cprmv:definition": "L'agent a un ou des enfants en garde alternée.", "cprmv:type": "xsd:boolean", "schema:valueRequired": false, "schema:defaultValue": false },
-        { "@type": "cprmv:Parameter", "dct:identifier": "parent_isole", "dct:title": "Parent isolé", "cprmv:definition": "L'agent est parent isolé au sens fiscal (case T).", "cprmv:type": "xsd:boolean", "schema:valueRequired": false, "schema:defaultValue": false },
-        { "@type": "cprmv:Parameter", "dct:identifier": "outre_mer", "dct:title": "Outre-mer", "cprmv:definition": "L'agent est affecté en outre-mer (abattement de 20% sur le revenu fiscal de référence).", "cprmv:type": "xsd:boolean", "schema:valueRequired": false, "schema:defaultValue": false }
+        {
+          "@type": "cprmv:Structure",
+          "@id": "ex:structure/menage",
+          "dct:identifier": "menage",
+          "dct:title": "Ménage",
+          "cprmv:definition": "Situation familiale et fiscale du foyer de l'agent.",
+          "sh:property": [
+            {
+              "sh:path": "cprmv:beneficiaire_porteur_handicap",
+              "dct:title": "Handicap au foyer",
+              "cprmv:definition": "Un membre du foyer (agent, enfant ou personne à charge) est porteur de handicap.",
+              "sh:datatype": "xsd:boolean",
+              "sh:minCount": 0, "sh:maxCount": 1,
+              "schema:defaultValue": false
+            },
+            {
+              "sh:path": "cprmv:garde_alternee",
+              "dct:title": "Garde alternée",
+              "cprmv:definition": "L'agent a un ou des enfants en garde alternée.",
+              "sh:datatype": "xsd:boolean",
+              "sh:minCount": 0, "sh:maxCount": 1,
+              "schema:defaultValue": false
+            },
+            {
+              "sh:path": "cprmv:parent_isole",
+              "dct:title": "Parent isolé",
+              "cprmv:definition": "L'agent est parent isolé au sens fiscal (case T).",
+              "sh:datatype": "xsd:boolean",
+              "sh:minCount": 0, "sh:maxCount": 1,
+              "schema:defaultValue": false
+            },
+            {
+              "sh:path": "cprmv:outre_mer",
+              "dct:title": "Outre-mer",
+              "cprmv:definition": "L'agent est affecté en outre-mer (abattement de 20% sur le revenu fiscal de référence).",
+              "sh:datatype": "xsd:boolean",
+              "sh:minCount": 0, "sh:maxCount": 1,
+              "schema:defaultValue": false
+            },
+            {
+              "sh:path": "cprmv:membres_du_foyer",
+              "dct:title": "Membres du foyer fiscal",
+              "cprmv:definition": "Liste des foyers fiscaux composant le ménage (l'agent, et le conjoint si vie à deux).",
+              "sh:node": "ex:structure/foyer_fiscal",
+              "sh:class": "cprmv:Foyer_fiscal",
+              "sh:minCount": 1
+            }
+          ]
+        },
+        {
+          "@type": "cprmv:Structure",
+          "@id": "ex:structure/foyer_fiscal",
+          "dct:identifier": "foyer_fiscal",
+          "dct:title": "Foyer fiscal",
+          "sh:property": [
+            {
+              "sh:path": "cprmv:revenu_fiscal_reference",
+              "dct:title": "Revenu fiscal de référence",
+              "cprmv:definition": "Revenu fiscal de référence annuel du foyer, en euros.",
+              "sh:datatype": "xsd:decimal",
+              "cprmv:unit": "EUR",
+              "sh:minCount": 1, "sh:maxCount": 1
+            },
+            {
+              "sh:path": "cprmv:nombre_personnes",
+              "dct:title": "Nombre de personnes",
+              "cprmv:definition": "Nombre de personnes rattachées à ce foyer fiscal.",
+              "sh:datatype": "xsd:integer",
+              "sh:minCount": 1, "sh:maxCount": 1
+            }
+          ]
+        }
       ],
       "cpsv:produces": [
         { "@type": ["cv:Output", "cprmv:Rule"], "dct:identifier": "value", "dct:title": "Quotient familial", "cprmv:definition": "Quotient familial calculé, exprimé en euros (ex. \"812.5€\").", "cprmv:type": "xsd:string" },
@@ -78,21 +142,51 @@
         { "id": "https://github.com/betagouv/prestagri/blob/478b3cc2ab28299c73b94fdd192b0559ae5873b8/backend/app/api/default.py#read_quotient_familial_aide_scolarite" }
       ],
       "cv:hasInput": [
-        { "@type": "cprmv:Parameter", "dct:identifier": "agent_revenu", "dct:title": "Revenu de l'agent", "cprmv:definition": "Revenu fiscal de référence annuel de l'agent, en euros.", "cprmv:type": "xsd:integer", "schema:valueRequired": true },
-        { "@type": "cprmv:Parameter", "dct:identifier": "agent_enfants", "dct:title": "Enfants de l'agent", "cprmv:definition": "Nombre d'enfants à charge de l'agent.", "cprmv:type": "xsd:integer", "schema:valueRequired": true },
-        { "@type": "cprmv:Parameter", "dct:identifier": "adresse_agent", "dct:title": "Adresse de l'agent", "cprmv:definition": "Adresse du domicile de l'agent (utilisée pour calculer la distance vers l'établissement).", "cprmv:type": "xsd:string", "schema:valueRequired": true },
-        { "@type": "cprmv:Parameter", "dct:identifier": "adresse_etablissement", "dct:title": "Adresse de l'établissement", "cprmv:definition": "Adresse de l'établissement scolaire ou universitaire fréquenté par l'enfant.", "cprmv:type": "xsd:string", "schema:valueRequired": true },
-        { "@type": "cprmv:Parameter", "dct:identifier": "conjoint_revenu", "dct:title": "Revenu du conjoint", "cprmv:definition": "Revenu fiscal de référence annuel du conjoint, en euros.", "cprmv:type": "xsd:integer", "schema:valueRequired": false },
-        { "@type": "cprmv:Parameter", "dct:identifier": "conjoint_enfants", "dct:title": "Enfants du conjoint", "cprmv:definition": "Nombre d'enfants à charge du conjoint.", "cprmv:type": "xsd:integer", "schema:valueRequired": false },
-        { "@type": "cprmv:Parameter", "dct:identifier": "etudiant_revenu", "dct:title": "Revenu de l'étudiant", "cprmv:definition": "Revenu fiscal de référence de l'étudiant, si celui-ci fait sa propre déclaration fiscale.", "cprmv:type": "xsd:integer", "schema:valueRequired": false },
-        { "@type": "cprmv:Parameter", "dct:identifier": "etudiant_enfants", "dct:title": "Enfants de l'étudiant", "cprmv:definition": "Nombre d'enfants à charge de l'étudiant fiscalement indépendant.", "cprmv:type": "xsd:integer", "schema:valueRequired": false },
-        { "@type": "cprmv:Parameter", "dct:identifier": "personne_ou_enfant_porteur_handicap", "dct:title": "Handicap au foyer", "cprmv:definition": "Un membre du foyer est porteur de handicap.", "cprmv:type": "xsd:boolean", "schema:valueRequired": false, "schema:defaultValue": false },
-        { "@type": "cprmv:Parameter", "dct:identifier": "garde_alternee", "dct:title": "Garde alternée", "cprmv:definition": "L'agent a un ou des enfants en garde alternée.", "cprmv:type": "xsd:boolean", "schema:valueRequired": false, "schema:defaultValue": false },
-        { "@type": "cprmv:Parameter", "dct:identifier": "parent_isole", "dct:title": "Parent isolé", "cprmv:definition": "L'agent est parent isolé au sens fiscal.", "cprmv:type": "xsd:boolean", "schema:valueRequired": false, "schema:defaultValue": false },
-        { "@type": "cprmv:Parameter", "dct:identifier": "outre_mer", "dct:title": "Outre-mer", "cprmv:definition": "L'agent est affecté en outre-mer.", "cprmv:type": "xsd:boolean", "schema:valueRequired": false, "schema:defaultValue": false },
-        { "@type": "cprmv:Parameter", "dct:identifier": "adresse_etudiant", "dct:title": "Adresse de l'étudiant", "cprmv:definition": "Adresse de résidence de l'étudiant, si différente de celle de l'agent (ex. logement étudiant).", "cprmv:type": "xsd:string", "schema:valueRequired": false },
-        { "@type": "cprmv:Parameter", "dct:identifier": "montant_materiel_specifique", "dct:title": "Matériel spécifique", "cprmv:definition": "Montant des frais d'équipement scolaire obligatoire engagés, en euros.", "cprmv:type": "xsd:integer", "schema:valueRequired": false },
-        { "@type": "cprmv:Parameter", "dct:identifier": "etudiant_post_bac", "dct:title": "Post-bac", "cprmv:definition": "L'enfant/étudiant est inscrit dans une filière post-bac (impacte le barème de points).", "cprmv:type": "xsd:boolean", "schema:valueRequired": false, "schema:defaultValue": false }
+        { "@type": "cprmv:Parameter", "dct:identifier": "quotient-familial", "dct:title": "Revenu de l'agent", "cprmv:definition": "Revenu fiscal de référence annuel de l'agent, en euros.", "cprmv:type": "xsd:integer", "schema:valueRequired": true },
+        { "@type": "cprmv:Parameter", "dct:identifier": "montant_matériel_spécifique", "dct:title": "Adresse de l'établissement", "cprmv:definition": "Adresse de l'établissement scolaire ou universitaire fréquenté par l'enfant.", "cprmv:type": "xsd:string", "schema:valueRequired": true },
+        { "@type": "cprmv:Parameter", "dct:identifier": "étudiant_en_filière_post_bac", "dct:title": "Revenu du conjoint", "cprmv:definition": "Revenu fiscal de référence annuel du conjoint, en euros.", "cprmv:type": "xsd:integer", "schema:valueRequired": false },
+        { 
+          "@type": "cprmv:Structure", 
+          "dct:identifier": "trajet_depuis_domicile_agent",
+          "dct:title": "Trajet depuis domicile agent",
+          "sh:path": "cprmv:trajet",
+          "sh:node": "ex:structure/trajet",
+          "sh:class": "cprmv:Trajet",
+          "sh:minCount": 1,
+          "sh:maxCount": 1
+        },
+        { 
+          "@type": "cprmv:Structure", 
+          "dct:identifier": "trajet_depuis_domicile_étudiant",
+          "dct:title": "Trajet depuis domicile agent",
+          "sh:path": "cprmv:trajet",
+          "sh:node": "ex:structure/trajet",
+          "sh:class": "cprmv:Trajet",
+          "sh:minCount": 1,
+          "sh:maxCount": 1
+        },
+        {
+          "@type": "cprmv:Structure",
+          "@id": "ex:structure/trajet",
+          "dct:identifier": "trajet",
+          "dct:title": "Trajet",
+          "sh:property": [
+            {
+              "sh:path": "cprmv:distance_km",
+              "dct:title": "Distance",
+              "cprmv:definition": "Distance (en km)",
+              "sh:datatype": "xsd:integer",
+              "sh:minCount": 1, "sh:maxCount": 1
+            },
+            {
+              "sh:path": "cprmv:durée_minutes",
+              "dct:title": "Durée",
+              "cprmv:definition": "Durée (en minutes)",
+              "sh:datatype": "xsd:integer",
+              "sh:minCount": 1, "sh:maxCount": 1
+            }
+          ]
+        }
       ],
       "cpsv:produces": [
         { "@type": ["cv:Output", "cprmv:Rule"], "dct:identifier": "value", "dct:title": "Montant de l'aide", "cprmv:definition": "Montant de l'aide à la scolarité calculé, plafonné à 1000€ par enfant et par an, exprimé en euros.", "cprmv:type": "xsd:string" },
