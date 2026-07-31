@@ -24,9 +24,9 @@ export const ruleTestsMock: RuleTest[] = [
              'valeur_point': 10.0,
              'étudiant_en_filière_post_bac': False},
     expected: {"critères_applicables": [
-                        {"C2_domiciliation_séparée": 2},
-                        {"C3_éloignement_étudiant": 2}],
-               "nb_points": 4},
+                        {"C2_domiciliation_séparée": "2"},
+                        {"C3_éloignement_étudiant": "2"}],
+               "nb_points": "4"},
     expectedUnit: '',
     source: 'administration',
     status: 'valide',
