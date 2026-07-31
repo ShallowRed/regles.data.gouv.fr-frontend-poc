@@ -31,12 +31,12 @@ export const ruleTestsMock: RuleTest[] = [
     source: 'administration',
     status: 'valide',
     validatedBy: 'API Prest\'Agri (calcul réel)',
-    validatedAt: '2026-31-07',
+    validatedAt: '2026-07-31',
     engineVersion: 'catala',
     tags: '',
     nativeFormat: 'catala-assert',
     nativeRef: 'https://github.com/betagouv/prestagri/tree/478b3cc2ab28299c73b94fdd192b0559ae5873b8/catala',
-    notes: 'Validé contre l\'API le 2026-31-07 ; l\'API a depuis changé de schéma de paramètres (dérive détectée le 2026-07-08).',
+    notes: 'Validé contre l\'API le 2026-07-31 ; l\'API a depuis changé de schéma de paramètres (dérive détectée le 2026-07-08).',
   },
 /** Premier test - est un example de ce qu'on aimerait avoir pour le test 4 de catala. Les champs vides seront demandés à l'utilisateur */
   {
