@@ -18,6 +18,7 @@
 
 import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
+import { isStructureInput, referencedStructureIds, structureLeaves } from '../app/utils/jsonld-adapter.ts'
 
 const asArray = v => (v === undefined ? [] : Array.isArray(v) ? v : [v])
 const literal = v => (typeof v === 'string' ? v : v && typeof v === 'object' && '@value' in v ? String(v['@value']) : undefined)
@@ -171,7 +172,25 @@ export function generateFicheDoc(doc, { sourcePath } = {}) {
         ? '| Paramètre | Type | Obligatoire | Nature de frontière | Définition |'
         : '| Paramètre | Type | Obligatoire | Définition |'
       push(header, header.replace(/[^|]/g, '-'))
-      for (const param of inputs) {
+      // Structures composites (shapes SHACL) : une ligne par champ feuille, avec le fil
+      // des structures traversées ; les définitions référencées ne sont pas des entrées.
+      const structureDefinitions = referencedStructureIds(inputs)
+      const rows = inputs.flatMap((param) => {
+        if (structureDefinitions.has(String(param['@id'] ?? '')))
+          return []
+        if (isStructureInput(param)) {
+          return structureLeaves(param, graph).map(leaf => ({
+            'dct:identifier': leaf.id,
+            'dct:title': leaf.group ? `${leaf.group} · ${leaf.label}` : leaf.label,
+            'cprmv:definition': leaf.definition,
+            'cprmv:type': leaf.datatype,
+            'schema:valueRequired': leaf.required,
+            'schema:defaultValue': leaf.defaultValue,
+          }))
+        }
+        return [param]
+      })
+      for (const param of rows) {
         const id = param['dct:identifier'] ?? ''
         const label = title(param)
         const name = label ? `**${md(label)}**<br>\`${id}\`` : `\`${id}\``
