@@ -47,13 +47,9 @@ const prestagri: Rule = {
   updatedAt: '2026-06-26',
   certificationRegime: 'frontiere',
   boundary: qualifyBoundary(prestagriAdaptation.boundaryDraft, {
-    agent_revenu: {
+    revenu_fiscal_reference: {
       kind: 'donnee-attestee',
       evidenceSource: { label: 'Revenu fiscal de référence (DGFiP, mobilisable via API Particulier)', url: 'https://particulier.api.gouv.fr' },
-    },
-    conjoint_revenu: {
-      kind: 'donnee-attestee',
-      evidenceSource: { label: 'Revenu fiscal de référence du conjoint (DGFiP)' },
     },
   }),
   outputs: prestagriAdaptation.outputs,

@@ -566,7 +566,10 @@ useHead(() => ({ title: title.value }))
                           :key="input.id"
                           class="fr-text--sm mb-0 text-gray-700"
                         >
-                          <strong>{{ input.label }}</strong><span
+                          <span
+                            v-if="input.group"
+                            class="fr-text--xs text-gray-500"
+                          >{{ input.group }} · </span><strong>{{ input.label }}</strong><span
                             v-if="input.required"
                             aria-hidden="true"
                           > *</span>

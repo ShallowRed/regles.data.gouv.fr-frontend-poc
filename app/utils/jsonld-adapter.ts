@@ -33,6 +33,10 @@ export interface JsonldAdaptation {
 const asArray = <T>(value: T | T[] | undefined): T[] =>
   value === undefined ? [] : Array.isArray(value) ? value : [value]
 
+/** Types d'un nœud : alias `type` du @context ou clé brute `@type` (les deux coexistent). */
+const nodeTypes = (node: JsonldNode): string[] =>
+  [...asArray(node.type), ...asArray(node['@type'] as string | string[])]
+
 const hasType = (node: JsonldNode, type: string): boolean =>
   asArray(node.type).includes(type)
 
@@ -67,6 +71,64 @@ const serviceInputs = (leaf: JsonldNode): JsonldNode[] => [
   ...asArray(leaf['cpsv:hasInput'] as JsonldNode | JsonldNode[]),
   ...asArray(leaf['cv:hasInput'] as JsonldNode | JsonldNode[]),
 ]
+
+/** Nom de champ depuis un sh:path (`cprmv:garde_alternee` → `garde_alternee`). */
+const shPathName = (value: unknown): string => {
+  const path = literal(value) ?? ''
+  return path.split(/[#:/]/).pop() ?? path
+}
+
+/** Champ feuille d'une structure SHACL, avec le fil des structures traversées. */
+export interface StructureLeaf {
+  id: string
+  label: string
+  definition?: string
+  datatype?: string
+  required: boolean
+  defaultValue?: unknown
+  /** Chemin des structures traversées (par exemple « Ménage › Foyer fiscal »). */
+  group: string
+}
+
+/**
+ * Aplatit une structure SHACL (cprmv:Structure + sh:property) en champs feuilles.
+ * Les propriétés `sh:node` renvoient vers une autre structure du graphe (par `@id`)
+ * ou l'embarquent : on récurse en gardant le fil des titres.
+ */
+export function structureLeaves(
+  structure: JsonldNode,
+  graph: JsonldNode[],
+  trail: string[] = [],
+): StructureLeaf[] {
+  const title = nodeTitle(structure) ?? String(structure['dct:identifier'] ?? '')
+  const nextTrail = [...trail, title].filter(Boolean)
+  return asArray(structure['sh:property'] as JsonldNode | JsonldNode[]).flatMap((property) => {
+    const nested = property['sh:node']
+    if (nested) {
+      const ref = typeof nested === 'string' ? nested : nodeId(nested) ?? (nested as JsonldNode)['@id']
+      const target = typeof nested === 'object' && (nested as JsonldNode)['sh:property']
+        ? nested as JsonldNode
+        : graph.find(node => node['@id'] === ref || node.id === ref)
+      return target ? structureLeaves(target, graph, nextTrail) : []
+    }
+    const id = shPathName(property['sh:path'])
+    if (!id)
+      return []
+    return [{
+      id,
+      label: nodeTitle(property) ?? id,
+      definition: literal(property['cprmv:definition']),
+      datatype: literal(property['sh:datatype']),
+      required: Number(property['sh:minCount'] ?? 0) >= 1,
+      defaultValue: property['schema:defaultValue'],
+      group: nextTrail.join(' › '),
+    }]
+  })
+}
+
+/** Une entrée déclarée comme structure composite (profil SHACL) plutôt que paramètre plat. */
+export const isStructureInput = (param: JsonldNode): boolean =>
+  nodeTypes(param).includes('cprmv:Structure') || param['sh:property'] !== undefined
 
 const engineFromLanguages = (languages: string[]): RuleEngine => {
   const lower = languages.map(l => l.toLowerCase())
@@ -128,8 +190,27 @@ export function adaptJsonldGraph(raw: string): JsonldAdaptation {
   // confiance), on la lit ; sinon kind par défaut `declaration`, requalifiable côté catalogue.
   const seen = new Set<string>()
   let boundaryQualified = false
+  let hasStructureInputs = false
   const boundaryDraft: RuleBoundaryInput[] = leaves.flatMap(leaf =>
     serviceInputs(leaf).flatMap((param) => {
+      // Structure composite (profil SHACL) : la frontière est portée par les champs
+      // feuilles, pas par le conteneur.
+      if (isStructureInput(param)) {
+        hasStructureInputs = true
+        return structureLeaves(param, graph).flatMap((field) => {
+          if (seen.has(field.id))
+            return []
+          seen.add(field.id)
+          return [{
+            id: field.id,
+            label: field.label,
+            kind: 'declaration' as const,
+            definition: field.definition,
+            required: field.required,
+            group: field.group,
+          }]
+        })
+      }
       const id = String(param['dct:identifier'] ?? '')
       if (!id || seen.has(id))
         return []
@@ -210,6 +291,8 @@ export function adaptJsonldGraph(raw: string): JsonldAdaptation {
     gaps.push('cas de tests structurés (seuls des liens bruts dct:source vers les fichiers de tests) - rdgf:testCase')
   if (!hasVersionEvents)
     gaps.push('historique de versions lié aux textes déclencheurs - rdgf:versionEvent')
+  if (hasStructureInputs)
+    gaps.push('projection des structures composites vers les paramètres HTTP (convention d\'aplatissement non déclarée) - rdgf:operationalMapping')
   gaps.push(
     'nature de publication (ouverte / hybride / fermée)',
     'position réglementaire (simulation → rescrit)',

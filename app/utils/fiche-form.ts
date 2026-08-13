@@ -9,6 +9,7 @@
  */
 
 import prestagriRaw from '~/data/jsonld/ministere-agriculture/prestagri/metadata.jsonld?raw'
+import { isStructureInput, structureLeaves } from '~/utils/jsonld-adapter'
 
 interface JsonldNode {
   'id'?: string
@@ -32,6 +33,12 @@ export interface FicheForm {
   serviceDescription?: string
   endpoint: string
   params: FicheFormParam[]
+  /**
+   * La fiche déclare des structures composites (shapes SHACL) sans déclarer leur
+   * projection vers les paramètres HTTP : le rejeu piloté par la fiche est suspendu
+   * tant que la convention d'aplatissement n'est pas au contrat.
+   */
+  compositeWithoutMapping?: boolean
 }
 
 function asArray<T>(value: T | T[] | undefined): T[] {
@@ -74,18 +81,38 @@ export function extractServiceForm(raw: string, serviceIdentifier: string): Fich
     ...asArray(service['cv:hasInput'] as JsonldNode | JsonldNode[]),
   ]
 
-  return {
-    serviceTitle: literal(service.title) ?? literal(service['dct:title']) ?? serviceIdentifier,
-    serviceDescription: literal(service.description) ?? literal(service['dct:description']),
-    endpoint,
-    params: inputs.map(param => ({
+  // Structures composites : les champs typés existent (feuilles SHACL) mais la fiche
+  // ne déclare pas comment ils se projettent en paramètres HTTP - le formulaire les
+  // montre sans prétendre pouvoir rejouer.
+  const compositeWithoutMapping = inputs.some(param => isStructureInput(param))
+
+  const params: FicheFormParam[] = inputs.flatMap((param) => {
+    if (isStructureInput(param)) {
+      return structureLeaves(param, graph).map(field => ({
+        id: field.id,
+        label: field.group ? `${field.group} · ${field.label}` : field.label,
+        definition: field.definition,
+        xsdType: compactXsd(field.datatype),
+        required: field.required,
+        defaultValue: field.defaultValue as FicheFormParam['defaultValue'],
+      }))
+    }
+    return [{
       id: String(param['dct:identifier'] ?? ''),
       label: literal(param.title) ?? literal(param['dct:title']) ?? String(param['dct:identifier'] ?? ''),
       definition: literal(param['cprmv:definition']),
       xsdType: compactXsd(param['cprmv:type']),
       required: param['schema:valueRequired'] === true,
       defaultValue: param['schema:defaultValue'] as FicheFormParam['defaultValue'],
-    })).filter(param => param.id),
+    }]
+  }).filter(param => param.id)
+
+  return {
+    serviceTitle: literal(service.title) ?? literal(service['dct:title']) ?? serviceIdentifier,
+    serviceDescription: literal(service.description) ?? literal(service['dct:description']),
+    endpoint,
+    params,
+    ...(compositeWithoutMapping ? { compositeWithoutMapping } : {}),
   }
 }
 

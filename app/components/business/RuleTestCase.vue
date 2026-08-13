@@ -79,12 +79,25 @@ const hasFlatProjection = computed(() =>
   props.test.inputs !== undefined || props.test.expected !== undefined,
 )
 
+/** Valeur d'entrée scalaire ou structurée (forme native du moteur). */
+function formatData(value: unknown): string {
+  if (value !== null && typeof value === 'object')
+    return JSON.stringify(value, null, 1).replace(/\n\s*/g, ' ')
+  return String(value)
+}
+
+const expectedIsStructured = computed(() =>
+  props.test.expected !== null && typeof props.test.expected === 'object',
+)
+
 const expectedDisplay = computed(() => {
   const e = props.test.expected
   if (typeof e === 'boolean')
     return e ? 'éligible' : 'non éligible'
   if (e === null || e === undefined)
     return '∅'
+  if (typeof e === 'object')
+    return JSON.stringify(e, null, 2)
   return props.test.expectedUnit ? `${e} ${props.test.expectedUnit}` : String(e)
 })
 </script>
@@ -138,7 +151,7 @@ const expectedDisplay = computed(() => {
                 v-for="(value, key) in test.inputs"
                 :key="key"
               >
-                <code class="font-mono">{{ key }}</code> : {{ value }}
+                <code class="font-mono">{{ key }}</code> : <span class="break-all">{{ formatData(value) }}</span>
               </li>
             </ul>
           </div>
@@ -146,7 +159,14 @@ const expectedDisplay = computed(() => {
             <p class="fr-text--xs uppercase tracking-wide text-gray-500 m-0 mb-1">
               Résultat attendu
             </p>
-            <p class="text-lg font-semibold text-blue-900 m-0">
+            <pre
+              v-if="expectedIsStructured"
+              class="fr-text--xs m-0 whitespace-pre-wrap break-all bg-gray-50 border border-gray-200 rounded p-2"
+            >{{ expectedDisplay }}</pre>
+            <p
+              v-else
+              class="text-lg font-semibold text-blue-900 m-0"
+            >
               {{ expectedDisplay }}
             </p>
           </div>

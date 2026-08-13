@@ -83,6 +83,8 @@ export interface RuleBoundaryInput {
   /** Pour une donnée attestée : qui l'atteste, et par quel canal. */
   evidenceSource?: { label: string, url?: string }
   required?: boolean
+  /** Structure composite d'origine quand la fiche déclare des shapes SHACL (« Ménage › Foyer fiscal »). */
+  group?: string
 }
 
 /** Sortie produite par la règle (dont les sorties d'explicabilité, « utiles pour expliquer un refus »). */

@@ -88,6 +88,21 @@ async function run() {
       </p>
     </div>
 
+    <div
+      v-if="form.compositeWithoutMapping"
+      class="rounded border border-[#0063cb]/30 bg-[#f4f6ff] p-3 space-y-1"
+    >
+      <p class="fr-text--sm mb-0 font-medium text-[#0063cb] m-0">
+        Fiche en cours de migration vers des entrées composites
+      </p>
+      <p class="fr-text--xs mb-0 text-gray-700 m-0">
+        La fiche décrit désormais ses entrées comme des structures (shapes SHACL), mais ne
+        déclare pas encore leur projection vers les paramètres HTTP de l'API. Les champs
+        ci-dessous viennent des structures&nbsp;; le rejeu échouera tant que cette
+        convention d'aplatissement n'est pas au contrat (écart listé dans la note technique).
+      </p>
+    </div>
+
     <form
       class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3"
       @submit.prevent="run"
