@@ -1,17 +1,14 @@
 {
-  "checkedAt": "2026-07-08",
-  "method": "rejeu des cas de l'enveloppe (rest-get + openfisca-post) + contrôle de dérive fiche/API, adossé par testId aux cas datés/versionnés",
+  "checkedAt": "2026-08-13",
+  "method": "rejeu des cas plats de l'enveloppe (rest-get + openfisca-post) + contrôle de dérive fiche/API (champs feuilles pour les fiches composites), adossé par testId aux cas datés/versionnés ; cas natifs structurés non rejoués (le test natif fait foi)",
   "schemaChecks": [
     {
       "ruleId": "prestagri",
       "endpoint": "https://api.prest-agri.beta.gouv.fr/quotient_familial",
       "drift": true,
       "declaredNotAccepted": [
-        "agent_revenu",
-        "agent_enfants",
-        "conjoint_revenu",
-        "conjoint_enfants",
-        "personne_ou_enfant_porteur_handicap"
+        "revenu_fiscal_reference",
+        "nombre_personnes"
       ],
       "acceptedNotDeclared": [
         "foyer_fiscal_agent_revenu",
@@ -19,9 +16,9 @@
         "foyer_fiscal_conjoint_revenu",
         "foyer_fiscal_conjoint_membres",
         "foyer_fiscal_etudiant_revenu",
-        "foyer_fiscal_etudiant_membres",
-        "beneficiaire_porteur_handicap"
-      ]
+        "foyer_fiscal_etudiant_membres"
+      ],
+      "comparison": "champs feuilles des structures SHACL, appariement par nom exact (projection HTTP non déclarée par la fiche)"
     }
   ],
   "results": [
@@ -30,22 +27,22 @@
       "testId": "prestagri-qf-couple-2-enfants",
       "label": "Agent seul, 30 000 € de revenu, 2 enfants",
       "expected": "833.33",
-      "got": null,
-      "status": "echec",
+      "got": "833.33€",
+      "status": "conforme",
       "period": null,
       "engineVersion": "prestagri 0.1.0",
-      "url": "https://api.prest-agri.beta.gouv.fr/quotient_familial?agent_revenu=30000&agent_enfants=2"
+      "url": "https://api.prest-agri.beta.gouv.fr/quotient_familial?foyer_fiscal_agent_revenu=30000&foyer_fiscal_agent_membres=3"
     },
     {
       "ruleId": "prestagri",
       "testId": "prestagri-qf-parent-isole",
       "label": "Même situation, parent isolé",
       "expected": "625.0",
-      "got": null,
-      "status": "echec",
+      "got": "625.0€",
+      "status": "conforme",
       "period": null,
       "engineVersion": "prestagri 0.1.0",
-      "url": "https://api.prest-agri.beta.gouv.fr/quotient_familial?agent_revenu=30000&agent_enfants=2&parent_isole=true"
+      "url": "https://api.prest-agri.beta.gouv.fr/quotient_familial?foyer_fiscal_agent_revenu=30000&foyer_fiscal_agent_membres=3&parent_isole=true"
     },
     {
       "ruleId": "prime-activite-openfisca",

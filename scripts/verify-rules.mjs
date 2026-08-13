@@ -43,6 +43,31 @@ const verifiable = {
   },
 }
 
+/** Nom de champ depuis un sh:path (`cprmv:garde_alternee` → `garde_alternee`). */
+function shPathName(value) {
+  const path = typeof value === 'string' ? value : ''
+  return path.split(/[#:/]/).pop() ?? path
+}
+
+/** Champs feuilles d'une structure SHACL (récursif via sh:node résolu dans le graphe). */
+function structureLeafNames(structure, graph) {
+  const properties = Array.isArray(structure['sh:property'])
+    ? structure['sh:property']
+    : structure['sh:property'] ? [structure['sh:property']] : []
+  return properties.flatMap((property) => {
+    const nested = property['sh:node']
+    if (nested) {
+      const ref = typeof nested === 'string' ? nested : nested['@id'] ?? nested.id
+      const target = typeof nested === 'object' && nested['sh:property']
+        ? nested
+        : graph.find(node => node['@id'] === ref || node.id === ref)
+      return target ? structureLeafNames(target, graph) : []
+    }
+    const name = shPathName(property['sh:path'])
+    return name ? [name] : []
+  })
+}
+
 /** Nœud de service et son canal, lus depuis la fiche. */
 function readService(fichePath, serviceIdentifier) {
   const graph = JSON.parse(readFileSync(join(root, fichePath), 'utf8'))['@graph']
@@ -53,8 +78,16 @@ function readService(fichePath, serviceIdentifier) {
     ...(service?.['cpsv:hasInput'] ?? []),
     ...(service?.['cv:hasInput'] ?? []),
   ]
-  const declaredParams = inputs.map(input => String(input['dct:identifier'])).filter(Boolean)
-  return { endpoint, declaredParams }
+  // Entrées composites (shapes SHACL) : la comparaison porte sur les champs feuilles.
+  // La fiche ne déclarant pas la projection structure → paramètres HTTP, seul
+  // l'appariement par nom exact est possible.
+  const hasStructures = inputs.some(input => input['sh:property'] !== undefined)
+  const declaredParams = inputs.flatMap(input =>
+    input['sh:property'] !== undefined
+      ? structureLeafNames(input, graph)
+      : [String(input['dct:identifier'] ?? '')],
+  ).filter(Boolean)
+  return { endpoint, declaredParams, hasStructures }
 }
 
 /** Paramètres réellement acceptés par l'API, lus depuis son openapi.json. */
@@ -122,10 +155,21 @@ for (const [ruleId, config] of Object.entries(verifiable)) {
       const declaredNotAccepted = service.declaredParams.filter(p => !accepted.includes(p))
       const acceptedNotDeclared = accepted.filter(p => !service.declaredParams.includes(p))
       const drift = declaredNotAccepted.length > 0
-      schemaChecks.push({ ruleId, endpoint, drift, declaredNotAccepted, acceptedNotDeclared })
+      schemaChecks.push({
+        ruleId,
+        endpoint,
+        drift,
+        declaredNotAccepted,
+        acceptedNotDeclared,
+        ...(service.hasStructures
+          ? { comparison: 'champs feuilles des structures SHACL, appariement par nom exact (projection HTTP non déclarée par la fiche)' }
+          : {}),
+      })
       if (drift) {
         failed = true
         console.log(`⚠ ${ruleId} : dérive fiche/API - déclarés non acceptés : ${declaredNotAccepted.join(', ')}`)
+        if (acceptedNotDeclared.length > 0)
+          console.log(`  acceptés non déclarés : ${acceptedNotDeclared.join(', ')}${service.hasStructures ? ' (projection composite → HTTP non déclarée)' : ''}`)
       }
       else {
         console.log(`✓ ${ruleId} : fiche et API déclarent les mêmes paramètres`)
@@ -133,8 +177,16 @@ for (const [ruleId, config] of Object.entries(verifiable)) {
     }
   }
 
-  // Rejeu des cas de l'enveloppe portant une projection plate exécutable.
-  const tests = ruleTestsMock.filter(test => test.ruleId === ruleId && test.inputs)
+  // Rejeu des cas de l'enveloppe portant une projection plate exécutable. Les cas aux
+  // entrées structurées (forme native du moteur) et les cas marqués `replayable: false`
+  // sont documentés par l'enveloppe, pas rejoués : le test natif fait foi.
+  const isFlat = inputs => Object.values(inputs).every(value => value === null || typeof value !== 'object')
+  const allCases = ruleTestsMock.filter(test => test.ruleId === ruleId && test.inputs)
+  const tests = allCases.filter(test => test.replayable !== false && isFlat(test.inputs))
+  for (const skipped of allCases.filter(test => !tests.includes(test))) {
+    const reason = skipped.replayable === false ? 'exclu du rejeu (replayable: false)' : 'entrées natives structurées'
+    console.log(`- ${ruleId} / ${skipped.label} : non rejoué - ${reason}`)
+  }
   for (const test of tests) {
     let status = 'echec'
     let got = null
@@ -169,7 +221,7 @@ for (const [ruleId, config] of Object.entries(verifiable)) {
 
 const verification = {
   checkedAt: new Date().toISOString().slice(0, 10),
-  method: 'rejeu des cas de l\'enveloppe (rest-get + openfisca-post) + contrôle de dérive fiche/API, adossé par testId aux cas datés/versionnés',
+  method: 'rejeu des cas plats de l\'enveloppe (rest-get + openfisca-post) + contrôle de dérive fiche/API (champs feuilles pour les fiches composites), adossé par testId aux cas datés/versionnés ; cas natifs structurés non rejoués (le test natif fait foi)',
   schemaChecks,
   results: caseResults,
 }
