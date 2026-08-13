@@ -9,7 +9,7 @@
  */
 
 import prestagriRaw from '~/data/jsonld/ministere-agriculture/prestagri/metadata.jsonld?raw'
-import { isStructureInput, structureLeaves } from '~/utils/jsonld-adapter'
+import { isStructureInput, referencedStructureIds, structureLeaves } from '~/utils/jsonld-adapter'
 
 interface JsonldNode {
   'id'?: string
@@ -85,8 +85,12 @@ export function extractServiceForm(raw: string, serviceIdentifier: string): Fich
   // ne déclare pas comment ils se projettent en paramètres HTTP - le formulaire les
   // montre sans prétendre pouvoir rejouer.
   const compositeWithoutMapping = inputs.some(param => isStructureInput(param))
+  const structureDefinitions = referencedStructureIds(inputs)
 
   const params: FicheFormParam[] = inputs.flatMap((param) => {
+    // Définition de structure référencée ailleurs : pas une entrée en soi.
+    if (structureDefinitions.has(String((param as JsonldNode)['@id'] ?? '')))
+      return []
     if (isStructureInput(param)) {
       return structureLeaves(param, graph).map(field => ({
         id: field.id,

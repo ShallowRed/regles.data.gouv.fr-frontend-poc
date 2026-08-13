@@ -102,13 +102,32 @@ export function structureLeaves(
 ): StructureLeaf[] {
   const title = nodeTitle(structure) ?? String(structure['dct:identifier'] ?? '')
   const nextTrail = [...trail, title].filter(Boolean)
+
+  // Entrée-référence : pas de sh:property propre, un sh:node vers une structure du
+  // graphe. Les feuilles sont préfixées par l'identifiant de l'entrée (deux trajets
+  // référençant la même structure gardent des ids distincts).
+  if (!structure['sh:property'] && structure['sh:node']) {
+    const nested = structure['sh:node']
+    const ref = typeof nested === 'string' ? nested : nodeId(nested) ?? (nested as JsonldNode)['@id']
+    const target = resolveNodeRef(ref, graph)
+    if (!target)
+      return []
+    const prefix = String(structure['dct:identifier'] ?? '')
+    // Titre et identifiant retirés de la cible : le fil est déjà porté par l'entrée.
+    return structureLeaves(
+      { ...target, 'dct:title': undefined, 'title': undefined, 'dct:identifier': undefined },
+      graph,
+      nextTrail,
+    ).map(leaf => ({ ...leaf, id: prefix ? `${prefix}.${leaf.id}` : leaf.id }))
+  }
+
   return asArray(structure['sh:property'] as JsonldNode | JsonldNode[]).flatMap((property) => {
     const nested = property['sh:node']
     if (nested) {
       const ref = typeof nested === 'string' ? nested : nodeId(nested) ?? (nested as JsonldNode)['@id']
       const target = typeof nested === 'object' && (nested as JsonldNode)['sh:property']
         ? nested as JsonldNode
-        : graph.find(node => node['@id'] === ref || node.id === ref)
+        : resolveNodeRef(ref, graph)
       return target ? structureLeaves(target, graph, nextTrail) : []
     }
     const id = shPathName(property['sh:path'])
@@ -129,6 +148,44 @@ export function structureLeaves(
 /** Une entrée déclarée comme structure composite (profil SHACL) plutôt que paramètre plat. */
 export const isStructureInput = (param: JsonldNode): boolean =>
   nodeTypes(param).includes('cprmv:Structure') || param['sh:property'] !== undefined
+
+/**
+ * Nœuds adressables par `@id`/`id`, où qu'ils vivent dans le graphe : les structures
+ * référencées par sh:node sont souvent déclarées dans le tableau d'entrées d'un
+ * service, pas à la racine du @graph.
+ */
+function collectResolvables(value: unknown, found: JsonldNode[] = []): JsonldNode[] {
+  if (Array.isArray(value)) {
+    value.forEach(item => collectResolvables(item, found))
+  }
+  else if (value && typeof value === 'object') {
+    const node = value as JsonldNode
+    if (node['@id'] !== undefined || node.id !== undefined)
+      found.push(node)
+    Object.values(node).forEach(child => collectResolvables(child, found))
+  }
+  return found
+}
+
+const resolveNodeRef = (ref: unknown, graph: JsonldNode[]): JsonldNode | undefined =>
+  collectResolvables(graph).find(node => node['@id'] === ref || node.id === ref)
+
+/** Ids des structures référencées par un sh:node : ces nœuds sont des définitions, pas des entrées. */
+export function referencedStructureIds(value: unknown, found: Set<string> = new Set()): Set<string> {
+  if (Array.isArray(value)) {
+    value.forEach(item => referencedStructureIds(item, found))
+  }
+  else if (value && typeof value === 'object') {
+    const node = value as JsonldNode
+    const ref = node['sh:node']
+    if (typeof ref === 'string')
+      found.add(ref)
+    else if (ref && typeof ref === 'object')
+      found.add(String((ref as JsonldNode)['@id'] ?? (ref as JsonldNode).id ?? ''))
+    Object.values(node).forEach(child => referencedStructureIds(child, found))
+  }
+  return found
+}
 
 const engineFromLanguages = (languages: string[]): RuleEngine => {
   const lower = languages.map(l => l.toLowerCase())
@@ -191,8 +248,12 @@ export function adaptJsonldGraph(raw: string): JsonldAdaptation {
   const seen = new Set<string>()
   let boundaryQualified = false
   let hasStructureInputs = false
+  const structureDefinitions = referencedStructureIds(leaves.map(leaf => serviceInputs(leaf)))
   const boundaryDraft: RuleBoundaryInput[] = leaves.flatMap(leaf =>
     serviceInputs(leaf).flatMap((param) => {
+      // Définition de structure référencée ailleurs : pas une entrée en soi.
+      if (structureDefinitions.has(String(param['@id'] ?? '')))
+        return []
       // Structure composite (profil SHACL) : la frontière est portée par les champs
       // feuilles, pas par le conteneur.
       if (isStructureInput(param)) {
