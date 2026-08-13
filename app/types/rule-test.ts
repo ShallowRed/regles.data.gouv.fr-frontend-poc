@@ -17,6 +17,13 @@
 /** Valeur scalaire pouvant être passée en entrée d'une règle. */
 export type RuleTestValue = string | number | boolean | null
 
+/**
+ * Donnée de cas de test, scalaire ou structurée. Les moteurs à entités composées
+ * (structures Catala, entités OpenFisca) publient leurs cas dans leur forme native ;
+ * seuls les cas entièrement scalaires sont rejouables contre une API plate.
+ */
+export type RuleTestData = RuleTestValue | RuleTestData[] | { [key: string]: RuleTestData }
+
 /** Format natif du cas de test, dans l'espace de noms du moteur. */
 export type RuleTestNativeFormat
   = | 'openfisca-yaml'
@@ -35,11 +42,18 @@ export interface RuleTest {
   scenario: string
   /**
    * Entrées clés-valeurs à visée pédagogique (affichage). Optionnelles : la référence
-   * qui fait foi est le test natif (`nativeRef`), pas cette projection plate.
+   * qui fait foi est le test natif (`nativeRef`), pas cette projection. Les valeurs
+   * peuvent être structurées (forme native du moteur) ; seuls les cas entièrement
+   * scalaires sont rejouables automatiquement.
    */
-  inputs?: Record<string, RuleTestValue>
-  /** Résultat attendu affiché (montant, booléen, statut). */
-  expected?: RuleTestValue
+  inputs?: Record<string, RuleTestData>
+  /** Résultat attendu affiché (montant, booléen, statut, ou structure native). */
+  expected?: RuleTestData
+  /**
+   * À false, le cas est exclu du rejeu automatique (entrées plus acceptées par l'API,
+   * sémantique non exprimable...) ; le constat se documente dans `notes`.
+   */
+  replayable?: boolean
   /** Unité du résultat attendu si numérique (par exemple `EUR`, `mois`) */
   expectedUnit?: string
   /** Provenance du cas. */

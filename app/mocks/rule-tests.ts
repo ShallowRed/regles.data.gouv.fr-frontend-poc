@@ -12,7 +12,13 @@ import type { RuleTest } from '~/types'
  * Champs omis quand l'information n'est pas connue (pas de dossier réel inventé).
  */
 export const ruleTestsMock: RuleTest[] = [
-    {
+  /**
+   * Cas contribué par le producteur (branche prestagri-tests) : exemple de ce qui est
+   * attendu pour le test 4 de la suite Catala. Entrées et sortie dans la forme native
+   * du moteur (structures Catala) : non rejouable contre l'API plate, le test natif
+   * fait foi.
+   */
+  {
     id: 'prestagri-aide-scolarite4',
     ruleId: 'prestagri',
     label: 'Cas N°4 : logement separe, l\'adresse des parents est moins avantageuse',
@@ -22,7 +28,7 @@ export const ruleTestsMock: RuleTest[] = [
              'trajet_depuis_domicile_étudiant': {'Présent': {'distance_km': 32,
                                                  'durée_minutes': 20}},
              'valeur_point': 10.0,
-             'étudiant_en_filière_post_bac': False},
+             'étudiant_en_filière_post_bac': false},
     expected: {"critères_applicables": [
                         {"C2_domiciliation_séparée": "2"},
                         {"C3_éloignement_étudiant": "2"}],
@@ -33,46 +39,46 @@ export const ruleTestsMock: RuleTest[] = [
     validatedBy: 'API Prest\'Agri (calcul réel)',
     validatedAt: '2026-07-31',
     engineVersion: 'catala',
-    tags: '',
+    tags: ['aide-scolarite'],
     nativeFormat: 'catala-assert',
     nativeRef: 'https://github.com/betagouv/prestagri/tree/478b3cc2ab28299c73b94fdd192b0559ae5873b8/catala',
-    notes: 'Validé contre l\'API le 2026-07-31 ; l\'API a depuis changé de schéma de paramètres (dérive détectée le 2026-07-08).',
+    notes: 'Validé contre l\'API le 2026-07-31. Les champs vides seront demandés à l\'utilisateur.',
   },
-/** Premier test - est un example de ce qu'on aimerait avoir pour le test 4 de catala. Les champs vides seront demandés à l'utilisateur */
   {
     id: 'prestagri-qf-couple-2-enfants',
     ruleId: 'prestagri',
     label: 'Agent seul, 30 000 € de revenu, 2 enfants',
     scenario: 'Quotient familial d\'un agent au revenu fiscal de référence de 30 000 € avec 2 enfants à charge.',
-    inputs: { agent_revenu: 30000, agent_enfants: 2 },
+    inputs: { foyer_fiscal_agent_revenu: 30000, foyer_fiscal_agent_membres: 3 },
     expected: '833.33',
     expectedUnit: 'EUR',
     source: 'administration',
     status: 'valide',
     validatedBy: 'API Prest\'Agri (calcul réel)',
-    validatedAt: '2026-07-07',
+    validatedAt: '2026-08-13',
     engineVersion: 'prestagri 0.1.0',
     tags: ['quotient-familial', 'agent-public'],
     nativeFormat: 'catala-assert',
     nativeRef: 'https://github.com/betagouv/prestagri/tree/478b3cc2ab28299c73b94fdd192b0559ae5873b8/catala',
-    notes: 'Validé contre l\'API le 2026-07-07 ; l\'API a depuis changé de schéma de paramètres (dérive détectée le 2026-07-08).',
+    notes: 'Migré vers le schéma composite de l\'API (dérive détectée le 2026-07-08) : foyer_fiscal_agent_membres = agent + enfants à charge. Revalidé le 2026-08-13, même résultat.',
   },
   {
     id: 'prestagri-qf-parent-isole',
     ruleId: 'prestagri',
     label: 'Même situation, parent isolé',
     scenario: 'La majoration parent isolé ajoute une unité au foyer : le quotient familial baisse de 833,33 € à 625 €.',
-    inputs: { agent_revenu: 30000, agent_enfants: 2, parent_isole: true },
+    inputs: { foyer_fiscal_agent_revenu: 30000, foyer_fiscal_agent_membres: 3, parent_isole: true },
     expected: '625.0',
     expectedUnit: 'EUR',
     source: 'administration',
     status: 'valide',
     validatedBy: 'API Prest\'Agri (calcul réel)',
-    validatedAt: '2026-07-07',
+    validatedAt: '2026-08-13',
     engineVersion: 'prestagri 0.1.0',
     tags: ['quotient-familial', 'parent-isole'],
     nativeFormat: 'catala-assert',
     nativeRef: 'https://github.com/betagouv/prestagri/tree/478b3cc2ab28299c73b94fdd192b0559ae5873b8/catala',
+    notes: 'Migré vers le schéma composite de l\'API et revalidé le 2026-08-13 : le critère parent isolé (+1 part, case T) est porté par le paramètre parent_isole. Même résultat que la validation du 2026-07-07.',
   },
   {
     id: 'droit-vote-cas-nominal',
