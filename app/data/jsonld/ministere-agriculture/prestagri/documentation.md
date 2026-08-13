@@ -35,13 +35,13 @@ Calcule le montant de l'aide à la scolarité (fiche F16) à partir du quotient 
 
 | Paramètre | Type | Obligatoire | Définition |
 |-----------|------|-------------|------------|
-| **Revenu de l'agent**<br>`quotient-familial` | nombre entier | obligatoire | Revenu fiscal de référence annuel de l'agent, en euros. |
-| **Adresse de l'établissement**<br>`montant_matériel_spécifique` | chaîne de caractères | obligatoire | Adresse de l'établissement scolaire ou universitaire fréquenté par l'enfant. |
-| **Revenu du conjoint**<br>`étudiant_en_filière_post_bac` | nombre entier | optionnel | Revenu fiscal de référence annuel du conjoint, en euros. |
+| **Quotient familial**<br>`quotient-familial` | nombre entier | obligatoire | Quotient familial du foyer, issu du service de calcul du quotient familial. |
+| **Montant du matériel spécifique**<br>`montant_matériel_spécifique` | nombre décimal | obligatoire | Montant du matériel spécifique, en euros. |
+| **Étudiant en filière post-bac**<br>`étudiant_en_filière_post_bac` | booléen (oui/non) | optionnel | L'étudiant est inscrit dans une filière post-bac. |
 | **Trajet depuis domicile agent · Distance**<br>`trajet_depuis_domicile_agent.distance_km` | nombre entier | obligatoire | Distance (en km) |
 | **Trajet depuis domicile agent · Durée**<br>`trajet_depuis_domicile_agent.durée_minutes` | nombre entier | obligatoire | Durée (en minutes) |
-| **Trajet depuis domicile agent · Distance**<br>`trajet_depuis_domicile_étudiant.distance_km` | nombre entier | obligatoire | Distance (en km) |
-| **Trajet depuis domicile agent · Durée**<br>`trajet_depuis_domicile_étudiant.durée_minutes` | nombre entier | obligatoire | Durée (en minutes) |
+| **Trajet depuis domicile étudiant · Distance**<br>`trajet_depuis_domicile_étudiant.distance_km` | nombre entier | obligatoire | Distance (en km) |
+| **Trajet depuis domicile étudiant · Durée**<br>`trajet_depuis_domicile_étudiant.durée_minutes` | nombre entier | obligatoire | Durée (en minutes) |
 
 ### Sorties
 

@@ -142,9 +142,9 @@
         { "id": "https://github.com/betagouv/prestagri/blob/478b3cc2ab28299c73b94fdd192b0559ae5873b8/backend/app/api/default.py#read_quotient_familial_aide_scolarite" }
       ],
       "cv:hasInput": [
-        { "@type": "cprmv:Parameter", "dct:identifier": "quotient-familial", "dct:title": "Revenu de l'agent", "cprmv:definition": "Revenu fiscal de référence annuel de l'agent, en euros.", "cprmv:type": "xsd:integer", "schema:valueRequired": true },
-        { "@type": "cprmv:Parameter", "dct:identifier": "montant_matériel_spécifique", "dct:title": "Adresse de l'établissement", "cprmv:definition": "Adresse de l'établissement scolaire ou universitaire fréquenté par l'enfant.", "cprmv:type": "xsd:string", "schema:valueRequired": true },
-        { "@type": "cprmv:Parameter", "dct:identifier": "étudiant_en_filière_post_bac", "dct:title": "Revenu du conjoint", "cprmv:definition": "Revenu fiscal de référence annuel du conjoint, en euros.", "cprmv:type": "xsd:integer", "schema:valueRequired": false },
+        { "@type": "cprmv:Parameter", "dct:identifier": "quotient-familial", "dct:title": "Quotient familial", "cprmv:definition": "Quotient familial du foyer, issu du service de calcul du quotient familial.", "cprmv:type": "xsd:integer", "schema:valueRequired": true },
+        { "@type": "cprmv:Parameter", "dct:identifier": "montant_matériel_spécifique", "dct:title": "Montant du matériel spécifique", "cprmv:definition": "Montant du matériel spécifique, en euros.", "cprmv:type": "xsd:decimal", "schema:valueRequired": true },
+        { "@type": "cprmv:Parameter", "dct:identifier": "étudiant_en_filière_post_bac", "dct:title": "Étudiant en filière post-bac", "cprmv:definition": "L'étudiant est inscrit dans une filière post-bac.", "cprmv:type": "xsd:boolean", "schema:valueRequired": false },
         { 
           "@type": "cprmv:Structure", 
           "dct:identifier": "trajet_depuis_domicile_agent",
@@ -158,7 +158,7 @@
         { 
           "@type": "cprmv:Structure", 
           "dct:identifier": "trajet_depuis_domicile_étudiant",
-          "dct:title": "Trajet depuis domicile agent",
+          "dct:title": "Trajet depuis domicile étudiant",
           "sh:path": "cprmv:trajet",
           "sh:node": "ex:structure/trajet",
           "sh:class": "cprmv:Trajet",
