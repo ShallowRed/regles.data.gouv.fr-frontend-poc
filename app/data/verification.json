@@ -1,6 +1,6 @@
 {
   "checkedAt": "2026-08-13",
-  "method": "rejeu des cas plats de l'enveloppe (rest-get + openfisca-post) + contrôle de dérive fiche/API (champs feuilles pour les fiches composites), adossé par testId aux cas datés/versionnés ; cas natifs structurés non rejoués (le test natif fait foi)",
+  "method": "rejeu des cas plats de l'enveloppe (rest-get + openfisca-post + publicodes-node) + contrôle de dérive fiche/API (champs feuilles pour les fiches composites), adossé par testId aux cas datés/versionnés ; cas natifs structurés non rejoués (le test natif fait foi)",
   "schemaChecks": [
     {
       "ruleId": "prestagri",
@@ -54,6 +54,50 @@
       "period": "2025-03",
       "engineVersion": "france-169.15.0",
       "url": "https://api.fr.openfisca.org/latest/calculate (POST, ppa 2025-03)"
+    },
+    {
+      "ruleId": "entreprise-innovation",
+      "testId": "cir-bareme-metropole-100k",
+      "label": "Industrielle au réel, 100 000 € de dépenses",
+      "expected": 30000,
+      "got": 30000,
+      "status": "conforme",
+      "period": null,
+      "engineVersion": "publicodes 1.10.1 + règles fc8e9a8",
+      "url": "moteur embarqué (cir . montant)"
+    },
+    {
+      "ruleId": "entreprise-innovation",
+      "testId": "cir-bareme-metropole-150m",
+      "label": "Industrielle au réel, 150 M€ de dépenses",
+      "expected": 32500000,
+      "got": 32500000,
+      "status": "conforme",
+      "period": null,
+      "engineVersion": "publicodes 1.10.1 + règles fc8e9a8",
+      "url": "moteur embarqué (cir . montant)"
+    },
+    {
+      "ruleId": "entreprise-innovation",
+      "testId": "cir-non-eligible-artisanale-bnc",
+      "label": "Artisanale, revenus BNC : non éligible",
+      "expected": false,
+      "got": false,
+      "status": "conforme",
+      "period": null,
+      "engineVersion": "publicodes 1.10.1 + règles fc8e9a8",
+      "url": "moteur embarqué (cir . eligibilite)"
+    },
+    {
+      "ruleId": "entreprise-innovation",
+      "testId": "cico-contrat-ordc-non",
+      "label": "CICo sans contrat ORDC : non éligible",
+      "expected": false,
+      "got": false,
+      "status": "conforme",
+      "period": null,
+      "engineVersion": "publicodes 1.10.1 + règles fc8e9a8",
+      "url": "moteur embarqué (cico . eligibilite)"
     }
   ]
 }

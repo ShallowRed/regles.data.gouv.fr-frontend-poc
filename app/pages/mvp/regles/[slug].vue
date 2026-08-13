@@ -1173,7 +1173,7 @@ useHead(() => ({ title: title.value }))
                       class="fr-text--sm mb-0 text-gray-700 m-0"
                     >
                       {{ autoVerification.passing }}/{{ autoVerification.total }} cas rejoués conformes
-                      contre l'API déclarée dans la fiche.
+                      contre le moteur du producteur.
                     </p>
                   </div>
 

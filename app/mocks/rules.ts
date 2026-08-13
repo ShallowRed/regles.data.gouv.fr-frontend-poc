@@ -120,6 +120,7 @@ const entrepriseInnovation: Rule = {
   capabilities: {
     hasCalculationPreview: true,
     hasLegalTraceability: true,
+    hasPublicTestCases: true,
   },
   certificationRegime: 'frontiere',
   boundary: [

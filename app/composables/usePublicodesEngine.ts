@@ -28,6 +28,11 @@ const ruleSources = import.meta.glob('../data/publicodes/entreprise-innovation/*
 
 export interface PublicodesResult {
   value: string | number | boolean | null | undefined
+  /**
+   * Variables que le moteur signale comme non renseignées pour conclure
+   * (sortie native `missingVariables`, noms dans l'espace du producteur).
+   */
+  missingVariables: string[]
 }
 
 let engineInstance: Engine | null = null
@@ -59,7 +64,10 @@ export function usePublicodesEngine() {
       engine.setSituation(situation)
       return Object.fromEntries(targets.map((target) => {
         const node = engine.evaluate(target)
-        return [target, { value: node.nodeValue } satisfies PublicodesResult]
+        return [target, {
+          value: node.nodeValue,
+          missingVariables: Object.keys(node.missingVariables ?? {}),
+        } satisfies PublicodesResult]
       }))
     }
     catch {

@@ -7,9 +7,11 @@
  * moteur). Pour chaque règle vérifiable, le script :
  *
  *   1. Rejoue les cas de l'enveloppe contre le moteur réel du producteur et compare au
- *      résultat attendu. Deux modes : `rest-get` (API GET pilotée par la fiche, ex. Prest'Agri)
- *      et `openfisca-post` (situation OpenFisca assemblée depuis le engineProfile, ex. prime
- *      d'activité). Chaque résultat porte la période et la version de moteur du cas.
+ *      résultat attendu. Trois modes : `rest-get` (API GET pilotée par la fiche, ex. Prest'Agri),
+ *      `openfisca-post` (situation OpenFisca assemblée depuis le engineProfile, ex. prime
+ *      d'activité) et `publicodes-node` (moteur embarqué sur les règles vendorées au SHA,
+ *      variable cible portée par l'enveloppe, ex. aides à l'innovation). Chaque résultat
+ *      porte la période et la version de moteur du cas.
  *   2. Pour les API `rest-get`, contrôle de dérive fiche/API : paramètres DÉCLARÉS dans la
  *      fiche vs ACCEPTÉS par l'API (openapi.json). Détecte un producteur qui change son API
  *      sans mettre à jour sa fiche.
@@ -21,7 +23,7 @@
  * Usage : pnpm verify:rules
  */
 
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
@@ -40,6 +42,10 @@ const verifiable = {
   'prime-activite-openfisca': {
     kind: 'openfisca-post',
     api: 'https://api.fr.openfisca.org/latest/calculate',
+  },
+  'entreprise-innovation': {
+    kind: 'publicodes-node',
+    rulesDir: 'app/data/publicodes/entreprise-innovation',
   },
 }
 
@@ -122,6 +128,27 @@ async function replayRestGet(endpoint, test) {
   return { got: body.value ?? null, ok: response.ok, url }
 }
 
+/**
+ * Moteur Publicodes construit depuis les règles vendorées - même chargement que le front
+ * (usePublicodesEngine) : le rejeu et l'aperçu de calcul évaluent les mêmes fichiers.
+ */
+async function buildPublicodesEngine(rulesDir) {
+  const { default: Engine } = await import('publicodes')
+  const { parse } = await import('yaml')
+  const dir = join(root, rulesDir)
+  const rules = {}
+  for (const file of readdirSync(dir).filter(f => f.endsWith('.publicodes')))
+    Object.assign(rules, parse(readFileSync(join(dir, file), 'utf8')))
+  return new Engine(rules, { logger: { log: () => {}, warn: () => {}, error: () => {} } })
+}
+
+/** Rejoue un cas dans le moteur Publicodes embarqué (variable cible portée par l'enveloppe). */
+function replayPublicodes(engine, test) {
+  engine.setSituation(test.inputs)
+  const node = engine.evaluate(test.targetVariable)
+  return { got: node.nodeValue, ok: true, url: `moteur embarqué (${test.targetVariable})` }
+}
+
 /** Rejoue un cas contre OpenFisca (situation assemblée, ppa extraite). */
 async function replayOpenfiscaPost(api, test) {
   const request = buildPrimeActiviteRequest(test.inputs.salaire_de_base, test.period)
@@ -177,6 +204,10 @@ for (const [ruleId, config] of Object.entries(verifiable)) {
     }
   }
 
+  const publicodesEngine = config.kind === 'publicodes-node'
+    ? await buildPublicodesEngine(config.rulesDir)
+    : null
+
   // Rejeu des cas de l'enveloppe portant une projection plate exécutable. Les cas aux
   // entrées structurées (forme native du moteur) et les cas marqués `replayable: false`
   // sont documentés par l'enveloppe, pas rejoués : le test natif fait foi.
@@ -192,9 +223,11 @@ for (const [ruleId, config] of Object.entries(verifiable)) {
     let got = null
     let url = null
     try {
-      const replay = config.kind === 'openfisca-post'
-        ? await replayOpenfiscaPost(config.api, test)
-        : await replayRestGet(endpoint, test)
+      const replay = config.kind === 'publicodes-node'
+        ? replayPublicodes(publicodesEngine, test)
+        : config.kind === 'openfisca-post'
+          ? await replayOpenfiscaPost(config.api, test)
+          : await replayRestGet(endpoint, test)
       got = replay.got
       url = replay.url
       status = replay.ok && matches(got, test.expected) ? 'conforme' : 'echec'
@@ -221,7 +254,7 @@ for (const [ruleId, config] of Object.entries(verifiable)) {
 
 const verification = {
   checkedAt: new Date().toISOString().slice(0, 10),
-  method: 'rejeu des cas plats de l\'enveloppe (rest-get + openfisca-post) + contrôle de dérive fiche/API (champs feuilles pour les fiches composites), adossé par testId aux cas datés/versionnés ; cas natifs structurés non rejoués (le test natif fait foi)',
+  method: 'rejeu des cas plats de l\'enveloppe (rest-get + openfisca-post + publicodes-node) + contrôle de dérive fiche/API (champs feuilles pour les fiches composites), adossé par testId aux cas datés/versionnés ; cas natifs structurés non rejoués (le test natif fait foi)',
   schemaChecks,
   results: caseResults,
 }
