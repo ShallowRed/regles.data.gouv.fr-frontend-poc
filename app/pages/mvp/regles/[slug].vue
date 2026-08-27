@@ -132,8 +132,8 @@ const availableServices = computed(() => {
   if (c.hasPublicTestCases) {
     services.push({
       icon: 'fr-icon-checkbox-circle-line',
-      label: 'Vérifier sur des cas',
-      description: 'Consulter les cas de test publiés par le producteur.',
+      label: 'Consulter les cas de tests',
+      description: 'Situations types et résultats attendus, publiés par le producteur.',
       tab: 'tests',
     })
   }
@@ -645,7 +645,7 @@ useHead(() => ({ title: title.value }))
               <aside class="space-y-5">
                 <div class="border border-gray-200 rounded">
                   <h2 class="fr-text--sm mb-0 font-bold uppercase tracking-wide text-gray-700 m-0 px-4 py-3 border-b border-gray-200">
-                    Métadonnées principales
+                    Informations
                   </h2>
                   <dl class="m-0 p-0 divide-y divide-gray-100">
                     <div class="px-4 py-3">
@@ -747,8 +747,7 @@ useHead(() => ({ title: title.value }))
                     Bases légales
                   </h2>
                   <p class="fr-text--sm text-gray-700 m-0">
-                    Les textes officiels qui fondent cette règle. Chaque référence renvoie
-                    à sa source consolidée sur Légifrance.
+                    Les textes officiels qui fondent cette règle.
                   </p>
                 </div>
 
