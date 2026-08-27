@@ -590,13 +590,15 @@ useHead(() => ({ title: title.value }))
                   v-if="rule.operationalMappings?.length"
                   class="space-y-3"
                 >
-                  <h2 class="fr-h6 m-0">
-                    Mappings opérationnels recensés
-                  </h2>
-                  <p class="fr-text--sm text-gray-600 m-0 max-w-2xl">
-                    Le catalogue ne rédige pas de dictionnaire de correspondances : il recense des
-                    mappings qui tournent, avec leur mainteneur et leur statut d'intégration continue.
-                  </p>
+                  <div class="flex items-center gap-2">
+                    <h2 class="fr-h6 m-0">
+                      Correspondances recensées
+                    </h2>
+                    <HintPopover
+                      text="Tables de passage maintenues par des réutilisateurs, entre le format d'un service et les entrées de la règle."
+                      label="Que sont les correspondances ?"
+                    />
+                  </div>
                   <ul class="list-none p-0 m-0 space-y-2">
                     <li
                       v-for="mapping in rule.operationalMappings"
@@ -613,8 +615,8 @@ useHead(() => ({ title: title.value }))
                         {{ mapping.label }}
                       </NuxtLink>
                       <span class="block fr-text--xs text-gray-600 mt-1 mb-0">
-                        {{ mapping.from }} → {{ mapping.to }} · maintenu par {{ mapping.maintainedBy }}
-                        <template v-if="mapping.ciStatus && mapping.ciStatus !== 'unknown'"> · CI : {{ mapping.ciStatus === 'passing' ? 'au vert' : 'en échec' }}</template>
+                        Maintenu par {{ mapping.maintainedBy }}
+                        <template v-if="mapping.ciStatus && mapping.ciStatus !== 'unknown'"> · tests automatiques {{ mapping.ciStatus === 'passing' ? 'au vert' : 'en échec' }}</template>
                       </span>
                     </li>
                   </ul>
@@ -626,10 +628,7 @@ useHead(() => ({ title: title.value }))
                   class="border border-dashed border-gray-300 rounded p-3"
                 >
                   <summary class="fr-text--xs mb-0 text-gray-600 cursor-pointer">
-                    Note technique : champs sans équivalent dans la fiche source
-                    <template v-if="rule.metadataSourcePath">
-                      ({{ rule.metadataSourcePath }})
-                    </template>
+                    Note technique : champs du référencement absents de la fiche du producteur
                   </summary>
                   <ul class="fr-text--xs text-gray-600 mt-2 mb-0 pl-5 space-y-1">
                     <li
@@ -706,7 +705,7 @@ useHead(() => ({ title: title.value }))
                   <p class="fr-text--xs mb-0 text-gray-700 m-0">
                     {{ rule.opposability === 'opposable'
                       ? 'Cette modélisation fait foi : un agent ou un usager peut s\'en prévaloir.'
-                      : 'Aide à la lecture du droit, sans valeur de décision. La décision opposable reste prise par l\'administration.' }}
+                      : 'Aide à la lecture du droit. La décision reste prise par l\'administration.' }}
                   </p>
                 </div>
                 <div

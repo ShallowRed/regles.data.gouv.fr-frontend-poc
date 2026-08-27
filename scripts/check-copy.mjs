@@ -29,6 +29,7 @@ const PATTERNS = [
   { name: 'antithèse « n\'est pas X mais/c\'est Y »', regex: /n(?:'|’)est pas [^.!?]{0,60}\b(?:mais|c(?:'|’)est)/i },
   { name: 'antithèse « ne sont pas X mais Y »', regex: /ne sont pas [^.!?]{0,60}\bmais/i },
   { name: 'antithèse « non pas »', regex: /\bnon pas\b/i },
+  { name: 'antithèse par négation verbale « ne rédige/réinterprète/recopie pas »', regex: /\bne (?:rédige|réinterprète|recopie|remplace) pas\b/i },
   { name: 'négation défensive « sans jamais »', regex: /\bsans jamais\b/i },
   { name: 'négation défensive « aucun porteur »', regex: /\baucune? porteur/i },
   { name: 'doctrine « fait foi »', regex: /fait foi/i },
