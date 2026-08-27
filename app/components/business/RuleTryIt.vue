@@ -9,8 +9,6 @@ import type { FicheForm } from '~/utils/fiche-form'
 
 const props = defineProps<{
   form: FicheForm
-  /** Chemin de la fiche source, affiché pour ancrer la démonstration. */
-  sourcePath?: string
 }>()
 
 /** Vue caste les input type=number en nombre dans le v-model : le champ peut porter les trois types. */
@@ -98,6 +96,7 @@ async function run() {
     </div>
 
     <form
+      v-if="!form.compositeWithoutMapping"
       class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3"
       @submit.prevent="run"
     >
@@ -173,7 +172,7 @@ async function run() {
         v-if="result.explanation"
         class="fr-text--sm mb-0 text-gray-700 m-0"
       >
-        Trace d'explication : <code class="fr-text--xs">{{ result.explanation }}</code>
+        Détail du calcul : <code class="fr-text--xs">{{ result.explanation }}</code>
       </p>
       <p
         v-if="calledUrl"
@@ -203,13 +202,6 @@ async function run() {
       class="fr-text--sm mb-0 text-[#ce0500] m-0"
     >
       L'appel à l'API a échoué ({{ requestError }}). L'API du producteur est peut-être indisponible.
-    </p>
-
-    <p
-      v-if="sourcePath"
-      class="fr-text--xs mb-0 text-gray-500 m-0"
-    >
-      Source&nbsp;: <code class="fr-text--xs">{{ sourcePath }}</code>.
     </p>
   </div>
 </template>

@@ -43,7 +43,7 @@ export const rulePreviewsMock: Record<string, RulePreview> = {
       {
         label: 'Quotient familial = revenu / (12 × unités)',
         value: '30 000,00 / (12 × 3,0) = 833,33 €',
-        source: 'Trace d\'explication renvoyée par l\'API Prest\'Agri (règles Catala) : « 30000.00/ (12 x 3.0) »',
+        source: 'Détail renvoyé par l\'API Prest\'Agri : « 30000.00 / (12 × 3.0) »',
       },
     ],
   },

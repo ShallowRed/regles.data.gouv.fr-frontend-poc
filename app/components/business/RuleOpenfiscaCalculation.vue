@@ -8,16 +8,15 @@
  * `engineProfile` de la fiche (entités individu/famille/foyer_fiscal/menage, périodes),
  * pas depuis le socle commun de métadonnées.
  */
-import { buildPrimeActiviteRequest, referenceQuarter } from '~/utils/openfisca/build-request'
+import { buildPrimeActiviteRequest } from '~/utils/openfisca/build-request'
 
 defineProps<{
-  /** Entités déclarées dans le engineProfile de la fiche, affichées pour ancrer la démonstration. */
-  entities?: string[]
   sourceUrl?: string
 }>()
 
 /** Mois de référence figé (validé contre les paramètres OpenFisca France). */
 const TARGET_MONTH = '2025-03'
+const TARGET_MONTH_LABEL = new Date(`${TARGET_MONTH}-01`).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
 /**
  * Instance OpenFisca visée. L'API publique convient au POC ; une instance dédiée
  * (ex. celle d'aides-simplifiées) donnerait davantage de garanties de disponibilité.
@@ -28,8 +27,6 @@ const salaireMensuel = ref(1000)
 const pending = ref(false)
 const requestError = ref<string | null>(null)
 const ppa = ref<number | null>(null)
-
-const quarter = computed(() => referenceQuarter(TARGET_MONTH))
 
 async function calculate() {
   pending.value = true
@@ -68,9 +65,6 @@ const formattedPpa = computed(() =>
       <p class="fr-badge fr-badge--sm fr-badge--blue-cumulus m-0">
         Calculé par openfisca-france
       </p>
-      <span class="fr-text--xs mb-0 text-gray-600">
-        Calculé par l'API openfisca-france
-      </span>
     </div>
 
     <div class="flex flex-wrap items-end gap-4">
@@ -82,7 +76,7 @@ const formattedPpa = computed(() =>
           Salaire net mensuel
         </label>
         <p class="fr-text--xs mb-0 text-gray-500 m-0">
-          Étalé sur le trimestre de référence ({{ quarter.join(', ') }})
+          Étalé sur le trimestre de référence
         </p>
         <input
           id="of-salaire"
@@ -106,14 +100,13 @@ const formattedPpa = computed(() =>
       class="rounded border border-gray-200 bg-gray-50 p-4 space-y-2"
     >
       <p class="fr-text--xs uppercase tracking-wide text-gray-500 m-0">
-        Prime d'activité pour {{ TARGET_MONTH }}
+        Prime d'activité pour {{ TARGET_MONTH_LABEL }}
       </p>
       <p class="text-lg font-semibold text-blue-900 m-0">
         {{ formattedPpa }} €
       </p>
       <p class="fr-text--xs mb-0 text-gray-600 m-0">
-        Variable <code class="fr-text--xs">ppa</code> (entité <code class="fr-text--xs">famille</code>),
-        calculée par openfisca-france à partir des ressources du trimestre.
+        Estimation à partir des ressources du trimestre de référence.
       </p>
     </div>
     <p
@@ -124,23 +117,12 @@ const formattedPpa = computed(() =>
     </p>
 
     <div
-      v-if="entities?.length"
+      v-if="sourceUrl"
       class="border-t border-gray-100 pt-3"
     >
       <p class="fr-text--xs mb-0 text-gray-500 m-0">
-        Situation assemblée selon le profil moteur de la fiche&nbsp;: entités
-        <template
-          v-for="(entity, i) in entities"
-          :key="entity"
-        >
-          <template v-if="i > 0">
-            ,
-          </template><code class="fr-text--xs">{{ entity }}</code>
-        </template>.
-        Le socle commun de métadonnées ne porte ni entités ni périodes&nbsp;: elles vivent
-        dans le bloc moteur.
+        Source&nbsp;:
         <a
-          v-if="sourceUrl"
           :href="sourceUrl"
           target="_blank"
           rel="noopener"

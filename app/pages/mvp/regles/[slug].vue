@@ -770,16 +770,9 @@ useHead(() => ({ title: title.value }))
                 v-else-if="activeTab === 'simulation'"
                 class="space-y-6"
               >
-                <div class="space-y-2 max-w-2xl">
-                  <h2 class="fr-h5 m-0">
-                    Aperçu de calcul
-                  </h2>
-                  <p class="fr-text--sm mb-0 text-gray-700 m-0">
-                    Un cas d'exemple illustre le résultat de la règle et le détail de son
-                    calcul, étape par étape. Le résultat est <strong>indicatif</strong>&nbsp;:
-                    la décision opposable reste prise par l'administration productrice.
-                  </p>
-                </div>
+                <h2 class="fr-h5 m-0">
+                  Aperçu de calcul
+                </h2>
 
                 <!-- Aperçu exécuté en direct : moteur Publicodes chargé dans la page -->
                 <RuleLiveCalculation
@@ -791,7 +784,6 @@ useHead(() => ({ title: title.value }))
                 <!-- Régime implémentation : calcul délégué au moteur du producteur (OpenFisca) -->
                 <RuleOpenfiscaCalculation
                   v-else-if="rule.slug === 'prime-activite-openfisca'"
-                  :entities="(rule.engineProfile?.openfisca?.entities as string[] | undefined)"
                   :source-url="rule.sourceUrl"
                 />
 
@@ -831,7 +823,6 @@ useHead(() => ({ title: title.value }))
                   <RuleTryIt
                     v-if="tryItForm"
                     :form="tryItForm"
-                    :source-path="rule.metadataSourcePath"
                   />
 
                   <p

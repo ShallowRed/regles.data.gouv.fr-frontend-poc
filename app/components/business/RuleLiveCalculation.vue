@@ -177,7 +177,7 @@ const explanation = computed<ExplanationNode[]>(() => {
             for="live-regime-fiscal"
           >
             Régime fiscal
-            <span class="fr-hint-text">Variable « regimeFiscal » : le régime micro fait tomber l'éligibilité</span>
+            <span class="fr-hint-text">Le régime micro fait tomber l'éligibilité</span>
           </label>
           <select
             id="live-regime-fiscal"
@@ -200,7 +200,7 @@ const explanation = computed<ExplanationNode[]>(() => {
               for="live-depenses-metropole"
             >
               Dépenses de recherche éligibles (métropole)
-              <span class="fr-hint-text">Variable « cir . depensesMetropole », en euros</span>
+              <span class="fr-hint-text">En euros</span>
             </label>
             <input
               id="live-depenses-metropole"
@@ -217,7 +217,7 @@ const explanation = computed<ExplanationNode[]>(() => {
               for="live-depenses-dom"
             >
               Dépenses de recherche éligibles (outre-mer)
-              <span class="fr-hint-text">Variable « cir . depensesDom », en euros</span>
+              <span class="fr-hint-text">En euros</span>
             </label>
             <input
               id="live-depenses-dom"
@@ -245,8 +245,7 @@ const explanation = computed<ExplanationNode[]>(() => {
         class="rounded border border-gray-200 bg-white p-3"
       >
         <p class="fr-text--xs mb-0 text-gray-600 m-0 mb-2">
-          Le moteur signale des informations non renseignées dans cet aperçu
-          (elles affineraient le montant) :
+          Informations non renseignées dans cet aperçu, qui affineraient le montant :
         </p>
         <ul class="flex flex-wrap gap-1 list-none p-0 m-0">
           <li
