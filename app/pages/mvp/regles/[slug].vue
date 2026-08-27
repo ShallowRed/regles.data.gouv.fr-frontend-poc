@@ -12,26 +12,29 @@ const engineTag = computed(() => (rule.value ? engineTagFor(rule.value) : null))
 
 const primaryReference = computed(() => rule.value?.legalReferences[0])
 
-/** Métadonnées d'affichage du régime de certification (doctrine : plusieurs régimes assumés). */
-const regimeMeta = computed(() => {
+/** Tag du régime de certification, rendu comme ses voisins (axe : valeur + hint). */
+const regimeTag = computed(() => {
   const regime = rule.value?.certificationRegime
   if (!regime)
     return null
   const meta = {
     frontiere: {
-      label: 'Certifiable à la frontière',
-      badgeClass: 'fr-badge--green-emeraude',
-      hint: 'L\'administration certifie le comportement de la règle sur les faits déclarés, à une version donnée.',
+      axis: 'résultats',
+      value: 'certifiés',
+      tone: 'green',
+      hint: 'L\'administration certifie le résultat de la règle sur les faits déclarés, à une version donnée.',
     },
     implementation: {
-      label: 'Cataloguée comme implémentation',
-      badgeClass: 'fr-badge--blue-cumulus',
-      hint: 'Règle vérifiée par sa suite de tests, sur une version datée de son implémentation.',
+      axis: 'résultats',
+      value: 'testés',
+      tone: 'blue',
+      hint: 'Le calcul est contrôlé par la suite de tests de la règle, à chaque version publiée.',
     },
     referencement: {
-      label: 'Simplement référencée',
-      badgeClass: 'fr-badge--grey',
-      hint: 'Métadonnées descriptives ; code et cas de tests non publiés.',
+      axis: 'résultats',
+      value: 'non vérifiés',
+      tone: 'grey',
+      hint: 'Fiche descriptive seule : le code et les cas de tests ne sont pas publiés.',
     },
   } as const
   return meta[regime]
@@ -301,16 +304,7 @@ const integrationModes = computed(() => {
   return modes
 })
 
-function formatDate(s: string | undefined): string {
-  if (!s)
-    return '-'
-  try {
-    return new Date(s).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })
-  }
-  catch {
-    return s
-  }
-}
+const formatDate = formatDateFr
 
 const title = computed(() => (rule.value ? `${rule.value.title} | Catalogue des règles` : 'Règle introuvable'))
 useHead(() => ({ title: title.value }))
@@ -384,14 +378,13 @@ useHead(() => ({ title: title.value }))
                 :hint="engineTag.hint"
               />
             </li>
-            <li v-if="regimeMeta">
-              <p
-                class="fr-badge fr-badge--sm m-0"
-                :class="regimeMeta.badgeClass"
-                :title="regimeMeta.hint"
-              >
-                {{ regimeMeta.label }}
-              </p>
+            <li v-if="regimeTag">
+              <QualifiedTag
+                :axis="regimeTag.axis"
+                :value="regimeTag.value"
+                :tone="regimeTag.tone"
+                :hint="regimeTag.hint"
+              />
             </li>
             <!-- <li class="fr-text--xs mb-0 fr-m-0 text-gray-500 ml-1">v{{ rule.version }}</li> -->
           </ul>
@@ -1108,18 +1101,18 @@ useHead(() => ({ title: title.value }))
 
               <section
                 v-else-if="activeTab === 'tests'"
-                class="space-y-6"
+                class="space-y-6 max-w-3xl"
               >
-                <div class="flex flex-wrap items-baseline justify-between gap-2 max-w-2xl">
+                <div class="flex items-center gap-2">
                   <h2 class="fr-h5 m-0">
                     Cas de tests
                   </h2>
-                  <NuxtLink
-                    to="/mvp/comprendre/verifier-une-regle"
-                    class="fr-link fr-text--sm"
-                  >
-                    Comprendre la vérification
-                  </NuxtLink>
+                  <HintPopover
+                    text="Situations types et résultats attendus, fournis par le producteur. Le catalogue contrôle automatiquement que le calcul les respecte."
+                    label="À quoi servent les cas de tests ?"
+                    more-to="/mvp/comprendre/verifier-une-regle"
+                    more-label="Comprendre la vérification"
+                  />
                 </div>
 
                 <template v-if="tests.length">

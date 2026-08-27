@@ -37,7 +37,7 @@ export const ruleTestsMock: RuleTest[] = [
     tags: ['aide-scolarite'],
     nativeFormat: 'catala-assert',
     nativeRef: 'https://github.com/betagouv/prestagri/tree/478b3cc2ab28299c73b94fdd192b0559ae5873b8/catala',
-    notes: 'Validé contre l\'API le 2026-07-31. Les champs vides seront demandés à l\'utilisateur.',
+    notes: 'Les champs vides seront demandés à l\'utilisateur.',
   },
   {
     id: 'prestagri-qf-couple-2-enfants',

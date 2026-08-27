@@ -2,35 +2,31 @@
 /**
  * Carte d'un cas de test attaché à une règle.
  *
- * Le test natif (format du moteur, lié par `nativeRef`) fait foi ; la carte présente
- * l'enveloppe normée par le catalogue (intention, provenance, validateur, statut) et,
- * quand elle existe, la projection pédagogique plate (inputs / résultat attendu).
+ * Composition : titre + statut en tête, données (entrées / résultat attendu)
+ * dans un panneau, provenance condensée en pied de carte sur une ligne.
  */
 import type { RuleTest } from '~/types/rule-test'
 
 const props = defineProps<{
   test: RuleTest
-  /** Résultat du dernier rejeu automatique (pnpm verify:rules), adossé à ce cas par testId. */
+  /** Résultat du dernier contrôle automatique (pnpm verify:rules), adossé à ce cas par testId. */
   verification?: { status: string, got: unknown, checkedAt: string }
 }>()
 
-/** Bandeau de vérification automatique, distinct du statut déclaré de l'enveloppe. */
 const autoCheck = computed(() => {
   const v = props.verification
   if (!v)
     return null
   const conforme = v.status === 'conforme'
-  return {
-    conforme,
-    label: conforme ? 'Conforme' : 'Écart détecté',
-    cls: conforme ? 'fr-badge--success' : 'fr-badge--error',
-    detail: conforme
-      ? `Vérifié le ${v.checkedAt}.`
-      : `Vérifié le ${v.checkedAt} : résultat obtenu ${v.got ?? '∅'}, différent du résultat attendu.`,
-  }
+  return { conforme, checkedAt: v.checkedAt, got: v.got }
 })
 
-const statusBadge = computed(() => {
+const badge = computed(() => {
+  if (autoCheck.value) {
+    return autoCheck.value.conforme
+      ? { label: 'Conforme', cls: 'fr-badge--success' }
+      : { label: 'Écart détecté', cls: 'fr-badge--error' }
+  }
   switch (props.test.status) {
     case 'valide':
       return { label: 'Validé', cls: 'fr-badge--success' }
@@ -68,107 +64,127 @@ const expectedDisplay = computed(() => {
     return JSON.stringify(e, null, 2)
   return props.test.expectedUnit ? `${e} ${props.test.expectedUnit}` : String(e)
 })
+
+/** Provenance condensée du pied de carte, séparée par « · ». */
+const metaItems = computed(() => {
+  const t = props.test
+  const items: string[] = []
+  if (autoCheck.value?.conforme)
+    items.push(`Vérifié le ${formatDateFr(autoCheck.value.checkedAt)}`)
+  if (t.validatedBy)
+    items.push(`Validé par ${t.validatedBy}${t.validatedAt ? ` le ${formatDateFr(t.validatedAt)}` : ''}`)
+  if (t.period)
+    items.push(`Période législative ${t.period}`)
+  if (t.engineVersion)
+    items.push(`Moteur ${t.engineVersion}`)
+  if (t.realCaseSource)
+    items.push(`Dossier réel anonymisé : ${t.realCaseSource}`)
+  if (t.legalAnchor)
+    items.push(`Texte visé : ${t.legalAnchor}`)
+  return items
+})
 </script>
 
 <template>
-  <article class="fr-card">
-    <div class="fr-card__body">
-      <div class="fr-card__content">
-        <div class="flex flex-wrap items-center gap-2 mb-2">
-          <span
-            class="fr-badge fr-badge--sm"
-            :class="autoCheck ? autoCheck.cls : statusBadge.cls"
-          >
-            {{ autoCheck ? autoCheck.label : statusBadge.label }}
-          </span>
-        </div>
-        <h3 class="fr-card__title fr-h6 m-0">
+  <article class="rounded-lg border border-gray-200 bg-white p-5 md:p-6">
+    <header class="flex items-start justify-between gap-4">
+      <div class="min-w-0 space-y-1">
+        <h3 class="fr-h6 m-0">
           {{ test.label }}
         </h3>
-        <p class="fr-card__desc text-sm text-gray-700 mt-2">
+        <p
+          v-if="test.scenario"
+          class="fr-text--sm mb-0 text-gray-600 m-0"
+        >
           {{ test.scenario }}
         </p>
+      </div>
+      <span
+        class="fr-badge fr-badge--sm shrink-0"
+        :class="badge.cls"
+      >
+        {{ badge.label }}
+      </span>
+    </header>
 
-        <div
-          v-if="hasFlatProjection"
-          class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3"
-        >
-          <div>
-            <p class="fr-text--xs uppercase tracking-wide text-gray-500 m-0 mb-1">
-              Entrées
-            </p>
-            <ul class="list-none p-0 m-0 text-sm">
-              <li
-                v-for="(value, key) in test.inputs"
-                :key="key"
-              >
-                <code class="font-mono">{{ key }}</code> : <span class="break-all">{{ formatData(value) }}</span>
-              </li>
-            </ul>
-          </div>
-          <div>
-            <p class="fr-text--xs uppercase tracking-wide text-gray-500 m-0 mb-1">
-              Résultat attendu
-            </p>
-            <pre
-              v-if="expectedIsStructured"
-              class="fr-text--xs m-0 whitespace-pre-wrap break-all bg-gray-50 border border-gray-200 rounded p-2"
-            >{{ expectedDisplay }}</pre>
-            <p
-              v-else
-              class="text-lg font-semibold text-blue-900 m-0"
-            >
-              {{ expectedDisplay }}
-            </p>
-          </div>
-        </div>
+    <p
+      v-if="autoCheck && !autoCheck.conforme"
+      class="fr-text--sm mb-0 m-0 mt-3 text-[#b34000]"
+    >
+      Contrôle du {{ formatDateFr(autoCheck.checkedAt) }} : résultat obtenu
+      {{ autoCheck.got ?? '∅' }}, différent du résultat attendu.
+    </p>
 
-        <ul class="list-none p-0 mt-3 mb-0 space-y-1 fr-text--xs text-gray-600">
-          <li v-if="autoCheck">
-            {{ autoCheck.detail }}
-          </li>
-          <li v-if="test.validatedBy">
-            Validé par : {{ test.validatedBy }}<template v-if="test.validatedAt">
-              ({{ test.validatedAt }})
-            </template>
-          </li>
-          <li v-if="test.period || test.engineVersion">
-            <template v-if="test.period">
-              Période législative : {{ test.period }}
-            </template>
-            <template v-if="test.period && test.engineVersion">
-              ·
-            </template>
-            <template v-if="test.engineVersion">
-              Moteur : {{ test.engineVersion }}
-            </template>
-          </li>
-          <li v-if="test.realCaseSource">
-            Dossier réel anonymisé : {{ test.realCaseSource }}
-          </li>
-          <li v-if="test.legalAnchor">
-            Texte visé : {{ test.legalAnchor }}
-          </li>
-          <li v-if="test.nativeRef">
-            <NuxtLink
-              :to="test.nativeRef"
-              :external="true"
-              target="_blank"
-              rel="noopener"
-              class="fr-link fr-text--xs"
-            >
-              Test natif (dépôt source)
-            </NuxtLink>
+    <div
+      v-if="hasFlatProjection"
+      class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 rounded border border-gray-100 bg-gray-50 p-4"
+    >
+      <div>
+        <p class="fr-text--xs uppercase tracking-wide text-gray-500 m-0 mb-1">
+          Entrées
+        </p>
+        <ul class="list-none p-0 m-0 text-sm space-y-0.5">
+          <li
+            v-for="(value, key) in test.inputs"
+            :key="key"
+          >
+            <code class="font-mono">{{ key }}</code> : <span class="break-all">{{ formatData(value) }}</span>
           </li>
         </ul>
-
+      </div>
+      <div class="sm:border-l sm:border-gray-200 sm:pl-4">
+        <p class="fr-text--xs uppercase tracking-wide text-gray-500 m-0 mb-1">
+          Résultat attendu
+        </p>
+        <pre
+          v-if="expectedIsStructured"
+          class="fr-text--xs m-0 whitespace-pre-wrap break-all bg-white border border-gray-200 rounded p-2"
+        >{{ expectedDisplay }}</pre>
         <p
-          v-if="test.notes"
-          class="fr-text--xs mb-0 text-gray-500 m-0 mt-2 italic"
+          v-else
+          class="text-lg font-semibold text-blue-900 m-0"
         >
-          {{ test.notes }}
+          {{ expectedDisplay }}
         </p>
       </div>
     </div>
+
+    <p
+      v-if="test.notes"
+      class="fr-text--xs mb-0 text-gray-500 m-0 mt-3 italic"
+    >
+      {{ test.notes }}
+    </p>
+
+    <footer
+      v-if="metaItems.length || test.nativeRef"
+      class="mt-4 pt-3 border-t border-gray-100 fr-text--xs text-gray-500 flex flex-wrap items-center gap-x-1.5 gap-y-1"
+    >
+      <template
+        v-for="(item, index) in metaItems"
+        :key="item"
+      >
+        <span
+          v-if="index"
+          aria-hidden="true"
+        >·</span>
+        <span>{{ item }}</span>
+      </template>
+      <template v-if="test.nativeRef">
+        <span
+          v-if="metaItems.length"
+          aria-hidden="true"
+        >·</span>
+        <NuxtLink
+          :to="test.nativeRef"
+          :external="true"
+          target="_blank"
+          rel="noopener"
+          class="fr-link fr-text--xs"
+        >
+          Test natif (dépôt source)
+        </NuxtLink>
+      </template>
+    </footer>
   </article>
 </template>

@@ -3,6 +3,7 @@
  * Tag qualifié « clé : valeur » pour expliciter ce que chaque badge décrit.
  * Rend la lecture pédagogique : on dit l'axe (règle, modèle, valeur, moteur)
  * avant la valeur, plutôt que d'empiler des libellés muets.
+ * Avec `hint`, le tag ouvre un panneau explicatif au survol ou au clic.
  */
 withDefaults(defineProps<{
   /** Axe qualifié, affiché en préfixe atténué (ex. « règle », « modèle »). */
@@ -11,7 +12,7 @@ withDefaults(defineProps<{
   value: string
   /** Classe de couleur de fond (tokens DSFR ou utilitaires). */
   tone?: 'neutral' | 'green' | 'blue' | 'purple' | 'yellow' | 'grey'
-  /** Infobulle explicative. */
+  /** Explication affichée dans un panneau contextuel. */
   hint?: string
 }>(), {
   tone: 'neutral',
@@ -29,10 +30,24 @@ const toneClass: Record<string, string> = {
 </script>
 
 <template>
+  <HintPopover
+    v-if="hint"
+    :text="hint"
+    :label="`${axis} ${value} : plus d’information`"
+    align="right"
+  >
+    <span
+      class="inline-flex items-baseline gap-1 rounded border px-2 py-0.5 fr-text--xs leading-tight whitespace-nowrap"
+      :class="toneClass[tone]"
+    >
+      <span class="opacity-60 font-normal">{{ axis }}</span>
+      <span class="font-semibold border-b border-dotted border-current">{{ value }}</span>
+    </span>
+  </HintPopover>
   <span
+    v-else
     class="inline-flex items-baseline gap-1 rounded border px-2 py-0.5 fr-text--xs leading-tight whitespace-nowrap"
     :class="toneClass[tone]"
-    :title="hint"
   >
     <span class="opacity-60 font-normal">{{ axis }}</span>
     <span class="font-semibold">{{ value }}</span>
