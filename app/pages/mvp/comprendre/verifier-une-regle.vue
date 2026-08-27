@@ -67,7 +67,7 @@ const rsaTimeline = computed(() =>
               Du résultat affiché jusqu'au texte de loi
             </h1>
             <p class="fr-text--lead text-gray-700 m-0">
-              Une décision algorithmique ne devrait jamais être une boîte noire. Le catalogue
+              Chaque décision algorithmique doit pouvoir être expliquée. Le catalogue
               relie chaque règle de calcul à la réglementation qui la fonde, pour que chacun
               puisse comprendre et vérifier d'où vient un droit.
             </p>

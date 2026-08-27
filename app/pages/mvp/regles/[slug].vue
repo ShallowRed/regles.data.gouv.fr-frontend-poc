@@ -21,17 +21,17 @@ const regimeMeta = computed(() => {
     frontiere: {
       label: 'Certifiable à la frontière',
       badgeClass: 'fr-badge--green-emeraude',
-      hint: 'L\'administration certifie le comportement entrées → sorties sur des faits déclarés, à une version donnée (sémantique du rescrit). La provenance amont des entrées n\'est pas couverte.',
+      hint: 'L\'administration certifie le comportement de la règle sur les faits déclarés, à une version donnée.',
     },
     implementation: {
       label: 'Cataloguée comme implémentation',
       badgeClass: 'fr-badge--blue-cumulus',
-      hint: 'Règle du cœur socio-fiscal, sans porteur unique de sa chaîne de dépendances : le couple suite de tests + snapshot d\'implémentation fait foi, pas la règle dans l\'abstrait.',
+      hint: 'Règle vérifiée par sa suite de tests, sur une version datée de son implémentation.',
     },
     referencement: {
       label: 'Simplement référencée',
       badgeClass: 'fr-badge--grey',
-      hint: 'Métadonnées descriptives seules : ni code ni cas de tests publiés.',
+      hint: 'Métadonnées descriptives ; code et cas de tests non publiés.',
     },
   } as const
   return meta[regime]
@@ -42,7 +42,7 @@ const boundaryKindMeta: Record<string, { label: string, icon: string, descriptio
   'declaration': {
     label: 'Faits déclarés',
     icon: 'fr-icon-edit-line',
-    description: 'Déclarés par l\'usager, non vérifiés. La certification porte sur ces faits tels que déclarés.',
+    description: 'Déclarés par l\'usager, non vérifiés.',
   },
   'donnee-attestee': {
     label: 'Données attestées',
@@ -52,7 +52,7 @@ const boundaryKindMeta: Record<string, { label: string, icon: string, descriptio
   'sortie-regle': {
     label: 'Sorties d\'autres règles',
     icon: 'fr-icon-git-merge-line',
-    description: 'Paramètres partagés ou résultats d\'autres règles : hors du périmètre certifié par cette entrée.',
+    description: 'Résultats d\'autres règles ou paramètres partagés, comme le SMIC.',
   },
   'contexte': {
     label: 'Paramètres de contexte',
@@ -531,18 +531,14 @@ useHead(() => ({ title: title.value }))
                   </ul>
                 </div>
 
-                <!-- Frontière de la règle : ce que la certification couvre, et ce qu'elle ne couvre pas -->
-                <div
+                <!-- Frontière de la règle -->
+                <details
                   v-if="boundaryGroups.length"
                   class="space-y-3"
                 >
-                  <h2 class="fr-h6 m-0">
-                    La frontière de la règle
-                  </h2>
-                  <p class="fr-text--sm text-gray-600 m-0 max-w-2xl">
-                    Un résultat certifié couvre le comportement de la règle sur ses entrées, pas la
-                    provenance de celles-ci. Chaque entrée est donc classée selon sa nature.
-                  </p>
+                  <summary class="fr-h6 m-0 cursor-pointer">
+                    Les entrées de la règle
+                  </summary>
                   <div class="space-y-4">
                     <div
                       v-for="group in boundaryGroups"
@@ -606,9 +602,9 @@ useHead(() => ({ title: title.value }))
                     </template>
                     - utile pour expliquer un refus.
                   </p>
-                </div>
+                </details>
 
-                <!-- Mappings opérationnels recensés (jamais rédigés par le catalogue) -->
+                <!-- Mappings opérationnels recensés -->
                 <div
                   v-if="rule.operationalMappings?.length"
                   class="space-y-3"
@@ -1131,9 +1127,8 @@ useHead(() => ({ title: title.value }))
                     Cas de tests
                   </h2>
                   <p class="fr-text--sm mb-0 text-gray-700 m-0">
-                    Des scénarios « situation → résultat attendu » documentent le comportement
-                    de la règle. Ils servent de <strong>garantie de confiance</strong> entre le
-                    producteur et les réutilisateurs, et sont rejoués à chaque nouvelle version.
+                    Cas « situation → résultat attendu » publiés par le producteur,
+                    rejoués automatiquement à chaque version.
                   </p>
                 </div>
 
@@ -1165,8 +1160,7 @@ useHead(() => ({ title: title.value }))
                       (<code class="fr-text--xs">{{ autoVerification.declaredNotAccepted.join(', ') }}</code>).
                       Elle attend désormais
                       <code class="fr-text--xs">{{ autoVerification.acceptedNotDeclared.slice(0, 3).join(', ') }}…</code>
-                      La fiche de référencement doit être mise à jour par le producteur&nbsp;: c'est
-                      exactement le type d'écart que la vérification continue rend visible.
+                      La fiche de référencement doit être mise à jour par le producteur.
                     </p>
                     <p
                       v-else

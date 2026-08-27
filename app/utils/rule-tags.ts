@@ -38,19 +38,6 @@ const natureSpec: Record<Rule['nature'], { value: string, tone: QualifiedTagSpec
   },
 }
 
-const opposabilitySpec: Record<Rule['opposability'], { value: string, tone: QualifiedTagSpec['tone'], hint: string }> = {
-  opposable: {
-    value: 'opposable',
-    tone: 'blue',
-    hint: 'Cette modélisation fait foi : un agent ou un usager peut s\'en prévaloir.',
-  },
-  indicatif: {
-    value: 'indicative',
-    tone: 'neutral',
-    hint: 'Aide à la lecture, sans valeur de source de droit.',
-  },
-}
-
 const engineLabel: Record<Rule['engine'], string> = {
   publicodes: 'Publicodes',
   openfisca: 'OpenFisca',
@@ -74,12 +61,6 @@ export function qualifiedTagsFor(rule: Rule): QualifiedTagSpec[] {
       value: natureSpec[rule.nature].value,
       tone: natureSpec[rule.nature].tone,
       hint: natureSpec[rule.nature].hint,
-    },
-    {
-      axis: 'valeur',
-      value: opposabilitySpec[rule.opposability].value,
-      tone: opposabilitySpec[rule.opposability].tone,
-      hint: opposabilitySpec[rule.opposability].hint,
     },
   ]
 }

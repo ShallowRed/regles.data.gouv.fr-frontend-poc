@@ -27,7 +27,7 @@ const title = computed(() =>
 const description = computed(() =>
   isOpposable.value
     ? 'Cette modélisation fait foi : un agent ou un usager peut s\u2019en prévaloir.'
-    : 'Cette modélisation est une aide à la lecture, non une source de droit.',
+    : 'Aide à la lecture du droit. La décision reste prise par l\'administration.',
 )
 </script>
 

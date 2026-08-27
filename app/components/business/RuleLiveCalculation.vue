@@ -151,7 +151,7 @@ const explanation = computed<ExplanationNode[]>(() => {
       <!-- Situation d'exemple : champs de dépenses éditables, recalcul immédiat -->
       <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 md:p-5">
         <p class="fr-text--xs uppercase tracking-wide text-gray-500 m-0 mb-3">
-          Situation d'exemple — modifiez les dépenses ou le régime pour recalculer
+          Situation d'exemple : modifiez les dépenses ou le régime pour recalculer
         </p>
         <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-24 gap-y-2 m-0 p-0 mb-4">
           <div class="flex justify-between gap-3 border-b border-gray-200 pb-1.5">
@@ -177,7 +177,7 @@ const explanation = computed<ExplanationNode[]>(() => {
             for="live-regime-fiscal"
           >
             Régime fiscal
-            <span class="fr-hint-text">Variable « regimeFiscal » — le régime micro fait tomber l'éligibilité</span>
+            <span class="fr-hint-text">Variable « regimeFiscal » : le régime micro fait tomber l'éligibilité</span>
           </label>
           <select
             id="live-regime-fiscal"

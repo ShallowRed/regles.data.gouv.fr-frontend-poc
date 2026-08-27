@@ -19,7 +19,7 @@ const audiences = [
   {
     pictogram: withBaseURL('pictograms/coding.svg'),
     title: 'Éditeurs, chercheurs, journalistes',
-    body: 'Consommez les règles officielles plutôt que de les réinterpréter, ou auditez les politiques publiques à partir du code en vigueur.',
+    body: 'Consommez les règles officielles à la source, ou auditez les politiques publiques à partir du code en vigueur.',
     examples: ['logiciels de paie', 'simulateurs tiers', 'travaux d\'évaluation'],
   },
 ]
@@ -66,9 +66,8 @@ const modes = [
               Une règle modélisée une fois, réutilisée partout
             </h1>
             <p class="fr-text--lead text-gray-700 m-0">
-              Plutôt que de recoder dans chaque service les mêmes règles d'éligibilité ou
-              de calcul, le catalogue les expose comme des briques communes, prêtes à être
-              intégrées et toujours à jour avec le droit en vigueur.
+              Le catalogue expose les règles d'éligibilité et de calcul comme des
+              briques communes, prêtes à être intégrées et à jour avec le droit en vigueur.
             </p>
           </header>
         </div>

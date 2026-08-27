@@ -144,11 +144,10 @@ const entrepriseInnovation: Rule = {
 const primeActivite: Rule = {
   id: 'prime-activite-openfisca',
   slug: 'prime-activite-openfisca',
-  title: 'Prime d\'activité - telle que calculée par openfisca-france',
+  title: 'Prime d\'activité',
   shortDescription:
-    'Prestation du cœur socio-fiscal : sa chaîne de dépendances (SMIC, bases ressources, définitions '
-    + 'de revenus) n\'a pas de porteur unique. Elle est cataloguée comme implémentation : le couple '
-    + 'suite de tests + snapshot openfisca-france fait foi, pas la règle dans l\'abstrait.',
+    'Prestation mensuelle qui complète les revenus d\'activité modestes, calculée par '
+    + 'openfisca-france à partir des ressources du trimestre de référence.',
   nature: 'ouverte',
   domain: 'solidarite',
   engine: 'openfisca',
@@ -169,7 +168,7 @@ const primeActivite: Rule = {
   boundary: [
     { id: 'salaire_de_base', label: 'Salaires des 3 derniers mois', kind: 'declaration', definition: 'Revenus d\'activité déclarés par l\'usager sur le trimestre de référence.', required: true },
     { id: 'rfr', label: 'Revenu fiscal de référence', kind: 'donnee-attestee', evidenceSource: { label: 'DGFiP, mobilisable via API Particulier', url: 'https://particulier.api.gouv.fr' } },
-    { id: 'montant_forfaitaire', label: 'Montant forfaitaire et SMIC', kind: 'sortie-regle', definition: 'Paramètres législatifs partagés du cœur socio-fiscal, maintenus dans openfisca-france ; aucun porteur administratif unique.' },
+    { id: 'montant_forfaitaire', label: 'Montant forfaitaire et SMIC', kind: 'sortie-regle', definition: 'Paramètres législatifs partagés du cœur socio-fiscal, maintenus dans openfisca-france.' },
   ],
   operationalMappings: [
     {
@@ -196,8 +195,7 @@ const passCultureBonusQf: Rule = {
   title: 'pass Culture - bonification selon le quotient familial',
   shortDescription:
     'Bonus de 50 € du pass Culture conditionné au quotient familial (décret n° 2025-195). '
-    + 'L\'implémentation officielle n\'est pas publiée : l\'entrée est référencée sur la seule base du texte, '
-    + 'sans code ni cas de tests. Une spécification d\'extraction indépendante existe.',
+    + 'Référencée d\'après le texte réglementaire ; code et cas de tests non publiés par l\'opérateur.',
   nature: 'fermee',
   domain: 'culture',
   engine: 'autre',

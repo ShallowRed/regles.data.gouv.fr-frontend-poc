@@ -26,7 +26,7 @@ const ownership = [
   {
     icon: 'fr-icon-eye-line',
     title: 'Le catalogue rend visible',
-    body: 'Découvrabilité, traçabilité jusqu\'au texte et réutilisation par d\'autres services : c\'est ce que le référencement ajoute, sans dépossession.',
+    body: 'Découvrabilité, traçabilité jusqu\'au texte et réutilisation par d\'autres services : c\'est ce que le référencement ajoute.',
   },
 ]
 
@@ -97,7 +97,7 @@ const audiences = [
             <p class="fr-text--lead text-gray-700 m-0">
               Votre administration applique des règles de calcul. Les référencer dans le
               catalogue les rend découvrables, traçables et réutilisables par les autres
-              services publics - sans jamais vous en déposséder.
+              services publics.
             </p>
           </header>
         </div>
@@ -123,8 +123,8 @@ const audiences = [
               Comment se passe un référencement
             </h2>
             <p class="fr-text--lg text-gray-700 m-0">
-              Référencer n'est pas un projet informatique lourd&nbsp;: on commence par le
-              minimum, puis on enrichit la fiche selon ce que l'on peut publier.
+              Le référencement commence par une fiche minimale, enrichie ensuite selon
+              ce que vous pouvez publier.
             </p>
           </div>
 
@@ -212,8 +212,8 @@ const audiences = [
               Ce que vous gardez, ce que le catalogue ajoute
             </h2>
             <p class="fr-text--lg text-gray-700 m-0">
-              Le référencement n'est pas une délégation. L'administration productrice reste
-              maîtresse de sa règle&nbsp;; le catalogue se contente de l'exposer.
+              L'administration productrice reste maîtresse de sa règle&nbsp;;
+              le catalogue l'expose.
             </p>
           </div>
 

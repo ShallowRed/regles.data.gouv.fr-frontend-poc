@@ -69,7 +69,7 @@ const formattedPpa = computed(() =>
         Calculé par openfisca-france
       </p>
       <span class="fr-text--xs mb-0 text-gray-600">
-        Appel réel au moteur du producteur · régime implémentation
+        Calculé par l'API openfisca-france
       </span>
     </div>
 

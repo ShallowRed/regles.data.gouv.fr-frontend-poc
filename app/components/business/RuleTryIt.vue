@@ -78,13 +78,9 @@ async function run() {
         <p class="fr-badge fr-badge--sm fr-badge--blue-cumulus m-0">
           Rejouer un cas
         </p>
-        <span class="fr-text--xs mb-0 text-gray-600">
-          Formulaire généré depuis la fiche · exécuté par le moteur du producteur
-        </span>
       </div>
       <p class="fr-text--xs mb-0 text-gray-500 m-0">
-        Outil de vérification : rejouez un cas d'entrées contre la règle référencée. Résultat
-        indicatif attribué au producteur, sans valeur de décision administrative.
+        Résultat indicatif, calculé par le producteur.
       </p>
     </div>
 
@@ -93,13 +89,11 @@ async function run() {
       class="rounded border border-[#0063cb]/30 bg-[#f4f6ff] p-3 space-y-1"
     >
       <p class="fr-text--sm mb-0 font-medium text-[#0063cb] m-0">
-        Fiche en cours de migration vers des entrées composites
+        Formulaire momentanément indisponible
       </p>
       <p class="fr-text--xs mb-0 text-gray-700 m-0">
-        La fiche décrit désormais ses entrées comme des structures (shapes SHACL), mais ne
-        déclare pas encore leur projection vers les paramètres HTTP de l'API. Les champs
-        ci-dessous viennent des structures&nbsp;; le rejeu échouera tant que cette
-        convention d'aplatissement n'est pas au contrat (écart listé dans la note technique).
+        La description des entrées de cette règle est en cours de mise à jour par le
+        producteur. Le détail figure dans la note technique de la fiche.
       </p>
     </div>
 
@@ -200,9 +194,8 @@ async function run() {
         Dérive détectée entre la fiche et l'API
       </p>
       <p class="fr-text--sm mb-0 text-gray-700 m-0">
-        L'API du producteur a refusé les paramètres décrits par la fiche. Son schéma a changé
-        depuis le référencement&nbsp;: la fiche doit être mise à jour. Ce formulaire, généré
-        depuis la fiche, rend l'écart visible plutôt que de renvoyer un résultat faux.
+        L'API du producteur a refusé les paramètres décrits par la fiche&nbsp;: son schéma a
+        changé depuis le référencement. La fiche doit être mise à jour.
       </p>
     </div>
     <p
@@ -216,7 +209,7 @@ async function run() {
       v-if="sourcePath"
       class="fr-text--xs mb-0 text-gray-500 m-0"
     >
-      Champs, types et endpoint proviennent intégralement de <code class="fr-text--xs">{{ sourcePath }}</code>.
+      Source&nbsp;: <code class="fr-text--xs">{{ sourcePath }}</code>.
     </p>
   </div>
 </template>

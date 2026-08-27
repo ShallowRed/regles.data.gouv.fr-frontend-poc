@@ -136,28 +136,6 @@ const latestUpdates = [...rulesMock]
           </div>
         </div>
 
-        <div class="mt-7 flex flex-wrap gap-3">
-          <NuxtLink
-            to="/mvp/regles/prestagri"
-            class="inline-flex items-center gap-2 border border-[#000091] text-[#000091] rounded-full px-4 py-1.5 text-sm no-underline bg-none bg-white hover:bg-[#f5f5fe]"
-          >
-            <span
-              class="fr-icon-flashlight-line fr-icon--sm"
-              aria-hidden="true"
-            />
-            <span><strong>En ce moment</strong>&nbsp;: les règles Prest'Agri (Catala) sont exécutables via API</span>
-          </NuxtLink>
-          <NuxtLink
-            to="/mvp/regles/"
-            class="inline-flex items-center gap-2 border border-[#000091] text-[#000091] rounded-full px-4 py-1.5 text-sm no-underline bg-none bg-white hover:bg-[#f5f5fe]"
-          >
-            <span
-              class="fr-icon-article-line fr-icon--sm"
-              aria-hidden="true"
-            />
-            <span><strong>Actualités</strong>&nbsp;: suivi des référencements - Mai 2026</span>
-          </NuxtLink>
-        </div>
       </div>
     </BrandBackgroundContainer>
 
@@ -208,7 +186,7 @@ const latestUpdates = [...rulesMock]
             <p class="fr-text--lg text-gray-700 m-0">
               Chaque règle référencée est documentée, reliée aux textes officiels qui la
               fondent et versionnée. L'administration qui la produit en garde l'entière
-              maîtrise&nbsp;: le catalogue la rend simplement visible et réutilisable.
+              maîtrise&nbsp;: le catalogue la rend visible et réutilisable.
             </p>
           </div>
 
