@@ -33,6 +33,8 @@ const PATTERNS = [
   { name: 'négation défensive « aucun porteur »', regex: /\baucune? porteur/i },
   { name: 'doctrine « fait foi »', regex: /fait foi/i },
   { name: 'comparatif béquille « plutôt que de »', regex: /plutôt que de/i },
+  { name: 'jargon interne « rejouer »', regex: /rejou/i },
+  { name: 'jargon interne « dérive »', regex: /dérive/i },
   { name: 'minimisation « se contente de »', regex: /se contente de/i },
 ]
 

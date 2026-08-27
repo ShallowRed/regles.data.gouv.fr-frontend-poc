@@ -220,18 +220,6 @@ const autoVerification = computed(() => {
 })
 
 /** Décompte des cas de test par statut, pour la barre de synthèse. */
-const testStats = computed(() => {
-  const t = tests.value
-  return {
-    total: t.length,
-    valide: t.filter(x => x.status === 'valide').length,
-    enRevue: t.filter(x => x.status === 'en_revue').length,
-    echec: t.filter(x => x.status === 'echec').length,
-    administration: t.filter(x => x.source === 'administration').length,
-    communaute: t.filter(x => x.source === 'communaute').length,
-  }
-})
-
 const certifyingOrganism = computed(() => {
   const cert = rule.value?.certification
   return cert ? organismsMock[cert.byOrganismId] : undefined
@@ -1122,20 +1110,22 @@ useHead(() => ({ title: title.value }))
                 v-else-if="activeTab === 'tests'"
                 class="space-y-6"
               >
-                <div class="space-y-2 max-w-2xl">
+                <div class="flex flex-wrap items-baseline justify-between gap-2 max-w-2xl">
                   <h2 class="fr-h5 m-0">
                     Cas de tests
                   </h2>
-                  <p class="fr-text--sm mb-0 text-gray-700 m-0">
-                    Cas « situation → résultat attendu » publiés par le producteur,
-                    rejoués automatiquement à chaque version.
-                  </p>
+                  <NuxtLink
+                    to="/mvp/comprendre/verifier-une-regle"
+                    class="fr-link fr-text--sm"
+                  >
+                    Comprendre la vérification
+                  </NuxtLink>
                 </div>
 
                 <template v-if="tests.length">
-                  <!-- Vérification automatique : rejeu des cas + contrôle de dérive fiche/API -->
+                  <!-- Synthèse de vérification : masquée quand la carte unique porte déjà l'info -->
                   <div
-                    v-if="autoVerification"
+                    v-if="autoVerification && (autoVerification.drift || !autoVerification.allPassing || autoVerification.total > 1)"
                     class="rounded-lg border p-4 space-y-2"
                     :class="autoVerification.drift || !autoVerification.allPassing
                       ? 'border-[#b34000]/30 bg-[#fff4ed]'
@@ -1146,10 +1136,16 @@ useHead(() => ({ title: title.value }))
                         class="fr-badge fr-badge--sm"
                         :class="autoVerification.drift || !autoVerification.allPassing ? 'fr-badge--warning' : 'fr-badge--success'"
                       >
-                        {{ autoVerification.drift ? 'Dérive détectée' : autoVerification.allPassing ? 'Vérifiée automatiquement' : 'Vérification en échec' }}
+                        {{ autoVerification.drift ? 'Écart détecté' : autoVerification.allPassing ? 'Cas conformes' : 'Écart détecté' }}
                       </span>
                       <span class="fr-text--sm mb-0 text-gray-700">
-                        Dernier contrôle automatique le {{ formatDate(autoVerification.checkedAt) }}.
+                        {{ autoVerification.drift
+                          ? `Contrôle du ${formatDate(autoVerification.checkedAt)}.`
+                          : autoVerification.total === 1
+                            ? `1 cas vérifié le ${formatDate(autoVerification.checkedAt)}, résultat conforme.`
+                            : autoVerification.allPassing
+                              ? `${autoVerification.total} cas vérifiés le ${formatDate(autoVerification.checkedAt)}, résultats conformes.`
+                              : `${autoVerification.passing} cas sur ${autoVerification.total} conformes au contrôle du ${formatDate(autoVerification.checkedAt)}.` }}
                       </span>
                     </div>
                     <p
@@ -1162,83 +1158,6 @@ useHead(() => ({ title: title.value }))
                       <code class="fr-text--xs">{{ autoVerification.acceptedNotDeclared.slice(0, 3).join(', ') }}…</code>
                       La fiche de référencement doit être mise à jour par le producteur.
                     </p>
-                    <p
-                      v-else
-                      class="fr-text--sm mb-0 text-gray-700 m-0"
-                    >
-                      {{ autoVerification.passing }}/{{ autoVerification.total }} cas rejoués conformes
-                      contre le moteur du producteur.
-                    </p>
-                  </div>
-
-                  <!-- Barre de synthèse : statuts + sources -->
-                  <div class="rounded-lg border border-gray-200 overflow-hidden">
-                    <div class="grid grid-cols-2 sm:grid-cols-4 divide-x divide-gray-200">
-                      <div class="p-4">
-                        <p class="text-2xl font-bold text-gray-900 m-0 tabular-nums">
-                          {{ testStats.total }}
-                        </p>
-                        <p class="fr-text--xs mb-0 text-gray-600 m-0">
-                          cas publiés
-                        </p>
-                      </div>
-                      <div class="p-4">
-                        <p class="text-2xl font-bold text-[#18753c] m-0 tabular-nums">
-                          {{ testStats.valide }}
-                        </p>
-                        <p class="fr-text--xs mb-0 text-gray-600 m-0">
-                          validés
-                        </p>
-                      </div>
-                      <div class="p-4">
-                        <p class="text-2xl font-bold text-[#716043] m-0 tabular-nums">
-                          {{ testStats.enRevue }}
-                        </p>
-                        <p class="fr-text--xs mb-0 text-gray-600 m-0">
-                          en revue
-                        </p>
-                      </div>
-                      <div class="p-4">
-                        <p
-                          class="text-2xl font-bold m-0 tabular-nums"
-                          :class="testStats.echec ? 'text-[#ce0500]' : 'text-gray-400'"
-                        >
-                          {{ testStats.echec }}
-                        </p>
-                        <p class="fr-text--xs mb-0 text-gray-600 m-0">
-                          en échec
-                        </p>
-                      </div>
-                    </div>
-                    <div class="border-t border-gray-200 bg-gray-50 px-4 py-2.5 flex flex-wrap items-center gap-x-5 gap-y-1">
-                      <span class="inline-flex items-center gap-1.5 fr-text--xs mb-0 text-gray-700">
-                        <span
-                          class="fr-icon-refresh-line fr-icon--xs text-[#000091]"
-                          aria-hidden="true"
-                        />
-                        Rejoués en intégration continue à chaque version
-                      </span>
-                      <span
-                        v-if="testStats.administration"
-                        class="inline-flex items-center gap-1.5 fr-text--xs mb-0 text-gray-600"
-                      >
-                        <span
-                          class="fr-icon-bank-line fr-icon--xs"
-                          aria-hidden="true"
-                        />
-                        {{ testStats.administration }} de l'administration
-                      </span>
-                      <span
-                        v-if="testStats.communaute"
-                        class="inline-flex items-center gap-1.5 fr-text--xs mb-0 text-gray-600"
-                      >
-                        <span
-                          class="fr-icon-team-line fr-icon--xs"
-                          aria-hidden="true"
-                        />
-                        {{ testStats.communaute }} de la communauté
-                      </span>
-                    </div>
                   </div>
 
                   <ul class="list-none p-0 m-0 space-y-3">

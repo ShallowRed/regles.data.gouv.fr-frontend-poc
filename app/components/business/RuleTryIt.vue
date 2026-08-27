@@ -76,7 +76,7 @@ async function run() {
     <div class="space-y-1">
       <div class="flex flex-wrap items-center gap-2">
         <p class="fr-badge fr-badge--sm fr-badge--blue-cumulus m-0">
-          Rejouer un cas
+          Tester un cas
         </p>
       </div>
       <p class="fr-text--xs mb-0 text-gray-500 m-0">
@@ -191,7 +191,7 @@ async function run() {
           class="fr-icon-alert-line fr-icon--sm"
           aria-hidden="true"
         />
-        Dérive détectée entre la fiche et l'API
+        Écart détecté entre la fiche et l'API
       </p>
       <p class="fr-text--sm mb-0 text-gray-700 m-0">
         L'API du producteur a refusé les paramètres décrits par la fiche&nbsp;: son schéma a

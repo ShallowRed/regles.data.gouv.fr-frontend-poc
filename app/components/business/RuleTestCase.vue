@@ -22,11 +22,11 @@ const autoCheck = computed(() => {
   const conforme = v.status === 'conforme'
   return {
     conforme,
-    label: conforme ? 'Rejoué conforme' : 'Rejeu en échec',
+    label: conforme ? 'Conforme' : 'Écart détecté',
     cls: conforme ? 'fr-badge--success' : 'fr-badge--error',
     detail: conforme
-      ? `Rejoué automatiquement le ${v.checkedAt}, résultat conforme au cas.`
-      : `Rejoué automatiquement le ${v.checkedAt} : le moteur ne renvoie plus le résultat attendu (obtenu : ${v.got ?? '∅'}).`,
+      ? `Vérifié le ${v.checkedAt}.`
+      : `Vérifié le ${v.checkedAt} : résultat obtenu ${v.got ?? '∅'}, différent du résultat attendu.`,
   }
 })
 
