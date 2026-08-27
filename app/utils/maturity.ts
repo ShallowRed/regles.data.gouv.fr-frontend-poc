@@ -16,6 +16,8 @@ export interface MaturityMeta {
   rank: number
   /** Libellé affiché à l'usager. Jamais « N0/N1 ». */
   label: string
+  /** Action permise à partir de ce niveau, formulée pour l'usager (facette « ce que la règle permet »). */
+  action: string
   /** Ce que ce niveau garantit sur la règle. */
   meaning: string
   /** Services activés à ce palier (nouveaux par rapport au précédent). */
@@ -29,6 +31,7 @@ export const maturityScale: MaturityMeta[] = [
     level: 'N0',
     rank: 0,
     label: 'Référencée',
+    action: 'Consulter la fiche',
     meaning: 'Inscrite au catalogue, avec son organisme porteur et sa base légale.',
     unlocks: ['Recherche et découverte'],
     badgeClass: 'fr-badge--grey',
@@ -37,6 +40,7 @@ export const maturityScale: MaturityMeta[] = [
     level: 'N1',
     rank: 1,
     label: 'Documentée',
+    action: 'Lire la documentation',
     meaning: 'Métadonnées complètes : périmètre, version et références à jour.',
     unlocks: ['Fiche détaillée', 'API de consultation'],
     badgeClass: 'fr-badge--blue-cumulus',
@@ -45,6 +49,7 @@ export const maturityScale: MaturityMeta[] = [
     level: 'N2',
     rank: 2,
     label: 'Vérifiée',
+    action: 'Vérifier code et tests',
     meaning: 'Code ouvert et cas de tests publiés : la traçabilité entre la loi et le code est contrôlable.',
     unlocks: ['Traçabilité loi ↔ code', 'Documentation générée', 'Cas de tests publics'],
     badgeClass: 'fr-badge--purple-glycine',
@@ -53,6 +58,7 @@ export const maturityScale: MaturityMeta[] = [
     level: 'N3',
     rank: 3,
     label: 'Exécutable',
+    action: 'Exécuter le calcul',
     meaning: 'Calcul disponible : aperçu indicatif et intégration via API ou widget.',
     unlocks: ['Aperçu de calcul', 'API d\'exécution', 'Widget intégrable'],
     badgeClass: 'fr-badge--green-emeraude',

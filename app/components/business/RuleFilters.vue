@@ -32,9 +32,9 @@ const engineLabel: Record<RuleEngine, string> = {
 }
 
 const natureLabel: Record<RuleNature, string> = {
-  ouverte: 'Ouverte',
+  ouverte: 'Ouvert',
   hybride: 'Hybride',
-  fermee: 'Fermée',
+  fermee: 'Fermé',
 }
 
 /** Organismes présents dans le catalogue, triés par volume décroissant. */
@@ -135,21 +135,20 @@ function reset() {
         />
       </div>
 
-      <!-- Ce que la règle permet (maturité) -->
+      <!-- Ce que la règle permet (maturité, sélection cumulative : ce niveau et au-delà) -->
       <div class="py-3">
         <FilterFacet
           legend="Ce que la règle permet"
-          help="De la simple référence à l'exécution du calcul."
-          :options="maturityScale.map(m => ({ value: m.level, label: m.label, count: facets.maturity[m.level] ?? 0, hint: m.meaning }))"
+          :options="maturityScale.map(m => ({ value: m.level, label: m.action, count: facets.maturity[m.level] ?? 0, hint: m.meaning }))"
           :selected="state.maturity"
           @toggle="(v) => toggle('maturity', v as MaturityLevel)"
         />
       </div>
 
-      <!-- Nature de publication -->
+      <!-- Modèle (nature de publication) -->
       <div class="py-3">
         <FilterFacet
-          legend="Nature de publication"
+          legend="Modèle"
           :options="(['ouverte', 'hybride', 'fermee'] as RuleNature[]).map(n => ({ value: n, label: natureLabel[n], count: facets.nature[n] ?? 0 }))"
           :selected="state.nature"
           @toggle="(v) => toggle('nature', v as RuleNature)"

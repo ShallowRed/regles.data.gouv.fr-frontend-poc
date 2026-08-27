@@ -14,9 +14,10 @@ export interface RuleFicheTab {
   label: string
 }
 
+/** Labels au masculin : ils qualifient le modèle (« modèle ouvert »), pas la règle. */
 const natureMeta: Record<RuleNature, { label: string, badgeClass: string, meaning: string }> = {
   ouverte: {
-    label: 'Ouverte',
+    label: 'Ouvert',
     badgeClass: 'fr-badge--green-menthe',
     meaning: 'Code source et artefacts de vérification publiquement consultables.',
   },
@@ -26,7 +27,7 @@ const natureMeta: Record<RuleNature, { label: string, badgeClass: string, meanin
     meaning: 'Publication partielle : documentation et API exposées, certaines briques restent internes.',
   },
   fermee: {
-    label: 'Fermée',
+    label: 'Fermé',
     badgeClass: 'fr-badge--beige-gris-galet',
     meaning: 'Moteur interne à l\'administration, non publié en source ouverte.',
   },

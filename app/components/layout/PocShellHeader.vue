@@ -2,7 +2,7 @@
 const home = '/mvp'
 
 const nav = [
-  { label: 'Toutes les règles', to: '/mvp/regles/' },
+  { label: 'Catalogue', to: '/mvp/regles/' },
   { label: 'Référencer ses règles', to: '/mvp/comprendre/referencer-une-regle' },
   { label: 'Vérifier une règle', to: '/mvp/comprendre/verifier-une-regle' },
   { label: 'Réutiliser une règle', to: '/mvp/comprendre/reutiliser-une-regle' },

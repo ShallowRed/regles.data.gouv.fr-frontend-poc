@@ -33,8 +33,10 @@ function matches(rule: typeof rulesMock[number], except?: keyof RuleFiltersState
     return false
   if (except !== 'organismId' && f.organismId && rule.organism.id !== f.organismId)
     return false
-  if (except !== 'maturity' && f.maturity && rule.maturity !== f.maturity)
+  if (except !== 'maturity' && f.maturity
+    && maturityMeta(rule.maturity).rank < maturityMeta(f.maturity).rank) {
     return false
+  }
   if (except !== 'engine' && f.engine && rule.engine !== f.engine)
     return false
   if (except !== 'nature' && f.nature && rule.nature !== f.nature)
@@ -70,8 +72,12 @@ const facets = computed<FacetCounts>(() => {
     entry.count++
     result.organism[o.id] = entry
   }
-  for (const rule of rulesMock.filter(r => matches(r, 'maturity'))) {
-    result.maturity[rule.maturity] = (result.maturity[rule.maturity] ?? 0) + 1
+  // Décompte cumulatif : une règle exécutable permet aussi tout ce que permettent les niveaux inférieurs.
+  const maturityPool = rulesMock.filter(r => matches(r, 'maturity'))
+  for (const meta of maturityScale) {
+    result.maturity[meta.level] = maturityPool
+      .filter(r => maturityMeta(r.maturity).rank >= meta.rank)
+      .length
   }
   for (const rule of rulesMock.filter(r => matches(r, 'engine'))) {
     result.engine[rule.engine] = (result.engine[rule.engine] ?? 0) + 1
@@ -93,9 +99,9 @@ const activeChips = computed(() => {
   if (f.organismId)
     chips.push({ key: 'organismId', label: facets.value.organism[f.organismId]?.label ?? f.organismId })
   if (f.maturity)
-    chips.push({ key: 'maturity', label: maturityMeta(f.maturity).label })
+    chips.push({ key: 'maturity', label: maturityMeta(f.maturity).action })
   if (f.nature)
-    chips.push({ key: 'nature', label: ruleNatureMeta(f.nature).label })
+    chips.push({ key: 'nature', label: `Modèle ${ruleNatureMeta(f.nature).label.toLowerCase()}` })
   if (f.engine)
     chips.push({ key: 'engine', label: f.engine })
   return chips
@@ -117,7 +123,7 @@ function clearChip(key: keyof RuleFiltersState) {
         <Breadcrumbs
           :items="[
             { to: '/mvp', label: 'Accueil' },
-            { to: null, label: 'Toutes les règles' },
+            { to: null, label: 'Catalogue' },
           ]"
         />
 
