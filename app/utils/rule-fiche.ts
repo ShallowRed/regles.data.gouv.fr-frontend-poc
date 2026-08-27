@@ -37,10 +37,11 @@ export const ruleNatureMeta = (nature: RuleNature) => natureMeta[nature]
 /**
  * Affichage d'une version : préfixe « v » seulement pour les versions numériques (semver).
  * Les règles en régime implémentation portent des versions descriptives
- * (« openfisca-france (suivi continu) », « main (2025-09-17) ») qu'on affiche telles quelles.
+ * (« openfisca-france 169.15.0 », « publication du 17 septembre 2025 ») affichées telles quelles.
  */
-export const formatRuleVersion = (version: string): string =>
-  /^\d/.test(version) ? `v${version}` : version
+export function formatRuleVersion(version: string): string {
+  return /^\d/.test(version) ? `v${version}` : version
+}
 
 const baseTabs: RuleFicheTab[] = [
   { key: 'description', label: 'Présentation' },

@@ -21,6 +21,13 @@ const engineTag = computed(() => engineTagFor(props.rule))
 const dateFormatter = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
 const updatedLabel = computed(() => dateFormatter.format(new Date(props.rule.updatedAt)))
 
+/** Ligne version : le numéro seulement s'il est semver ; sinon la date de mise à jour suffit. */
+const versionLine = computed(() =>
+  /^\d/.test(props.rule.version)
+    ? `${formatRuleVersion(props.rule.version)} · maj ${updatedLabel.value}`
+    : `maj ${updatedLabel.value}`,
+)
+
 /**
  * Capacités activées sur la fiche, présentées comme « ce que la règle permet ».
  * Ordonnées de la plus engageante (exécution) à la plus basique (traçabilité).
@@ -98,7 +105,7 @@ const availableServices = computed(() => {
               {{ rule.title }}
             </NuxtLink>
           </h3>
-          <p class="fr-text--sm text-gray-700 m-0 max-w-2xl">
+          <p class="fr-text--sm text-gray-700 m-0 max-w-2xl line-clamp-3">
             {{ rule.shortDescription }}
           </p>
         </div>
@@ -153,7 +160,7 @@ const availableServices = computed(() => {
           </li>
         </ul>
         <p class="fr-text--xs mb-0 text-gray-500 m-0 mt-auto">
-          {{ formatRuleVersion(rule.version) }} · maj {{ updatedLabel }}
+          {{ versionLine }}
         </p>
       </div>
     </div>

@@ -99,9 +99,8 @@ const entrepriseInnovation: Rule = {
   slug: 'entreprise-innovation',
   title: 'Aides fiscales à l\'innovation - CIR, CII, CICo, JEI, JEU, JEC',
   shortDescription:
-    'Éligibilité et montant des six dispositifs fiscaux de soutien à l\'innovation des entreprises. '
-    + 'Modélisation Publicodes coconstruite avec un expert métier de la DGFiP, exposée en iframe sur '
-    + 'entreprendre.service-public.fr (DILA).',
+    'Éligibilité et montant des six dispositifs fiscaux de soutien à l\'innovation des '
+    + 'entreprises, tels qu\'exposés sur entreprendre.service-public.fr.',
   nature: 'ouverte',
   domain: 'fiscalite',
   engine: 'publicodes',
@@ -115,7 +114,7 @@ const entrepriseInnovation: Rule = {
   ],
   tags: ['cir', 'cii', 'jei', 'innovation', 'publicodes', 'entreprises'],
   updatedAt: '2025-09-17',
-  version: 'main (2025-09-17)',
+  version: 'publication du 17 septembre 2025',
   sourceUrl: 'https://github.com/betagouv/publicodes-entreprise-innovation',
   capabilities: {
     hasCalculationPreview: true,
@@ -158,7 +157,7 @@ const primeActivite: Rule = {
   legalReferences: [legalReferencesMock['css-L841-1']!],
   tags: ['prime-activite', 'openfisca', 'minima-sociaux', 'cnaf'],
   updatedAt: '2026-07-07',
-  version: 'openfisca-france (suivi continu)',
+  version: 'openfisca-france 169.15.0',
   sourceUrl: 'https://github.com/openfisca/openfisca-france',
   certificationRegime: 'implementation',
   capabilities: {

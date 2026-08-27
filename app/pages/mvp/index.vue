@@ -22,6 +22,7 @@ const themes = [
 /* --- Chiffres clés dérivés des données du catalogue --- */
 const stats = computed(() => {
   const domains = new Set(rulesMock.map(r => r.domain))
+  const producers = new Set(rulesMock.map(r => r.organism.id))
   const executable = rulesMock.filter(r => r.maturity === 'N3').length
   return [
     {
@@ -31,9 +32,9 @@ const stats = computed(() => {
       icon: 'fr-icon-file-text-line',
     },
     {
-      value: Object.keys(organismsMock).length,
+      value: producers.size,
       label: 'administrations productrices',
-      caption: 'de l\'État aux collectivités territoriales',
+      caption: 'ministères, caisses et opérateurs',
       icon: 'fr-icon-bank-line',
     },
     {
@@ -78,7 +79,7 @@ const latestUpdates = [...rulesMock]
               <hgroup class="space-y-4">
                 <h1 class="m-0 text-[2rem] md:text-[2.75rem] leading-[1.15] font-bold text-gray-900">
                   Explorez les <span class="text-[#000091]">règles</span><br>
-                  des droits et services <span class="text-[#000091]">publics</span>
+                  des services <span class="text-[#000091]">publics</span>
                 </h1>
                 <p class="fr-text--lead text-gray-700 m-0">
                   Aides, impôts, prestations&nbsp;: comprenez comment l'administration
@@ -135,7 +136,6 @@ const latestUpdates = [...rulesMock]
             </div>
           </div>
         </div>
-
       </div>
     </BrandBackgroundContainer>
 
@@ -185,8 +185,7 @@ const latestUpdates = [...rulesMock]
             </h2>
             <p class="fr-text--lg text-gray-700 m-0">
               Chaque règle référencée est documentée, reliée aux textes officiels qui la
-              fondent et versionnée. L'administration qui la produit en garde l'entière
-              maîtrise&nbsp;: le catalogue la rend visible et réutilisable.
+              fondent et versionnée.
             </p>
           </div>
 
