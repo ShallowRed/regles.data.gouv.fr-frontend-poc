@@ -36,7 +36,7 @@ const kindMeta: Record<string, { label: string, dot: string }> = {
   correctif: { label: 'Correctif', dot: 'bg-[#716043]' },
   editorial: { label: 'Éditorial', dot: 'bg-gray-400' },
 }
-const rsaTimeline = computed(() =>
+const exampleTimeline = computed(() =>
   ruleVersionsMock
     .filter(v => v.ruleId === 'prestagri')
     .map(v => ({
@@ -144,12 +144,12 @@ const rsaTimeline = computed(() =>
 
           <div class="rounded-lg border border-gray-200 bg-white p-6 md:p-8 shadow-[0_2px_12px_rgba(0,0,145,0.04)]">
             <p class="fr-text--sm text-gray-700 m-0 mb-6">
-              <span class="font-bold">Revenu de solidarité active - éligibilité</span>
-              <span class="text-gray-500"> · produit par la CNAF</span>
+              <span class="font-bold">Prest'Agri - quotient familial et aide à la scolarité</span>
+              <span class="text-gray-500"> · produit par le ministère de l'Agriculture</span>
             </p>
             <ol class="relative list-none p-0 pl-6 m-0 ml-2 space-y-6">
               <li
-                v-for="v in rsaTimeline"
+                v-for="v in exampleTimeline"
                 :key="v.id"
                 class="relative pl-6"
               >

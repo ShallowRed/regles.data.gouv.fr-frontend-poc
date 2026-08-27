@@ -306,8 +306,8 @@ const audiences = [
             Vous appliquez des règles de calcul ?
           </h2>
           <p class="fr-text--sm mb-0 text-white/90 m-0">
-            Parlons de leur référencement. Vous gardez la responsabilité de leur contenu&nbsp;;
-            nous les rendons découvrables, traçables et réutilisables par les autres services publics.
+            Parlons de leur référencement&nbsp;: l'équipe du catalogue vous accompagne,
+            de la fiche minimale à la règle exécutable.
           </p>
           <div class="flex flex-wrap gap-3 pt-2">
             <a
