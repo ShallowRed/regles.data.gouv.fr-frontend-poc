@@ -114,7 +114,7 @@ const entrepriseInnovation: Rule = {
   ],
   tags: ['cir', 'cii', 'jei', 'innovation', 'publicodes', 'entreprises'],
   updatedAt: '2025-09-17',
-  version: 'publication du 17 septembre 2025',
+  version: 'Publication initiale',
   sourceUrl: 'https://github.com/betagouv/publicodes-entreprise-innovation',
   capabilities: {
     hasCalculationPreview: true,

@@ -238,8 +238,14 @@ function fieldName(label: string): string {
     .replace(/^_+|_+$/g, '')
 }
 
+/** Valeur d'affichage (« 30 000 € ») → nombre brut pour les exemples d'API, ou null. */
+function numericValue(value: string): number | null {
+  const raw = value.trim().replace(/\s/g, '').replace(/(?:€|ans|mois)$/, '').replace(',', '.')
+  return /^\d+(?:\.\d+)?$/.test(raw) ? Number.parseFloat(raw) : null
+}
+
 function fieldType(value: string): 'number' | 'boolean' | 'string' {
-  if (/^\d+(?:[.,]\d+)?\s*(?:€|ans|mois)?$/.test(value.trim()))
+  if (numericValue(value) !== null)
     return 'number'
   if (/^(?:oui|non|true|false)$/i.test(value.trim()))
     return 'boolean'
@@ -259,12 +265,14 @@ const apiDoc = computed(() => {
     example: i.value,
   }))
   const requestBody = Object.fromEntries(
-    inputs.map(i => [i.name, i.type === 'number'
-      ? Number.parseFloat(i.example.replace(',', '.')) || i.example
-      : i.example]),
+    inputs.map(i => [i.name, numericValue(i.example) ?? i.example]),
   )
   const responseBody = p
-    ? { resultat: p.result.value, ...(p.result.unit ? { unite: p.result.unit.replace(/^-\s*/, '') } : {}), opposabilite: r.opposability }
+    ? {
+        resultat: numericValue(p.result.value) ?? p.result.value,
+        ...(p.result.unit ? { unite: p.result.unit.replace(/^-\s*/, '') } : {}),
+        opposabilite: r.opposability,
+      }
     : { resultat: '...' }
 
   return {
@@ -886,16 +894,9 @@ useHead(() => ({ title: title.value }))
                 v-else-if="activeTab === 'api'"
                 class="space-y-8"
               >
-                <div class="space-y-2 max-w-2xl">
-                  <h2 class="fr-h5 m-0">
-                    Intégrer cette règle
-                  </h2>
-                  <p class="fr-text--sm mb-0 text-gray-700 m-0">
-                    La règle s'appelle comme un service&nbsp;: une situation en entrée,
-                    un résultat en sortie. Les contrats sont stables et versionnés pour
-                    garantir la reproductibilité.
-                  </p>
-                </div>
+                <h2 class="fr-h5 m-0">
+                  Intégrer cette règle
+                </h2>
 
                 <!-- Modes d'intégration disponibles -->
                 <ul class="grid grid-cols-1 sm:grid-cols-3 gap-3 list-none p-0 m-0">
@@ -1005,8 +1006,7 @@ useHead(() => ({ title: title.value }))
                   </div>
 
                   <p class="fr-text--xs mb-0 text-gray-500 m-0">
-                    Schéma illustratif dérivé d'un cas d'exemple. La spécification complète
-                    (OpenAPI) est publiée avec la règle.
+                    Schéma illustratif dérivé d'un cas d'exemple.
                   </p>
                 </div>
               </section>
@@ -1189,16 +1189,9 @@ useHead(() => ({ title: title.value }))
                 v-else-if="activeTab === 'versions'"
                 class="space-y-6"
               >
-                <div class="space-y-2 max-w-2xl">
-                  <h2 class="fr-h5 m-0">
-                    Historique des versions
-                  </h2>
-                  <p class="fr-text--sm mb-0 text-gray-700 m-0">
-                    Chaque évolution de la règle est versionnée et datée. On sait ainsi
-                    quel calcul s'appliquait à une date donnée, et quelle évolution
-                    réglementaire l'a motivé.
-                  </p>
-                </div>
+                <h2 class="fr-h5 m-0">
+                  Historique des versions
+                </h2>
 
                 <p
                   v-if="!versions.length"
