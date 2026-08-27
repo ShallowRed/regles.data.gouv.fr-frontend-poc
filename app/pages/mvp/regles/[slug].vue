@@ -1015,16 +1015,16 @@ useHead(() => ({ title: title.value }))
                 v-else-if="activeTab === 'traceability'"
                 class="space-y-6"
               >
-                <div class="space-y-2 max-w-2xl">
+                <div class="flex items-center gap-2">
                   <h2 class="fr-h5 m-0">
                     Traçabilité loi ↔ code
                   </h2>
-                  <p class="fr-text--sm mb-0 text-gray-700 m-0">
-                    Chaque fragment du texte réglementaire est mis en regard du code qui
-                    l'implémente. Cet appariement rend la modélisation
-                    <strong>auditable</strong>&nbsp;: on peut vérifier que le calcul
-                    respecte le droit, ligne à ligne.
-                  </p>
+                  <HintPopover
+                    text="Chaque fragment du texte officiel est mis en regard du code qui l'applique."
+                    label="Qu'est-ce que la traçabilité ?"
+                    more-to="/mvp/comprendre/verifier-une-regle"
+                    more-label="Comprendre la vérification"
+                  />
                 </div>
 
                 <!-- Appariements texte ↔ code : moteur ouvert, traçabilité publiée -->
@@ -1049,7 +1049,7 @@ useHead(() => ({ title: title.value }))
                       target="_blank"
                       rel="noopener"
                       class="fr-link"
-                    >{{ rule.sourceUrl }}</a>
+                    >{{ rule.sourceUrl.replace('https://github.com/', '') }}</a>
                   </p>
                 </template>
 
@@ -1069,9 +1069,8 @@ useHead(() => ({ title: title.value }))
                           Bases légales référencées
                         </h3>
                         <p class="fr-text--sm mb-0 text-gray-700 m-0">
-                          L'appariement détaillé texte ↔ code n'est pas publié pour cette
-                          règle (moteur interne ou traçabilité non encore exposée). Les
-                          textes qui la fondent restent référencés.
+                          L'appariement détaillé entre le texte et le code n'est pas
+                          publié pour cette règle.
                         </p>
                       </div>
                     </div>
