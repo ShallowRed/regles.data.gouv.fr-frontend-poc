@@ -9,13 +9,13 @@ const props = withDefaults(defineProps<{
   showKind: true,
 })
 
-const kindLabel = computed(() => {
+const kindKey = computed(() => {
   switch (props.reference.kind) {
-    case 'loi': return 'Loi'
-    case 'decret': return 'Décret'
-    case 'arrete': return 'Arrêté'
-    case 'circulaire': return 'Circulaire'
-    case 'code': return 'Code'
+    case 'loi': return 'legalKind.loi'
+    case 'decret': return 'legalKind.decret'
+    case 'arrete': return 'legalKind.arrete'
+    case 'circulaire': return 'legalKind.circulaire'
+    case 'code': return 'legalKind.code'
     default: return null
   }
 })
@@ -30,10 +30,10 @@ const href = computed(() => {
 <template>
   <span class="inline-flex flex-wrap items-baseline gap-2 pb-2">
     <span
-      v-if="showKind && kindLabel"
+      v-if="showKind && kindKey"
       class="fr-tag fr-tag--sm"
     >
-      {{ kindLabel }}
+      {{ $t(kindKey) }}
     </span>
 
     <a

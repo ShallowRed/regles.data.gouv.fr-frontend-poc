@@ -1,11 +1,13 @@
 <script setup lang="ts">
+const localePath = useLocalePath()
+
 const home = '/mvp'
 
 const nav = [
-  { label: 'Toutes les règles', to: '/mvp/regles/' },
-  { label: 'Référencer ses règles', to: '/mvp/comprendre/referencer-une-regle' },
-  { label: 'Vérifier une règle', to: '/mvp/comprendre/verifier-une-regle' },
-  { label: 'Réutiliser une règle', to: '/mvp/comprendre/reutiliser-une-regle' },
+  { labelKey: 'header.catalogue', to: '/mvp/regles/' },
+  { labelKey: 'header.reference', to: '/mvp/comprendre/referencer-une-regle' },
+  { labelKey: 'header.verify', to: '/mvp/comprendre/verifier-une-regle' },
+  { labelKey: 'header.reuse', to: '/mvp/comprendre/reutiliser-une-regle' },
 ]
 </script>
 
@@ -27,8 +29,8 @@ const nav = [
             </div>
             <div class="fr-header__service">
               <NuxtLink
-                :to="home"
-                title="Accueil | Catalogue des règles publiques"
+                :to="localePath(home)"
+                :title="$t('site.homeTitle')"
               >
                 <p class="fr-header__service-title flex items-baseline gap-0">
                   <span class="fr-text--alt font-medium italic">
@@ -43,8 +45,13 @@ const nav = [
                 </p>
               </NuxtLink>
               <p class="fr-header__service-tagline">
-                Règles publiques modélisées, ouvertes et réutilisables
+                {{ $t('site.tagline') }}
               </p>
+            </div>
+          </div>
+          <div class="fr-header__tools">
+            <div class="fr-header__tools-links">
+              <LanguageSwitcher />
             </div>
           </div>
         </div>
@@ -56,7 +63,7 @@ const nav = [
         <nav
           class="fr-nav"
           role="navigation"
-          aria-label="Menu principal"
+          :aria-label="$t('header.menuLabel')"
         >
           <ul class="fr-nav__list">
             <li
@@ -65,11 +72,11 @@ const nav = [
               class="fr-nav__item"
             >
               <NuxtLink
-                :to="item.to"
+                :to="localePath(item.to)"
                 class="fr-nav__link"
                 exact-active-class="fr-nav__link--active"
               >
-                {{ item.label }}
+                {{ $t(item.labelKey) }}
               </NuxtLink>
             </li>
           </ul>

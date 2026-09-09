@@ -33,6 +33,8 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      - name: Lint copie UI
+        run: pnpm lint:copy
 
       - name: Generate static site
         run: pnpm generate

@@ -1,0 +1,237 @@
+# Contrat d'interface front ↔ data - profil de métadonnées
+
+> **Statut : proposition v0, à co-écrire.** Ce document vit côté POC front le temps de la
+> discussion ; sa cible est le dépôt `datagouv/regles.data.gouv.fr`, qui reste la source de
+> vérité des fiches. Rédigé à partir des deux fiches existantes (droit de vote, Prest'Agri)
+> et de la doctrine du catalogue (ontologie localisée, régimes de certification).
+
+Le contrat tient en trois pièces, aucune n'existait :
+
+1. **Le profil de `metadata.jsonld` figé** - champs obligatoires/optionnels, vocabulaires (ce document, sections 2-3).
+2. **Une convention de slugs et d'URI** - sans espaces ni accents (section 4).
+3. **Un index de catalogue généré** - le front ne crawle pas une arborescence (section 5).
+
+La répartition des apports : le dépôt data apporte la conformité SEMIC (CPSV-AP, CCCEV,
+sous-ensemble descriptif de CPRMV) ; le front apporte la **couche confiance** (maturité,
+régimes de certification, enveloppe de cas de tests, frontière des entrées), proposée en
+extension JSON-LD (section 6). Les deux fiches d'exemple dans [propositions/](propositions/)
+montrent le profil complet sur des cas réels.
+
+## 1. Socle constaté (ce qui marche, à garder tel quel)
+
+Constaté dans les deux fiches existantes, directement consommable par le front (le
+`@context` aplatit `title`/`description` en clés courtes, langue fr - pas besoin de stack RDF) :
+
+| Champ | Vocabulaire | Statut proposé | Note |
+|---|---|---|---|
+| `@context` + `@graph` | JSON-LD | obligatoire | |
+| nœud `cpsv:PublicService` | CPSV-AP | obligatoire (>= 1) | composition possible via `dct:hasPart` / `dct:isPartOf` (cas Prest'Agri) |
+| `dct:identifier` | DC | obligatoire | schéma à figer, cf. section 4 |
+| `title`, `description` (fr) | DC | obligatoires | |
+| `dct:version` | DC | obligatoire | semver ; aujourd'hui absent des sous-services Prest'Agri |
+| `dct:valid` | DC | optionnel | période indicative ; ne prétend pas couvrir le droit transitoire (c'est une règle, pas une métadonnée) |
+| `cv:hasCompetentAuthority` → `cv:PublicOrganisation` | CPSV-AP | obligatoire, **décrit dans le graphe** | aujourd'hui référencé sans nœud dans Prest'Agri ; les shapes exigent aussi `dct:spatial` sur l'organisation et le type `org:Organization` (cible de `cv:ownedBy`) |
+| `cv:hasLegalResource` (ELI, `dct:coverage` par articles) | CPSV-AP/ELI | obligatoire | le motif « id Légifrance + coverage article par article » de la fiche droit de vote est le bon |
+| `cv:hasChannel` | CPSV-AP | obligatoire | package, API, dépôt git |
+| `cpsv:hasInput` → `["cv:Evidence", "cprmv:Parameter"]` (types XSD, `cprmv:definition` sourcée) | CPSV-AP + CPRMV (sous-ensemble descriptif) | obligatoire | **tranché** : la propriété CPSV-AP 3.2.0 est `cpsv:hasInput` (shape officielle : `shacl:path <http://purl.org/vocab/cpsv#hasInput>`, `shacl:class cv:Evidence`), pas `cv:hasInput` ; d'où le double typage `cv:Evidence` (exigé par la shape) + `cprmv:Parameter` (geste CPRMV, cf. section 6 bis). Le typage reste volontairement superficiel : **pas d'entités ni de périodes dans le socle** (cf. section 7) |
+| `cpsv:produces` → `cprmv:Rule` | CPRMV | obligatoire | dont la sortie d'explicabilité (`explanation`, `metadata.conditions`) - motif à généraliser : « utile pour expliquer un refus » |
+| `schema:SoftwareSourceCode` pinné à un SHA | schema.org | obligatoire si code publié | |
+| `schema:HowTo` | schema.org | optionnel | |
+| `dct:source` vers code **et tests** | DC | obligatoire si code publié | remplacé à terme par `rdgf:testCase` (section 6) qui structure l'enveloppe |
+
+## 1 bis. Littéraux multilingues
+
+Les littéraux affichés (`dct:title`, `dct:description`, `cprmv:definition`, `skos:prefLabel`,
+`dct:coverage`, `schema:name`, `schema:description`) s'écrivent en tableau de littéraux étiquetés
+par leur langue, forme prévue par JSON-LD 1.1 :
+
+```jsonc
+{
+  "title": [
+    { "@value": "Droit de vote en France", "@language": "fr" },
+    { "@value": "Right to vote in France", "@language": "en" }
+  ]
+}
+```
+
+Règle de choix côté consommateur (`app/utils/jsonld-adapter.ts`) : la langue demandée, puis le
+français, puis le premier littéral disponible. Un texte identique dans les deux langues s'écrit
+en chaîne simple, sans étiquette.
+
+L'étiquette de langue portée par chaque littéral vaut aussi pour les clés écrites en toutes
+lettres, que les alias `title` / `description` du `@context` ne couvrent pas (cf. section 2,
+« Titres et descriptions balisés langue »).
+
+Les deux fiches vendorées dans `app/data/jsonld/` portent leurs traductions anglaises sous cette
+forme, à titre de démonstration pour la revue GovTech4All. C'est une proposition au dépôt data,
+qui reste la source de vérité des fiches (section 8) : une synchronisation (`pnpm sync:data`) les
+écrase tant que le dépôt data ne les a pas reprises.
+
+Restent en français dans toutes les langues : le nom propre des textes de loi, avec une glose
+anglaise à la première mention ; les extraits de texte réglementaire ; le code des règles ; les
+identifiants, versions et valeurs de tests.
+
+## 2. Points à trancher (relevés par `rapport-conformite.md`)
+
+Générés automatiquement par `scripts/sync-data-repo.mjs` à chaque synchronisation :
+
+- **Schéma d'URI des services** : `https://regles.gouv.fr/algo/...` (droit de vote) vs
+  `https://github.com/betagouv/prestagri#...` (Prest'Agri). Proposition section 4.
+- **`cv:hasInput` vs `cpsv:hasInput`** : **tranché** en faveur de `cpsv:hasInput`, vérifié dans les
+  shapes officielles 3.2.0 (`shacl:path <http://purl.org/vocab/cpsv#hasInput>` ; `cv:hasInput`
+  n'existe pas sur Public Service, le namespace m8g ne définit que `hasInputType`). Les entrées
+  doivent porter le type `cv:Evidence` (`shacl:class` de la shape).
+- **`type` vs `@type` sur les paramètres** : normaliser (le `@context` mappe déjà `type` → `@type`,
+  autant l'utiliser partout).
+- **Titres et descriptions balisés langue** : les shapes exigent `rdf:langString` sur `dct:title` ;
+  seuls les alias `title` / `description` du `@context` portent `@language: fr`, une clé `dct:title`
+  écrite en toutes lettres produit un littéral sans langue (violation constatée sur les 4 fiches).
+  Convention : utiliser les alias partout, y compris sur les paramètres et sorties.
+- **Composition de services** : `dct:hasPart` / `dct:isPartOf` entre services (motif Prest'Agri)
+  est hors profil CPSV-AP (`dct:isPartOf` y attend un `dcat:Dataset`, violation constatée). Le lien
+  natif pour « le service B utilise le service A » est `dct:requires` (`shacl:class cpsv:PublicService`),
+  qui converge avec `rdgf:boundaryKind: sortie-regle` côté entrées. L'unité de référencement est la
+  frontière certifiable (le sous-service), pas le dépôt : un nœud parent sans titre ni autorité n'a
+  pas à être un `cpsv:PublicService`.
+- **Dossiers avec espaces et accents** (`site/Ministère Intérieur/...`) : inutilisables en
+  routes front, cf. section 4.
+- **Autorité compétente non décrite** (Prest'Agri) et **bases légales absentes** des sous-services.
+
+> Vérification effective : le rejeu des shapes SHACL officielles (`cpsv-ap-SHACL.ttl`, 3.2.0) sur les
+> quatre fiches donne `conforms: false` partout avant corrections ; les deux fiches de
+> [propositions/](propositions/) sont corrigées et passent (`conforms: true`). Les écarts des fiches
+> réelles (hasInput, `cv:ownedBy` → `org:Organization`, `dct:spatial` obligatoire sur l'organisation,
+> langues, composition) sont matière à co-écriture, pas des corrections unilatérales côté front.
+
+## 3. Régimes de certification : des variantes de profil, pas un moule unique
+
+Le profil admet des **variantes selon les propriétés de la règle** (`rdgf:certificationRegime`) :
+
+| Régime | Quand | Ce que le profil exige en plus | Ce qu'il n'exige pas |
+|---|---|---|---|
+| `frontiere` | règle packageable : autorité claire, dépendances peu profondes | qualification de la frontière des entrées (section 6), cas de tests avec enveloppe | rien sur l'amont des entrées |
+| `implementation` | cœur socio-fiscal : chaîne de dépendances transitive sans porteur unique | snapshot d'implémentation (dépôt + version/SHA), suite de tests native référencée | une « autorité de la règle dans l'abstrait » |
+| `referencement` | ni code ni tests publiés | socle descriptif seul (section 1) | code, tests, canaux d'exécution |
+
+C'est la traduction en profil de la mise en garde OpenFisca : sur le cœur socio-fiscal,
+« administration porteuse » n'a pas de sens ; l'unité certifiable est le couple tests + snapshot.
+
+## 4. Conventions de nommage proposées
+
+- **Arborescence** : `site/<org-slug>/<rule-slug>/metadata.jsonld`, slugs kebab-case ASCII
+  (`ministere-interieur/droits-civiques-elections`). Le script de sync applique déjà cette
+  normalisation côté front ; autant la faire à la source.
+- **Identifiant** : `<domaine>.<slug>.<variante>` en gardant le motif existant
+  (`civique.droit-vote.v1`) ; pour le régime implémentation, la variante nomme
+  l'implémentation (`solidarite.prime-activite.openfisca-france`).
+- **URI canonique de service** : `https://regles.data.gouv.fr/regles/<org-slug>/<rule-slug>/<variante>`
+  - le domaine cible du produit, même si rien n'y répond encore (les URI JSON-LD sont des
+  identifiants, pas des liens). Les URI GitHub restent en `dct:source`/`schema:codeRepository`.
+- **Partage des rôles entre les trois axes de version** : l'URI porte la **lignée** (`/v1`, ou la
+  variante d'implémentation pour le régime implémentation) ; `dct:version` porte le **semver à
+  l'intérieur de la lignée** ; `rdgf:versionEvent` porte l'**historique daté** relié aux textes
+  déclencheurs. Une rupture de frontière (entrées/sorties incompatibles) crée une nouvelle URI ;
+  tout le reste est un incrément de `dct:version`. Deux implémentations de la même règle = deux
+  fiches (deux variantes d'URI), reliées par `cv:relatedService`.
+- **Entrées et sorties adressables** : donner aux paramètres qualifiés un `@id` de fragment
+  (`<uri-service>#input-<identifiant>`) plutôt qu'un blank node, pour permettre la référence
+  croisée et le suivi d'un paramètre entre deux versions de fiche.
+
+## 5. Index de catalogue (`catalog.json`)
+
+Généré aujourd'hui côté front par `scripts/sync-data-repo.mjs` (`pnpm sync:data`), à terme
+généré côté dépôt data en CI. Champs par entrée : `organisation`, `organisationSlug`, `slug`,
+`title`, `identifier`, `version`, `languages`, `sourcePath`, `conformite` (compteurs d'écarts).
+En-tête : commit source, date. Le front ne lit **que** l'index et les fiches qu'il référence.
+`title` reprend les littéraux de la fiche : une chaîne quand la fiche n'a qu'une langue, un objet
+`{ "fr": "…", "en": "…" }` quand elle en porte plusieurs (section 1 bis).
+
+## 6. Extensions « couche confiance » (namespace `rdgf:`)
+
+Proposition : `"rdgf": "https://regles.data.gouv.fr/def/catalogue#"`. Ce sont les champs que
+le front affiche déjà et que le profil actuel ne porte pas (liste `profileGaps` visible sur
+les fiches du POC). Illustrées sur des cas réels dans [propositions/](propositions/).
+
+| Propriété | Porte sur | Valeurs | Pourquoi |
+|---|---|---|---|
+| `rdgf:maturity` | service | `N0`-`N3` | active les services progressivement (doctrine restitution) |
+| `rdgf:certificationRegime` | service | `frontiere` / `implementation` / `referencement` | section 3 |
+| `rdgf:boundaryKind` | `cprmv:Parameter` | `declaration` / `donnee-attestee` / `sortie-regle` / `contexte` | un badge « certifiée » doit dire ce qu'il couvre ; généralise la distinction data/context déjà présente dans la fiche droit de vote |
+| `rdgf:evidenceSource` | `cprmv:Parameter` | nœud { label, url } | ancrage aux données attestées ayant un propriétaire institutionnel (RFR/DGFiP via API Particulier) - logique Evidence CCCEV, plus gouvernable qu'un modèle d'entités |
+| `rdgf:testCase` | service | nœud enveloppe : `intent`, `provenance`, `validatedBy`, `validatedAt`, `legalAnchor`, `tolerance`, `status`, `nativeFormat`, `nativeRef` | le test natif fait foi ; le catalogue norme l'enveloppe sociale, jamais le format de situation (ontologie localisée) |
+| `rdgf:operationalMapping` | service | nœud { from, to, artifact, maintainedBy, ciStatus } | recenser des mappings qui tournent, ne jamais rédiger de dictionnaire |
+| `rdgf:implementationSnapshot` | service (régime `implementation`) | nœud { repository, ref } | l'unité certifiable du régime implémentation |
+| `rdgf:engineProfile` | service | **littéral JSON** (`"@type": "@json"` dans le `@context`, JSON-LD 1.1 → `rdf:JSON`) | les opinions ontologiques (entités, périodes OpenFisca) restent locales au moteur. En nœud RDF, l'ordre des listes serait perdu et toute clé moteur non déclarée dans le `@context` produirait un IRI bidon ou disparaîtrait en silence (vérifié à l'expansion) ; le littéral JSON préserve la structure et assume l'opacité : le catalogue ne norme pas l'intérieur du bloc |
+| `rdgf:versionEvent` | service | nœud { version, date, kind, triggeredBy → ELI } | historique de versions lié aux textes déclencheurs |
+
+Conventions d'écriture qui conditionnent la validité RDF (vérifiées à l'expansion `jsonld`) :
+
+- **`cprmv:type` doit être déclaré `"@type": "@id"` dans le `@context`**, sinon `"xsd:decimal"`
+  s'expanse en littéral texte de onze caractères au lieu de l'IRI du datatype XSD.
+- **Les valeurs d'énumération rdgf: restent des chaînes nues en v1** (`frontiere`, `declaration`,
+  `N0`-`N3`...) : consommables en JSON sans résolution, contraignables par `sh:in`. Une promotion
+  ultérieure en concepts SKOS reste possible sans rupture.
+- **Aucune clé non mappée** : une clé à préfixe non déclaré fuit en IRI invalide, une clé nue
+  disparaît sans erreur (comportement JSON-LD standard). La moulinette doit comparer les clés du
+  document aux triples produits par l'expansion et rejeter tout écart.
+
+## 6 bis. Dette CPRMV (assumée, à porter à Bas)
+
+Le sous-ensemble CPRMV des fiches repose sur un vocabulaire en **working draft** (CPRMV 0.4.1,
+avril 2026, https://acc.cprmv.open-regels.nl/respec/) et l'écart est documenté plutôt que caché :
+
+- le namespace utilisé (`https://regels.overheid.nl/def/cprmv#`) ne déréférence pas et ne
+  correspond pas aux URL de la spec (`https://standaarden.open-regels.nl/standards/cprmv/0.4.1/`) ;
+  à re-pinner quand Bas publie le namespace définitif ;
+- `cprmv:Parameter` y est défini comme **sous-classe de Rule** (« a Rule that forms a parameter »,
+  un élément paramétrique revalorisé plus souvent que le reste : un montant, un barème), pas comme
+  variable d'entrée - notre usage est un contresens à discuter ;
+- `cprmv:type` n'existe pas dans le draft (seul `cprmv:definition` y est).
+
+D'où la position du profil : le **porteur sémantique des entrées est `cv:Evidence`** (CPSV-AP/CCCEV,
+spec UE stable), `cprmv:Parameter` est un typage secondaire assumé comme geste d'interopérabilité
+GovTech4All. La spec CPRMV définit par ailleurs `TestCase` / `TestSet` : convergence possible avec
+`rdgf:testCase` à explorer.
+
+## 7. Ce que le profil n'ajoutera pas (exclusions volontaires)
+
+- **Pas d'entités ni de périodes dans le socle commun.** Décrire une situation exige
+  l'ontologie du moteur ; un format commun de situations serait le « langage unique » par la
+  bande (biais d'inférence, cf. position Merigoux sur CPRMV). D'où `rdgf:engineProfile`
+  (namespacé) et les tests natifs référencés plutôt que transposés.
+- **Pas de format d'exécution des tests.** L'enveloppe `rdgf:testCase` est sociale
+  (provenance, validation), le test exécutable reste dans le dépôt source.
+- **Pas de table de correspondances entre notions administratives.** Uniquement le
+  recensement `rdgf:operationalMapping`.
+- Conséquence assumée : pas de promesse de transposabilité automatique inter-moteurs.
+
+## 8. Processus proposé
+
+1. Le dépôt data reste la **source de vérité** des fiches ; le front les consomme via
+   `pnpm sync:data` (clone local) et n'édite jamais une fiche vendorée.
+2. Les surcouches du front (maturité, régime, frontière...) sont **temporaires** : dès que le
+   profil `rdgf:` est accepté, elles migrent dans les fiches et l'adaptateur les lit
+   (`profileGaps` doit tendre vers zéro - c'est l'indicateur de convergence du contrat).
+3. Validation : contrôles structurels du script en attendant les shapes SHACL CPSV-AP 3.2.0
+   (outillage prêt dans `qloridant/vocabulaire-commun`, tutoriel 04) en CI du dépôt data,
+   étendues au namespace `rdgf:` une fois le profil stabilisé.
+
+## 9. Alignement avec schema.data.gouv.fr (outillage partagé)
+
+Le modèle cible est celui, éprouvé et actif, de schema.data.gouv.fr - avec lequel l'équipe
+partagera des outils. Correspondances et trajectoire :
+
+| schema.data.gouv.fr | Équivalent règles | Quand |
+|---|---|---|
+| `repertoires.yml` (PR de quelques lignes : url git, type, email) | registre `regles.yml` avec `type: publicodes / openfisca / catala / python / other` ; les fiches migrent à terme chez les producteurs (la fiche Prest'Agri a sa place dans `betagouv/prestagri`) | cible ; aujourd'hui fiches centralisées dans `site/` = état transitoire assumé |
+| tags git semver, doc générée par version | `rdgf:versionEvent`, « l'état du droit à une date donnée » | dès le profil |
+| type « other » dégradé (doc seule, zéro contrôle) | régime `referencement` (section 3) - le précédent valide l'approche multi-régimes | déjà fait |
+| validation des schémas par la moulinette + `errors.json` | contrôles structurels de `sync-data-repo.mjs` + `rapport-conformite.md` (embryon direct de l'étape validation du futur DAG) | déjà fait |
+| DAG Airflow quotidien (`datagouvfr_data_pipelines/schema/`) | un dossier `regles/` dans le même monorepo, pas une infra nouvelle | prématuré (2 fiches) ; les formats ci-dessus le préparent |
+| Validata (validation des données contre les schémas) | **« Validata des règles »** : rejouer les suites de tests natives contre les implémentations et publier le statut - c'est le chantier preuves avec OpenFisca | S2 2026 |
+| issues labellisées « en investigation / en construction » → page « schémas en cours » | même mécanisme pour les règles en cours de référencement | quand le repo data s'ouvre |
+| boucle producteurs passive (notifications désactivées, point faible assumé) | à inverser : pour un catalogue de règles, la confiance est le produit - rapports et statuts de tests actifs et publics (badges par fiche) | doctrine, dès maintenant |
+
+À corriger au passage : le README de `datagouv/regles.data.gouv.fr` pointe
+`etalab/dag_schema_data_gouv_fr`, **archivé depuis mars 2023** ; le pipeline actif vit dans
+`datagouv/datagouvfr_data_pipelines/schema/`.

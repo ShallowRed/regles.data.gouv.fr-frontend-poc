@@ -1,47 +1,49 @@
 <script setup lang="ts">
-useHead({ title: 'Réutiliser les règles | Catalogue des règles publiques' })
-
+const { t } = useI18n()
+const localePath = useLocalePath()
 const { withBaseURL } = useBaseUrl()
+
+useHead(() => ({ title: t('reuse.title') }))
 
 const audiences = [
   {
     pictogram: withBaseURL('pictograms/city-hall.svg'),
-    title: 'Portails et services publics',
-    body: 'Branchez un calcul d\'éligibilité ou de montant directement dans votre démarche en ligne, pour informer l\'usager au bon moment.',
-    examples: ['Application Mobile Interministérielle', 'Service-Public.fr', 'portails de collectivités'],
+    titleKey: 'reuse.audience1Title',
+    bodyKey: 'reuse.audience1Body',
+    exampleKeys: ['reuse.audience1Example1', 'reuse.audience1Example2', 'reuse.audience1Example3'],
   },
   {
     pictogram: withBaseURL('pictograms/contract.svg'),
-    title: 'Aidants et travailleurs sociaux',
-    body: 'Appuyez-vous sur des règles à jour et explicables pour accompagner une personne et comprendre pourquoi un droit est ouvert ou refusé.',
-    examples: ['France Services', 'CCAS', 'associations'],
+    titleKey: 'reuse.audience2Title',
+    bodyKey: 'reuse.audience2Body',
+    exampleKeys: ['reuse.audience2Example1', 'reuse.audience2Example2', 'reuse.audience2Example3'],
   },
   {
     pictogram: withBaseURL('pictograms/coding.svg'),
-    title: 'Éditeurs, chercheurs, journalistes',
-    body: 'Consommez les règles officielles plutôt que de les réinterpréter, ou auditez les politiques publiques à partir du code en vigueur.',
-    examples: ['logiciels de paie', 'simulateurs tiers', 'travaux d\'évaluation'],
+    titleKey: 'reuse.audience3Title',
+    bodyKey: 'reuse.audience3Body',
+    exampleKeys: ['reuse.audience3Example1', 'reuse.audience3Example2', 'reuse.audience3Example3'],
   },
 ]
 
 const modes = [
   {
     icon: 'fr-icon-terminal-box-line',
-    title: 'API de calcul',
-    body: 'Pour les règles exécutables, une API documentée renvoie un résultat à partir d\'une situation décrite. Contrats d\'entrée et de sortie stables.',
-    availability: 'Disponible dès qu\'une règle expose un moteur de calcul (OpenFisca, Publicodes, Catala ou moteur propriétaire ouvert).',
+    titleKey: 'reuse.mode1Title',
+    bodyKey: 'reuse.mode1Body',
+    availabilityKey: 'reuse.mode1Availability',
   },
   {
     icon: 'fr-icon-window-line',
-    title: 'Widget intégrable',
-    body: 'Un module de simulation prêt à embarquer (iframe ou web component) à poser sur un site, sans développement lourd.',
-    availability: 'Réservé aux moteurs légers exécutables côté navigateur (Publicodes, Catala).',
+    titleKey: 'reuse.mode2Title',
+    bodyKey: 'reuse.mode2Body',
+    availabilityKey: 'reuse.mode2Availability',
   },
   {
     icon: 'fr-icon-download-line',
-    title: 'Paquet exécutable',
-    body: 'Pour les moteurs légers, la règle peut s\'exécuter côté client - adaptée aux usages mobiles et respectueux de la vie privée.',
-    availability: 'Distribué sous forme de paquet npm / package pour les règles dont la modélisation est publiée.',
+    titleKey: 'reuse.mode3Title',
+    bodyKey: 'reuse.mode3Body',
+    availabilityKey: 'reuse.mode3Availability',
   },
 ]
 </script>
@@ -57,18 +59,16 @@ const modes = [
         <div class="space-y-4">
           <Breadcrumbs
             :items="[
-              { to: '/mvp', label: 'Accueil' },
-              { to: null, label: 'Réutiliser les règles' },
+              { to: '/mvp', label: $t('breadcrumb.home') },
+              { to: null, label: $t('breadcrumb.reuse') },
             ]"
           />
           <header class="space-y-3 max-w-3xl">
             <h1 class="fr-h2 m-0">
-              Une règle modélisée une fois, réutilisée partout
+              {{ $t('reuse.heading') }}
             </h1>
             <p class="fr-text--lead text-gray-700 m-0">
-              Plutôt que de recoder dans chaque service les mêmes règles d'éligibilité ou
-              de calcul, le catalogue les expose comme des briques communes, prêtes à être
-              intégrées et toujours à jour avec le droit en vigueur.
+              {{ $t('reuse.lead') }}
             </p>
           </header>
         </div>
@@ -85,18 +85,17 @@ const modes = [
           id="audiences"
           class="fr-h3 m-0"
         >
-          À qui ça sert
+          {{ $t('reuse.audiencesTitle') }}
         </h2>
         <p class="fr-text--lg text-gray-700 m-0">
-          Réutiliser une règle officielle, c'est gagner en fiabilité et en conformité,
-          sans réécrire ni maintenir le calcul de son côté.
+          {{ $t('reuse.audiencesLead') }}
         </p>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div
           v-for="a in audiences"
-          :key="a.title"
+          :key="a.titleKey"
           class="rounded-lg border border-gray-200 bg-white p-6 space-y-3"
         >
           <img
@@ -106,18 +105,18 @@ const modes = [
             height="64"
           >
           <h3 class="fr-h6 m-0">
-            {{ a.title }}
+            {{ $t(a.titleKey) }}
           </h3>
           <p class="fr-text--sm text-gray-700 m-0">
-            {{ a.body }}
+            {{ $t(a.bodyKey) }}
           </p>
           <ul class="flex flex-wrap gap-1.5 list-none p-0 m-0 pt-1">
             <li
-              v-for="ex in a.examples"
+              v-for="ex in a.exampleKeys"
               :key="ex"
               class="fr-tag fr-tag--sm"
             >
-              {{ ex }}
+              {{ $t(ex) }}
             </li>
           </ul>
         </div>
@@ -140,17 +139,16 @@ const modes = [
               id="modes"
               class="fr-h3 m-0"
             >
-              Trois façons d'intégrer une règle
+              {{ $t('reuse.modesTitle') }}
             </h2>
             <p class="fr-text--lg text-gray-700 m-0">
-              Le mode d'intégration dépend du moteur de la règle et de son niveau de publication.
-              Chaque fiche indique précisément lesquels sont disponibles.
+              {{ $t('reuse.modesLead') }}
             </p>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div
               v-for="m in modes"
-              :key="m.title"
+              :key="m.titleKey"
               class="flex flex-col rounded-lg border border-gray-200 bg-white p-6 space-y-3"
             >
               <span
@@ -159,23 +157,22 @@ const modes = [
                 aria-hidden="true"
               />
               <h3 class="fr-h6 m-0">
-                {{ m.title }}
+                {{ $t(m.titleKey) }}
               </h3>
               <p class="fr-text--sm text-gray-700 m-0">
-                {{ m.body }}
+                {{ $t(m.bodyKey) }}
               </p>
               <p class="fr-text--xs text-gray-600 m-0 pt-2 mt-auto border-t border-gray-100 flex items-start gap-1.5">
                 <span
                   class="fr-icon-information-line fr-icon--xs text-[#000091] shrink-0 mt-0.5"
                   aria-hidden="true"
                 />
-                <span>{{ m.availability }}</span>
+                <span>{{ $t(m.availabilityKey) }}</span>
               </p>
             </div>
           </div>
           <p class="fr-text--sm text-gray-600 max-w-2xl m-0">
-            Toutes les règles ne sont pas exécutables&nbsp;: certaines restent opérées en interne
-            par l'administration productrice et ne sont pas réutilisables hors de ses systèmes.
+            {{ $t('reuse.modesNote') }}
           </p>
         </section>
       </div>
@@ -189,24 +186,23 @@ const modes = [
       <div class="fr-container py-12 md:py-14">
         <div class="max-w-2xl space-y-3">
           <h2 class="fr-h4 m-0 text-white">
-            Voir une API de règle
+            {{ $t('reuse.ctaTitle') }}
           </h2>
           <p class="fr-text--sm text-white/90 m-0">
-            Ouvrez une fiche de règle exécutable et consultez l'onglet « API » : endpoint,
-            format d'entrée et exemple de réponse y sont documentés.
+            {{ $t('reuse.ctaBody') }}
           </p>
           <div class="flex flex-wrap gap-3 pt-2">
             <NuxtLink
-              to="/mvp/regles/rsa-eligibilite?tab=api"
+              :to="localePath('/mvp/regles/prestagri?tab=api')"
               class="fr-btn btn-on-dark--solid"
             >
-              Exemple : l'API du RSA
+              {{ $t('reuse.ctaPrimary') }}
             </NuxtLink>
             <NuxtLink
-              to="/mvp/regles/"
+              :to="localePath('/mvp/regles/')"
               class="fr-btn fr-btn--secondary btn-on-dark--ghost"
             >
-              Parcourir le catalogue
+              {{ $t('reuse.ctaSecondary') }}
             </NuxtLink>
           </div>
         </div>

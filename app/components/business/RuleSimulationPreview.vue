@@ -42,7 +42,7 @@ defineProps<{
             v-if="computedAt"
             class="fr-text--sm mb-0 text-gray-500 mt-2"
           >
-            Calcul effectué le {{ computedAt }}
+            {{ $t('preview.computedAt', { date: computedAt }) }}
           </p>
         </div>
       </div>
@@ -57,7 +57,7 @@ defineProps<{
         id="explanation-title"
         class="fr-h5"
       >
-        Comment ce résultat a été calculé
+        {{ $t('preview.explanationTitle') }}
       </h3>
       <ul class="list-none p-0 space-y-4">
         <li
@@ -73,7 +73,7 @@ defineProps<{
             v-if="node.source"
             class="fr-text--sm mb-0 text-gray-600 m-0"
           >
-            <em>Source : {{ node.source }}</em>
+            <em>{{ $t('preview.source', { source: node.source }) }}</em>
           </p>
           <ul
             v-if="node.children?.length"

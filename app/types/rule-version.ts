@@ -17,7 +17,7 @@ export interface RuleVersion {
   author: string
   /**
    * Identifiant de la référence légale qui a déclenché ce changement
-   * (clé de legalReferencesMock). Matérialise « l'état du droit à une date donnée ».
+   * (clé de legalReferencesSource). Matérialise « l'état du droit à une date donnée ».
    */
   triggeredBy?: string
 }

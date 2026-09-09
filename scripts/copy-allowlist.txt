@@ -1,0 +1,6 @@
+# Exceptions justifiées au lint éditorial (doctrine 15).
+# Format : chemin:extrait exact de la ligne.
+# « fait foi » est du vocabulaire juridique exact pour un résultat opposable.
+i18n/locales/fr.json:un agent ou un usager peut
+# Cadratin isolé = placeholder typographique de valeur vide, pas de la prose.
+app/components/business/RuleLiveCalculation.vue:euros.format(value)

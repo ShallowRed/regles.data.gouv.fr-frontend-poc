@@ -9,7 +9,9 @@ const props = withDefaults(defineProps<{
   withMeaning: false,
 })
 
+const { t } = useI18n()
 const meta = computed(() => maturityMeta(props.level))
+const meaning = computed(() => t(meta.value.meaningKey))
 </script>
 
 <template>
@@ -17,13 +19,13 @@ const meta = computed(() => maturityMeta(props.level))
     <span
       class="fr-badge fr-badge--sm"
       :class="meta.badgeClass"
-      :title="meta.meaning"
+      :title="meaning"
     >
-      {{ meta.label }}
+      {{ $t(meta.labelKey) }}
     </span>
     <span
       v-if="withMeaning"
       class="fr-text--xs text-gray-600"
-    >{{ meta.meaning }}</span>
+    >{{ meaning }}</span>
   </span>
 </template>

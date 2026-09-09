@@ -1,47 +1,49 @@
 <script setup lang="ts">
-useHead({ title: 'Vérifier une règle | Catalogue des règles publiques' })
-
+const { t } = useI18n()
+const localePath = useLocalePath()
 const { withBaseURL } = useBaseUrl()
+const { formatMonthYear } = useLocaleDate()
+const { ruleVersions } = useCatalog()
 
-const steps = [
-  { num: '1', label: 'Le texte', desc: 'L\'article de loi ou le décret qui fonde la règle.' },
-  { num: '2', label: 'La règle métier', desc: 'L\'interprétation administrative : le barème, les conditions.' },
-  { num: '3', label: 'Le code', desc: 'La modélisation exécutable qui calcule le résultat.' },
-  { num: '4', label: 'Le résultat', desc: 'Un montant ou une éligibilité, traçable jusqu\'à sa source.' },
-]
+useHead(() => ({ title: t('verify.title') }))
+
+const steps = [1, 2, 3, 4].map(num => ({
+  num: String(num),
+  labelKey: `verify.step${num}Label`,
+  descKey: `verify.step${num}Desc`,
+}))
 
 const guarantees = [
   {
     pictogram: withBaseURL('/pictograms/justice.svg'),
-    title: 'Chaque règle est reliée à son texte',
-    body: 'Loi, décret, arrêté, convention ou délibération : la base légale de chaque règle est référencée et liée à sa source officielle (Légifrance, identifiants ELI et LEGIARTI).',
+    titleKey: 'verify.guarantee1Title',
+    bodyKey: 'verify.guarantee1Body',
   },
   {
     pictogram: withBaseURL('/pictograms/document-search.svg'),
-    title: 'L\'historique est conservé',
-    body: 'À chaque évolution de la réglementation, une nouvelle version de la règle est publiée. On peut consulter l\'état du droit applicable à une date donnée.',
+    titleKey: 'verify.guarantee2Title',
+    bodyKey: 'verify.guarantee2Body',
   },
   {
     pictogram: withBaseURL('/pictograms/contract.svg'),
-    title: 'La fiabilité est qualifiée',
-    body: 'Selon les preuves apportées par le producteur (code ouvert, cas de test, certification), la règle gagne en niveau de garantie, signalé clairement sur sa fiche.',
+    titleKey: 'verify.guarantee3Title',
+    bodyKey: 'verify.guarantee3Body',
   },
 ]
 
-/* --- Frise des versions du RSA, pour illustrer « l'état du droit à une date donnée » --- */
-const dateFormatter = new Intl.DateTimeFormat('fr-FR', { year: 'numeric', month: 'long' })
-const kindMeta: Record<string, { label: string, dot: string }> = {
-  majeur: { label: 'Évolution majeure', dot: 'bg-[#6e445a]' },
-  mineur: { label: 'Mise à jour', dot: 'bg-[#000091]' },
-  correctif: { label: 'Correctif', dot: 'bg-[#716043]' },
-  editorial: { label: 'Éditorial', dot: 'bg-gray-400' },
+/* --- Frise des versions de Prest'Agri, pour illustrer « l'état du droit à une date donnée » --- */
+const kindMeta: Record<string, { labelKey: string, dot: string }> = {
+  majeur: { labelKey: 'verify.kindMajeur', dot: 'bg-[#6e445a]' },
+  mineur: { labelKey: 'verify.kindMineur', dot: 'bg-[#000091]' },
+  correctif: { labelKey: 'verify.kindCorrectif', dot: 'bg-[#716043]' },
+  editorial: { labelKey: 'verify.kindEditorial', dot: 'bg-gray-400' },
 }
-const rsaTimeline = computed(() =>
-  ruleVersionsMock
-    .filter(v => v.ruleId === 'rsa-eligibilite')
+const exampleTimeline = computed(() =>
+  ruleVersions.value
+    .filter(v => v.ruleId === 'prestagri')
     .map(v => ({
       ...v,
-      date: dateFormatter.format(new Date(v.publishedAt)),
+      date: formatMonthYear(v.publishedAt),
       meta: kindMeta[v.kind] ?? kindMeta.editorial,
     })),
 )
@@ -58,18 +60,16 @@ const rsaTimeline = computed(() =>
         <div class="space-y-4">
           <Breadcrumbs
             :items="[
-              { to: '/mvp', label: 'Accueil' },
-              { to: null, label: 'Vérifier une règle' },
+              { to: '/mvp', label: $t('breadcrumb.home') },
+              { to: null, label: $t('breadcrumb.verify') },
             ]"
           />
           <header class="space-y-3 max-w-3xl">
             <h1 class="fr-h2 m-0">
-              Du résultat affiché jusqu'au texte de loi
+              {{ $t('verify.heading') }}
             </h1>
             <p class="fr-text--lead text-gray-700 m-0">
-              Une décision algorithmique ne devrait jamais être une boîte noire. Le catalogue
-              relie chaque règle de calcul à la réglementation qui la fonde, pour que chacun
-              puisse comprendre et vérifier d'où vient un droit.
+              {{ $t('verify.lead') }}
             </p>
           </header>
         </div>
@@ -92,11 +92,10 @@ const rsaTimeline = computed(() =>
               id="chaine"
               class="fr-h3 m-0"
             >
-              La chaîne qui relie la loi au calcul
+              {{ $t('verify.chainTitle') }}
             </h2>
             <p class="fr-text--lg text-gray-700 m-0">
-              Entre le texte voté et le montant affiché à l'usager, il y a plusieurs traductions.
-              Le catalogue rend chacune d'elles visible et vérifiable.
+              {{ $t('verify.chainLead') }}
             </p>
           </div>
 
@@ -115,10 +114,10 @@ const rsaTimeline = computed(() =>
                 aria-hidden="true"
               />
               <p class="fr-text--sm font-bold text-gray-900 mt-3 mb-1">
-                {{ step.label }}
+                {{ $t(step.labelKey) }}
               </p>
               <p class="fr-text--xs text-gray-600 m-0">
-                {{ step.desc }}
+                {{ $t(step.descKey) }}
               </p>
             </li>
           </ol>
@@ -134,22 +133,21 @@ const rsaTimeline = computed(() =>
               id="historique"
               class="fr-h3 m-0"
             >
-              L'état du droit, à une date donnée
+              {{ $t('verify.historyTitle') }}
             </h2>
             <p class="fr-text--lg text-gray-700 m-0">
-              Chaque évolution réglementaire donne lieu à une nouvelle version, datée et reliée
-              au texte qui l'a déclenchée. On peut ainsi savoir quelle règle s'appliquait à un instant précis.
+              {{ $t('verify.historyLead') }}
             </p>
           </div>
 
           <div class="rounded-lg border border-gray-200 bg-white p-6 md:p-8 shadow-[0_2px_12px_rgba(0,0,145,0.04)]">
             <p class="fr-text--sm text-gray-700 m-0 mb-6">
-              <span class="font-bold">Revenu de solidarité active - éligibilité</span>
-              <span class="text-gray-500"> · produit par la CNAF</span>
+              <span class="font-bold">{{ $t('verify.timelineRule') }}</span>
+              <span class="text-gray-500">{{ $t('verify.timelineProducer') }}</span>
             </p>
             <ol class="relative list-none p-0 pl-6 m-0 ml-2 space-y-6">
               <li
-                v-for="v in rsaTimeline"
+                v-for="v in exampleTimeline"
                 :key="v.id"
                 class="relative pl-6"
               >
@@ -159,10 +157,10 @@ const rsaTimeline = computed(() =>
                   aria-hidden="true"
                 />
                 <div class="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-                  <span class="fr-text--sm mb-0 font-bold text-gray-900 tabular-nums">v{{ v.version }}</span>
+                  <span class="fr-text--sm mb-0 font-bold text-gray-900 tabular-nums">{{ formatRuleVersion(v.version) }}</span>
                   <span class="fr-text--xs mb-0 text-gray-500">{{ v.date }}</span>
                   <span class="fr-text--xs mb-0 text-gray-400">·</span>
-                  <span class="fr-text--xs mb-0 text-gray-500">{{ v.meta!.label }}</span>
+                  <span class="fr-text--xs mb-0 text-gray-500">{{ $t(v.meta!.labelKey) }}</span>
                 </div>
                 <p class="fr-text--sm mb-0 text-gray-700 m-0 mt-1">
                   {{ v.changelog }}
@@ -183,12 +181,12 @@ const rsaTimeline = computed(() =>
         id="garanties"
         class="fr-h3 m-0 max-w-3xl"
       >
-        Ce que le catalogue garantit
+        {{ $t('verify.guaranteesTitle') }}
       </h2>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div
           v-for="g in guarantees"
-          :key="g.title"
+          :key="g.titleKey"
           class="rounded-lg border border-gray-200 bg-white p-6 space-y-3"
         >
           <img
@@ -198,10 +196,10 @@ const rsaTimeline = computed(() =>
             height="64"
           >
           <h3 class="fr-h6 m-0">
-            {{ g.title }}
+            {{ $t(g.titleKey) }}
           </h3>
           <p class="fr-text--sm mb-0 text-gray-700 m-0">
-            {{ g.body }}
+            {{ $t(g.bodyKey) }}
           </p>
         </div>
       </div>
@@ -215,24 +213,23 @@ const rsaTimeline = computed(() =>
       <div class="fr-container py-12 md:py-14">
         <div class="max-w-2xl space-y-3">
           <h2 class="fr-h4 m-0 text-white">
-            Voir la traçabilité sur une règle réelle
+            {{ $t('verify.ctaTitle') }}
           </h2>
           <p class="fr-text--sm mb-0 text-white/90 m-0">
-            Ouvrez une fiche et explorez l'onglet « Bases légales » : chaque règle expose
-            les textes qui la fondent et l'historique de ses versions.
+            {{ $t('verify.ctaBody') }}
           </p>
           <div class="flex flex-wrap gap-3 pt-2">
             <NuxtLink
-              to="/mvp/regles/rsa-eligibilite?tab=legal"
+              :to="localePath('/mvp/regles/prestagri?tab=legal')"
               class="fr-btn btn-on-dark--solid"
             >
-              Exemple : le RSA
+              {{ $t('verify.ctaPrimary') }}
             </NuxtLink>
             <NuxtLink
-              to="/mvp/regles/"
+              :to="localePath('/mvp/regles/')"
               class="fr-btn fr-btn--secondary btn-on-dark--ghost"
             >
-              Parcourir le catalogue
+              {{ $t('verify.ctaSecondary') }}
             </NuxtLink>
           </div>
         </div>

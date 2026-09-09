@@ -1,3 +1,7 @@
+<script setup lang="ts">
+const localePath = useLocalePath()
+</script>
+
 <template>
   <footer
     class="fr-footer"
@@ -7,8 +11,8 @@
       <div class="fr-footer__body">
         <div class="fr-footer__brand fr-enlarge-link">
           <NuxtLink
-            to="/mvp"
-            title="Retour à l'accueil du Catalogue des règles publiques"
+            :to="localePath('/mvp')"
+            :title="$t('site.footerHomeTitle')"
           >
             <p class="fr-logo">
               République<br>française
@@ -17,9 +21,7 @@
         </div>
         <div class="fr-footer__content">
           <p class="fr-footer__content-desc">
-            Le catalogue des règles publiques référence les modélisations informatiques
-            des règles de droit produites par les administrations françaises, pour les
-            rendre lisibles, traçables et réutilisables.
+            {{ $t('footer.description') }}
           </p>
           <ul class="fr-footer__content-list">
             <li class="fr-footer__content-item">
@@ -52,20 +54,20 @@
       <div class="fr-footer__bottom">
         <ul class="fr-footer__bottom-list">
           <li class="fr-footer__bottom-item">
-            <span class="fr-footer__bottom-link">Accessibilité : non conforme</span>
+            <span class="fr-footer__bottom-link">{{ $t('footer.accessibility') }}</span>
           </li>
           <li class="fr-footer__bottom-item">
-            <span class="fr-footer__bottom-link">Mentions légales</span>
+            <span class="fr-footer__bottom-link">{{ $t('footer.legalNotice') }}</span>
           </li>
           <li class="fr-footer__bottom-item">
-            <span class="fr-footer__bottom-link">Données personnelles</span>
+            <span class="fr-footer__bottom-link">{{ $t('footer.personalData') }}</span>
           </li>
           <li class="fr-footer__bottom-item">
             <NuxtLink
-              to="/a-propos"
+              :to="localePath('/a-propos')"
               class="fr-footer__bottom-link"
             >
-              À propos de cette préfiguration
+              {{ $t('footer.about') }}
             </NuxtLink>
           </li>
         </ul>

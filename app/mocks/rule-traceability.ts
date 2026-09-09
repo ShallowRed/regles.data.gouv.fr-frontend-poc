@@ -4,10 +4,10 @@ import type { RuleEngine } from '~/types/rule'
  * Correspondances texte légal ↔ code, par règle.
  *
  * Matérialise l'« objet-frontière » de la restitution : un extrait de texte
- * réglementaire mis en regard du fragment de code qui l'implémente. Aucune
- * analyse n'est faite ici, ce sont des appariements documentés (mockés).
+ * réglementaire mis en regard du fragment de code qui l'implémente.
  *
- * Seules les règles à moteur ouvert et traçabilité publiée en exposent.
+ * Démo resserrée : les snippets sont extraits des dépôts publics réels
+ * (betagouv/publicodes-entreprise-innovation, src/dispositifs/cir.publicodes).
  */
 export interface TraceabilityMapping {
   /** Identifiant de la référence légale (clé de legalReferencesMock). */
@@ -25,80 +25,51 @@ export interface TraceabilityMapping {
 }
 
 export const ruleTraceabilityMock: Record<string, TraceabilityMapping[]> = {
-  'pass-culture-eligibilite': [
+  'entreprise-innovation': [
     {
-      referenceId: 'decret-2021-628',
-      legalAnchor: 'Art. 2',
+      referenceId: 'cgi-244-quater-b',
+      legalAnchor: 'Art. 244 quater B, I',
       legalExcerpt:
-        'Le pass Culture est ouvert aux personnes âgées de quinze à dix-huit ans résidant en France depuis au moins un an.',
+        'Les entreprises industrielles et commerciales ou agricoles imposées d\'après leur bénéfice réel ou exonérées '
+        + 'en application [de certains régimes] peuvent bénéficier d\'un crédit d\'impôt au titre des dépenses de recherche '
+        + 'qu\'elles exposent au cours de l\'année.',
       engine: 'publicodes',
-      codeAnchor: 'pass culture . éligible',
-      codeSnippet: `pass culture . éligible:
-  toutes ces conditions:
-    - âge >= 15 ans
-    - âge <= 18 ans
-    - résidence éligible`,
+      codeAnchor: 'cir . eligibilite',
+      codeSnippet: `cir . eligibilite:
+  titre: Éligibilité au Crédit d'Impôt Recherche
+  variations:
+    - si: natureActivite . commercialeIndustrielleAgricole
+      alors: regimeFiscalReelOuConditionDExoneration
+    - si: natureActivite . artisanale
+      alors:
+        toutes ces conditions:
+          - regimeFiscalEstReel
+          - typeDeRevenus = 'bic'
+    - sinon: non`,
     },
     {
-      referenceId: 'decret-2021-628',
-      legalAnchor: 'Art. 2, II',
+      referenceId: 'cgi-244-quater-b',
+      legalAnchor: 'Art. 244 quater B, I (taux)',
       legalExcerpt:
-        'La condition de résidence est réputée remplie pour les personnes résidant dans un département d\'outre-mer.',
+        'Le taux du crédit d\'impôt est de 30 % pour la fraction des dépenses de recherche inférieure ou égale à '
+        + '100 millions d\'euros et de 5 % pour la fraction des dépenses de recherche supérieure à ce montant. '
+        + 'Le premier de ces deux taux est porté à 50 % pour les dépenses de recherche exposées dans des exploitations '
+        + 'situées dans un département d\'outre-mer.',
       engine: 'publicodes',
-      codeAnchor: 'pass culture . résidence éligible',
-      codeSnippet: `résidence éligible:
-  une de ces conditions:
-    - résidence = "métropole"
-    - résidence . outre-mer`,
-    },
-  ],
-  'rsa-eligibilite': [
-    {
-      referenceId: 'code-action-sociale-L262-2',
-      legalAnchor: 'Art. L. 262-2',
-      legalExcerpt:
-        'Toute personne résidant en France de manière stable et effective a droit au revenu de solidarité active, dans les conditions définies au présent chapitre, dès lors que ses ressources n\'atteignent pas le montant forfaitaire mentionné au 2° de l\'article L. 262-3.',
-      engine: 'openfisca',
-      codeAnchor: 'rsa.eligibilite',
-      codeSnippet: `class rsa_eligibilite(Variable):
-    value_type = bool
-    entity = Famille
-    def formula(famille, period):
-        residence = famille('residence_stable', period)
-        ressources = famille('rsa_base_ressources', period)
-        forfait = parameters(period).prestations.rsa.montant_de_base
-        return residence * (ressources < forfait)`,
-    },
-  ],
-  'allocation-chomage-are': [
-    {
-      referenceId: 'convention-unedic-2024',
-      legalAnchor: 'Art. 14',
-      legalExcerpt:
-        'L\'allocation journalière est égale au montant le plus élevé entre une partie fixe et 40,4 % du salaire journalier de référence, sans pouvoir être inférieure à 57 % du salaire journalier de référence.',
-      engine: 'publicodes',
-      codeAnchor: 'ARE . allocation journalière',
-      codeSnippet: `allocation journalière:
-  le maximum de:
-    - partie fixe + 40.4% * salaire journalier de référence
-    - 57% * salaire journalier de référence`,
-    },
-  ],
-  'apl-eligibilite': [
-    {
-      referenceId: 'ccffh-L823-1',
-      legalAnchor: 'Art. L. 823-1',
-      legalExcerpt:
-        'Le montant de l\'aide est calculé en fonction d\'un loyer plafond déterminé selon la zone géographique et la composition du foyer, diminué d\'une participation personnelle du bénéficiaire.',
-      engine: 'openfisca',
-      codeAnchor: 'aide_logement.montant',
-      codeSnippet: `class aide_logement(Variable):
-    value_type = float
-    entity = Famille
-    def formula(famille, period, parameters):
-        loyer_plafond = famille('loyer_plafonne', period)
-        participation = famille('participation_personnelle', period)
-        return max_(loyer_plafond - participation, 0)`,
+      codeAnchor: 'cir . creditMetropole / cir . creditDom',
+      codeSnippet: `cir . creditMetropole:
+  barème:
+    assiette: cir . depensesMetropole
+    tranches:
+      - taux: 30%
+        plafond: 100000000
+      - taux: 5%
+
+cir . creditDom:
+  barème:
+    assiette: cir . depensesDom
+    tranches:
+      - taux: 50%`,
     },
   ],
 }

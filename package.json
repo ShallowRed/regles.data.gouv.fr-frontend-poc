@@ -12,17 +12,25 @@
     "postinstall": "nuxt prepare",
     "typecheck": "nuxt typecheck",
     "lint": "eslint .",
-    "lint:fix": "eslint --fix ."
+    "lint:fix": "eslint --fix .",
+    "sync:data": "node scripts/sync-data-repo.mjs",
+    "check:contrat": "node --experimental-strip-types scripts/check-contrat.mjs",
+    "docs:fiches": "node scripts/generate-fiche-doc.mjs app/data/jsonld/*/*/metadata.jsonld contrat-interface/propositions/*/*/metadata.jsonld",
+    "verify:rules": "node --experimental-strip-types scripts/verify-rules.mjs",
+    "lint:copy": "node scripts/check-copy.mjs"
   },
   "dependencies": {
     "@gouvfr/dsfr": "^1.13.2",
     "nuxt": "^4.0.0",
+    "publicodes": "^1.10.1",
     "vue": "^3.5.13",
-    "vue-router": "^4.5.0"
+    "vue-router": "^4.5.0",
+    "yaml": "^2.9.0"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^9.0.0",
     "@nuxt/eslint": "^1.0.0",
+    "@nuxtjs/i18n": "^10.6.0",
     "@nuxtjs/tailwindcss": "^6.13.1",
     "@types/node": "^25.9.3",
     "eslint": "^10.3.0",

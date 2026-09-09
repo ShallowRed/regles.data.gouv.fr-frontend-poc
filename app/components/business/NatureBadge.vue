@@ -7,6 +7,7 @@ const props = defineProps<{
   withMeaning?: boolean
 }>()
 
+const { t } = useI18n()
 const meta = computed(() => ruleNatureMeta(props.nature))
 </script>
 
@@ -14,8 +15,8 @@ const meta = computed(() => ruleNatureMeta(props.nature))
   <span
     class="fr-badge fr-badge--sm"
     :class="meta.badgeClass"
-    :title="withMeaning ? meta.meaning : undefined"
+    :title="withMeaning ? t(meta.meaningKey) : undefined"
   >
-    {{ meta.label }}
+    {{ $t(meta.labelKey) }}
   </span>
 </template>

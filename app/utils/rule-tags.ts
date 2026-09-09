@@ -2,15 +2,17 @@
  * Présentation des qualifications d'une règle sous forme de tags « axe : valeur ».
  * Source de vérité partagée entre la carte de listing et la fiche, pour un
  * vocabulaire pédagogique cohérent.
+ *
+ * Les champs portent des clés de traduction : `useQualifiedTags()` les résout.
  */
-import type { Rule } from '~/types/rule'
+import type { CertificationRegime, Rule } from '~/types/rule'
 import { maturityMeta } from '~/utils/maturity'
 
 export interface QualifiedTagSpec {
-  axis: string
-  value: string
+  axisKey: string
+  valueKey: string
   tone: 'neutral' | 'green' | 'blue' | 'purple' | 'yellow' | 'grey'
-  hint: string
+  hintKey: string
 }
 
 const maturityTone: Record<string, QualifiedTagSpec['tone']> = {
@@ -20,66 +22,63 @@ const maturityTone: Record<string, QualifiedTagSpec['tone']> = {
   N3: 'green',
 }
 
-const natureSpec: Record<Rule['nature'], { value: string, tone: QualifiedTagSpec['tone'], hint: string }> = {
+const natureSpec: Record<Rule['nature'], Omit<QualifiedTagSpec, 'axisKey'>> = {
   ouverte: {
-    value: 'ouvert',
+    valueKey: 'tags.model.ouverte',
     tone: 'green',
-    hint: 'Le code et les artefacts de vérification sont publiquement consultables.',
+    hintKey: 'tags.model.hintOuverte',
   },
   hybride: {
-    value: 'partiel',
+    valueKey: 'tags.model.hybride',
     tone: 'yellow',
-    hint: 'Documentation et API exposées ; certaines briques restent internes.',
+    hintKey: 'tags.model.hintHybride',
   },
   fermee: {
-    value: 'fermé',
+    valueKey: 'tags.model.fermee',
     tone: 'grey',
-    hint: 'Moteur interne à l\'administration, non publié en source ouverte.',
+    hintKey: 'tags.model.hintFermee',
   },
 }
 
-const opposabilitySpec: Record<Rule['opposability'], { value: string, tone: QualifiedTagSpec['tone'], hint: string }> = {
-  opposable: {
-    value: 'opposable',
+const engineValueKey: Record<Rule['engine'], string> = {
+  publicodes: 'engine.publicodes',
+  openfisca: 'engine.openfisca',
+  catala: 'engine.catala',
+  proprietaire: 'tags.engine.proprietaire',
+  autre: 'tags.engine.autre',
+}
+
+const regimeSpec: Record<CertificationRegime, Omit<QualifiedTagSpec, 'axisKey'>> = {
+  frontiere: {
+    valueKey: 'tags.results.frontiere',
+    tone: 'green',
+    hintKey: 'tags.results.hintFrontiere',
+  },
+  implementation: {
+    valueKey: 'tags.results.implementation',
     tone: 'blue',
-    hint: 'Cette modélisation fait foi : un agent ou un usager peut s\'en prévaloir.',
+    hintKey: 'tags.results.hintImplementation',
   },
-  indicatif: {
-    value: 'indicative',
-    tone: 'neutral',
-    hint: 'Aide à la lecture, sans valeur de source de droit.',
+  referencement: {
+    valueKey: 'tags.results.referencement',
+    tone: 'grey',
+    hintKey: 'tags.results.hintReferencement',
   },
 }
 
-const engineLabel: Record<Rule['engine'], string> = {
-  publicodes: 'Publicodes',
-  openfisca: 'OpenFisca',
-  catala: 'Catala',
-  proprietaire: 'propriétaire',
-  autre: 'autre',
-}
-
-/** Les trois qualifications structurantes : ce que la règle permet, sa publication, sa portée. */
+/** Les deux qualifications structurantes : ce que la règle permet, sa publication. */
 export function qualifiedTagsFor(rule: Rule): QualifiedTagSpec[] {
   const mat = maturityMeta(rule.maturity)
   return [
     {
-      axis: 'règle',
-      value: mat.label.toLowerCase(),
+      axisKey: 'tags.rule.axis',
+      valueKey: `tags.rule.${mat.level}`,
       tone: maturityTone[rule.maturity] ?? 'grey',
-      hint: mat.meaning,
+      hintKey: mat.meaningKey,
     },
     {
-      axis: 'modèle',
-      value: natureSpec[rule.nature].value,
-      tone: natureSpec[rule.nature].tone,
-      hint: natureSpec[rule.nature].hint,
-    },
-    {
-      axis: 'valeur',
-      value: opposabilitySpec[rule.opposability].value,
-      tone: opposabilitySpec[rule.opposability].tone,
-      hint: opposabilitySpec[rule.opposability].hint,
+      axisKey: 'tags.model.axis',
+      ...natureSpec[rule.nature],
     },
   ]
 }
@@ -87,9 +86,15 @@ export function qualifiedTagsFor(rule: Rule): QualifiedTagSpec[] {
 /** Tag dédié au moteur de calcul (présenté à part, info plus technique). */
 export function engineTagFor(rule: Rule): QualifiedTagSpec {
   return {
-    axis: 'moteur',
-    value: engineLabel[rule.engine],
+    axisKey: 'tags.engine.axis',
+    valueKey: engineValueKey[rule.engine],
     tone: 'neutral',
-    hint: `Moteur de calcul : ${engineLabel[rule.engine]}.`,
+    hintKey: 'tags.engine.hint',
   }
+}
+
+/** Tag du régime de certification, rendu comme ses voisins. */
+export function certificationTagFor(rule: Rule): QualifiedTagSpec | null {
+  const regime = rule.certificationRegime
+  return regime ? { axisKey: 'tags.results.axis', ...regimeSpec[regime] } : null
 }

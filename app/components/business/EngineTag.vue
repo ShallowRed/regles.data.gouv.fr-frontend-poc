@@ -8,17 +8,17 @@ const props = defineProps<{
 const meta = computed(() => {
   switch (props.engine) {
     case 'publicodes':
-      return { label: 'Publicodes', cls: 'fr-tag--blue-france' }
+      return { key: 'engine.publicodes', cls: 'fr-tag--blue-france' }
     case 'openfisca':
-      return { label: 'OpenFisca', cls: 'fr-tag--green-bourgeon' }
+      return { key: 'engine.openfisca', cls: 'fr-tag--green-bourgeon' }
     case 'catala':
-      return { label: 'Catala', cls: 'fr-tag--brown-caramel' }
+      return { key: 'engine.catala', cls: 'fr-tag--brown-caramel' }
     case 'proprietaire':
-      return { label: 'Moteur proprietaire', cls: 'fr-tag--pink-tuile' }
+      return { key: 'engine.proprietaire', cls: 'fr-tag--pink-tuile' }
     case 'autre':
-      return { label: 'Autre moteur', cls: 'fr-tag--grey' }
+      return { key: 'engine.autre', cls: 'fr-tag--grey' }
     default:
-      return { label: 'Moteur inconnu', cls: 'fr-tag--grey' }
+      return { key: 'engine.inconnu', cls: 'fr-tag--grey' }
   }
 })
 </script>
@@ -28,6 +28,6 @@ const meta = computed(() => {
     class="fr-tag fr-tag--sm"
     :class="meta.cls"
   >
-    {{ meta.label }}
+    {{ $t(meta.key) }}
   </span>
 </template>

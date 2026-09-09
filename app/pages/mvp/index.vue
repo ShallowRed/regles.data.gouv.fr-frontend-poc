@@ -1,67 +1,72 @@
 <script setup lang="ts">
-useHead({ title: 'Catalogue des règles publiques' })
+const { t } = useI18n()
+const localePath = useLocalePath()
+const { formatLong } = useLocaleDate()
+const { rules } = useCatalog()
+
+useHead(() => ({ title: t('home.title') }))
 
 /* --- Recherche du hero, renvoie vers le catalogue --- */
 const searchQuery = ref('')
 function submitSearch() {
   const q = searchQuery.value.trim()
-  navigateTo({ path: '/mvp/regles/', query: q ? { q } : {} })
+  navigateTo({ path: localePath('/mvp/regles/'), query: q ? { q } : {} })
 }
 
-/* --- Thématiques de parcours rapide (les requêtes matchent les mocks) --- */
+// Quick-entry themes: a policy area opens the registry on its facet; the two
+// themes without a facet search the localized keyword.
 const themes = [
-  { label: 'Solidarité', q: 'solidarité' },
-  { label: 'Fiscalité', q: 'impôt' },
-  { label: 'Emploi', q: 'chômage' },
-  { label: 'Retraite', q: 'retraite' },
-  { label: 'Famille', q: 'famille' },
-  { label: 'Culture', q: 'culture' },
-  { label: 'Jeunesse', q: 'jeune' },
+  { labelKey: 'home.themes.solidarite', query: { domain: 'solidarite' } },
+  { labelKey: 'home.themes.fiscalite', query: { domain: 'fiscalite' } },
+  { labelKey: 'home.themes.emploi', query: { domain: 'emploi' } },
+  { labelKey: 'home.themes.retraite', query: { domain: 'retraite' } },
+  { labelKey: 'home.themes.famille', queryKey: 'home.themeQueries.famille' },
+  { labelKey: 'home.themes.culture', query: { domain: 'culture' } },
+  { labelKey: 'home.themes.jeunesse', queryKey: 'home.themeQueries.jeunesse' },
 ]
+function themeQuery(theme: { query?: Record<string, string>, queryKey?: string }) {
+  return theme.query ?? { q: t(theme.queryKey!) }
+}
 
 /* --- Chiffres clés dérivés des données du catalogue --- */
 const stats = computed(() => {
-  const domains = new Set(rulesMock.map(r => r.domain))
-  const executable = rulesMock.filter(r => r.maturity === 'N3').length
+  const domains = new Set(rules.value.map(r => r.domain))
+  const producers = new Set(rules.value.map(r => r.organism.id))
+  const executable = rules.value.filter(r => r.maturity === 'N3').length
   return [
     {
-      value: rulesMock.length,
-      label: 'règles référencées',
-      caption: 'aides, prestations et impôts modélisés',
+      value: rules.value.length,
+      label: t('home.stats.rulesLabel'),
+      caption: t('home.stats.rulesCaption'),
       icon: 'fr-icon-file-text-line',
     },
     {
-      value: Object.keys(organismsMock).length,
-      label: 'administrations productrices',
-      caption: 'de l\'État aux collectivités territoriales',
+      value: producers.size,
+      label: t('home.stats.producersLabel'),
+      caption: t('home.stats.producersCaption'),
       icon: 'fr-icon-bank-line',
     },
     {
       value: domains.size,
-      label: 'domaines couverts',
-      caption: 'solidarité, emploi, logement, santé…',
+      label: t('home.stats.domainsLabel'),
+      caption: t('home.stats.domainsCaption'),
       icon: 'fr-icon-compass-3-line',
     },
     {
       value: executable,
-      label: 'règles exécutables en ligne',
-      caption: 'calcul disponible via API ou simulateur',
+      label: t('home.stats.executableLabel'),
+      caption: t('home.stats.executableCaption'),
       icon: 'fr-icon-flashlight-fill',
     },
   ]
 })
 
 /* --- Sélections éditoriales --- */
-const featuredRules = rulesMock.slice(0, 3)
+const featuredRules = computed(() => rules.value.slice(0, 3))
 
-const dateFormatter = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
-function formatDate(iso: string) {
-  return dateFormatter.format(new Date(iso))
-}
-
-const latestUpdates = [...rulesMock]
+const latestUpdates = computed(() => [...rules.value]
   .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-  .slice(0, 4)
+  .slice(0, 4))
 </script>
 
 <template>
@@ -77,24 +82,23 @@ const latestUpdates = [...rulesMock]
             <div class="bg-white rounded-sm p-7 md:p-12 shadow-[0_8px_32px_rgba(0,0,145,0.08)] space-y-10">
               <hgroup class="space-y-4">
                 <h1 class="m-0 text-[2rem] md:text-[2.75rem] leading-[1.15] font-bold text-gray-900">
-                  Explorez les <span class="text-[#000091]">règles</span><br>
-                  des droits et services <span class="text-[#000091]">publics</span>
+                  {{ $t('home.hero.titleLead1') }} <span class="text-[#000091]">{{ $t('home.hero.titleAccent1') }}</span><br>
+                  {{ $t('home.hero.titleLead2') }} <span class="text-[#000091]">{{ $t('home.hero.titleAccent2') }}</span>
                 </h1>
                 <p class="fr-text--lead text-gray-700 m-0">
-                  Aides, impôts, prestations&nbsp;: comprenez comment l'administration
-                  calcule vos droits, et réutilisez ces règles dans vos propres services.
+                  {{ $t('home.hero.lead') }}
                 </p>
               </hgroup>
               <div class="space-y-6">
                 <form
                   role="search"
-                  aria-label="Rechercher une règle"
+                  :aria-label="$t('home.hero.searchFormLabel')"
                   @submit.prevent="submitSearch"
                 >
                   <label
                     class="fr-label fr-text--bold !mb-2"
                     for="hero-search"
-                  >Recherchez une règle</label>
+                  >{{ $t('home.hero.searchLabel') }}</label>
                   <div
                     class="fr-search-bar fr-search-bar--lg"
                     role="presentation"
@@ -104,59 +108,36 @@ const latestUpdates = [...rulesMock]
                       v-model="searchQuery"
                       class="fr-input"
                       type="search"
-                      placeholder="Ex. RSA, impôt sur le revenu, pass Culture"
+                      :placeholder="$t('home.hero.searchPlaceholder')"
                     >
                     <button
                       type="submit"
                       class="fr-btn fr-btn--lg"
                     >
-                      Rechercher
+                      {{ $t('home.hero.searchSubmit') }}
                     </button>
                   </div>
                 </form>
 
                 <ul
                   class="flex flex-wrap gap-2 list-none p-0 m-0"
-                  aria-label="Parcourir par thématique"
+                  :aria-label="$t('home.hero.themesLabel')"
                 >
                   <li
                     v-for="theme in themes"
-                    :key="theme.label"
+                    :key="theme.labelKey"
                   >
                     <NuxtLink
-                      :to="{ path: '/mvp/regles/', query: { q: theme.q } }"
+                      :to="{ path: localePath('/mvp/regles/'), query: themeQuery(theme) }"
                       class="fr-tag"
                     >
-                      {{ theme.label }}
+                      {{ $t(theme.labelKey) }}
                     </NuxtLink>
                   </li>
                 </ul>
               </div>
             </div>
           </div>
-        </div>
-
-        <div class="mt-7 flex flex-wrap gap-3">
-          <NuxtLink
-            to="/mvp/regles/pass-culture-eligibilite"
-            class="inline-flex items-center gap-2 border border-[#000091] text-[#000091] rounded-full px-4 py-1.5 text-sm no-underline bg-none bg-white hover:bg-[#f5f5fe]"
-          >
-            <span
-              class="fr-icon-flashlight-line fr-icon--sm"
-              aria-hidden="true"
-            />
-            <span><strong>En ce moment</strong>&nbsp;: les règles du pass Culture sont référencées</span>
-          </NuxtLink>
-          <NuxtLink
-            to="/mvp/regles/"
-            class="inline-flex items-center gap-2 border border-[#000091] text-[#000091] rounded-full px-4 py-1.5 text-sm no-underline bg-none bg-white hover:bg-[#f5f5fe]"
-          >
-            <span
-              class="fr-icon-article-line fr-icon--sm"
-              aria-hidden="true"
-            />
-            <span><strong>Actualités</strong>&nbsp;: suivi des référencements - Mai 2026</span>
-          </NuxtLink>
         </div>
       </div>
     </BrandBackgroundContainer>
@@ -168,7 +149,7 @@ const latestUpdates = [...rulesMock]
       <div class="fr-container">
         <!-- ============ CHIFFRES CLÉS ============ -->
         <section
-          aria-label="Le catalogue en chiffres"
+          :aria-label="$t('home.stats.sectionLabel')"
           class="pt-12 md:pt-16 pb-8"
         >
           <dl class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 m-0">
@@ -203,12 +184,10 @@ const latestUpdates = [...rulesMock]
               id="valeur"
               class="fr-h2 m-0"
             >
-              Une référence commune, des règles vérifiables
+              {{ $t('home.value.title') }}
             </h2>
             <p class="fr-text--lg text-gray-700 m-0">
-              Chaque règle référencée est documentée, reliée aux textes officiels qui la
-              fondent et versionnée. L'administration qui la produit en garde l'entière
-              maîtrise&nbsp;: le catalogue la rend simplement visible et réutilisable.
+              {{ $t('home.value.lead') }}
             </p>
           </div>
 
@@ -217,13 +196,12 @@ const latestUpdates = [...rulesMock]
               <div class="fr-tile__body">
                 <div class="fr-tile__content">
                   <h3 class="fr-tile__title">
-                    <NuxtLink to="/mvp/regles/">
-                      Découvrir les règles
+                    <NuxtLink :to="localePath('/mvp/regles/')">
+                      {{ $t('home.value.discoverTitle') }}
                     </NuxtLink>
                   </h3>
                   <p class="fr-tile__desc">
-                    Recherchez une règle par prestation, administration ou thématique,
-                    et consultez sa fiche complète.
+                    {{ $t('home.value.discoverBody') }}
                   </p>
                 </div>
               </div>
@@ -243,13 +221,12 @@ const latestUpdates = [...rulesMock]
               <div class="fr-tile__body">
                 <div class="fr-tile__content">
                   <h3 class="fr-tile__title">
-                    <NuxtLink to="/mvp/comprendre/verifier-une-regle">
-                      Vérifier la base légale
+                    <NuxtLink :to="localePath('/mvp/comprendre/verifier-une-regle')">
+                      {{ $t('home.value.verifyTitle') }}
                     </NuxtLink>
                   </h3>
                   <p class="fr-tile__desc">
-                    Chaque règle est reliée aux articles de loi, décrets et conventions
-                    qui la fondent, version par version.
+                    {{ $t('home.value.verifyBody') }}
                   </p>
                 </div>
               </div>
@@ -269,13 +246,12 @@ const latestUpdates = [...rulesMock]
               <div class="fr-tile__body">
                 <div class="fr-tile__content">
                   <h3 class="fr-tile__title">
-                    <NuxtLink to="/mvp/comprendre/reutiliser-une-regle">
-                      Réutiliser dans vos services
+                    <NuxtLink :to="localePath('/mvp/comprendre/reutiliser-une-regle')">
+                      {{ $t('home.value.reuseTitle') }}
                     </NuxtLink>
                   </h3>
                   <p class="fr-tile__desc">
-                    Intégrez une règle via son API documentée pour informer un usager
-                    ou préremplir un dossier.
+                    {{ $t('home.value.reuseBody') }}
                   </p>
                 </div>
               </div>
@@ -305,13 +281,13 @@ const latestUpdates = [...rulesMock]
                   id="alaune"
                   class="fr-h3 m-0"
                 >
-                  Règles à la une
+                  {{ $t('home.featured.title') }}
                 </h2>
                 <NuxtLink
-                  to="/mvp/regles/"
+                  :to="localePath('/mvp/regles/')"
                   class="fr-link"
                 >
-                  Voir toutes les règles
+                  {{ $t('home.featured.seeAll') }}
                 </NuxtLink>
               </div>
 
@@ -333,7 +309,7 @@ const latestUpdates = [...rulesMock]
                 id="maj"
                 class="fr-h5 m-0"
               >
-                Dernières mises à jour
+                {{ $t('home.featured.updatesTitle') }}
               </h2>
               <ul class="list-none p-0 m-0 divide-y divide-gray-200">
                 <li
@@ -342,16 +318,16 @@ const latestUpdates = [...rulesMock]
                   class="py-4 first:pt-0"
                 >
                   <p class="fr-text--xs text-gray-600 m-0 mb-1">
-                    {{ formatDate(rule.updatedAt) }}
+                    {{ formatLong(rule.updatedAt) }}
                   </p>
                   <NuxtLink
-                    :to="`/mvp/regles/${rule.slug}`"
+                    :to="localePath(`/mvp/regles/${rule.slug}`)"
                     class="fr-link fr-text--sm"
                   >
                     {{ rule.title }}
                   </NuxtLink>
                   <p class="fr-text--xs text-gray-600 m-0 mt-1">
-                    Version {{ rule.version }} - {{ rule.organism.acronym ?? rule.organism.name }}
+                    {{ $t('home.featured.updateLine', { version: rule.version, organism: rule.organism.acronym ?? rule.organism.name }) }}
                   </p>
                 </li>
               </ul>
@@ -381,12 +357,10 @@ const latestUpdates = [...rulesMock]
                 id="administrations"
                 class="fr-h4 m-0 text-white"
               >
-                Vous êtes une administration&nbsp;?
+                {{ $t('home.administrations.title') }}
               </h2>
               <p class="fr-text--sm text-white/90 m-0">
-                Référencez les règles que vous appliquez&nbsp;: vous restez responsable de
-                leur contenu et de leur publication, le catalogue les rend découvrables,
-                traçables et réutilisables par les autres services publics.
+                {{ $t('home.administrations.body') }}
               </p>
             </div>
           </div>
@@ -394,18 +368,18 @@ const latestUpdates = [...rulesMock]
             <ul class="fr-btns-group fr-btns-group--right">
               <li>
                 <NuxtLink
-                  to="/mvp/comprendre/referencer-une-regle"
+                  :to="localePath('/mvp/comprendre/referencer-une-regle')"
                   class="fr-btn btn-on-dark--solid"
                 >
-                  Référencer vos règles
+                  {{ $t('home.administrations.primary') }}
                 </NuxtLink>
               </li>
               <li>
                 <NuxtLink
-                  to="/mvp/regles/"
+                  :to="localePath('/mvp/regles/')"
                   class="fr-btn fr-btn--secondary btn-on-dark--ghost"
                 >
-                  Voir les règles référencées
+                  {{ $t('home.administrations.secondary') }}
                 </NuxtLink>
               </li>
             </ul>
