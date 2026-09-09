@@ -2,6 +2,8 @@
 defineProps<{
   demo: Demo
 }>()
+
+const localePath = useLocalePath()
 </script>
 
 <template>
@@ -17,15 +19,15 @@ defineProps<{
         >
           <NuxtLink
             v-if="demo.route"
-            :to="demo.route"
+            :to="localePath(demo.route)"
           >
-            {{ demo.title }}
+            {{ $t(`demos.${demo.slug}.title`) }}
           </NuxtLink>
-          <span v-else>{{ demo.title }}</span>
+          <span v-else>{{ $t(`demos.${demo.slug}.title`) }}</span>
         </h3>
 
         <p class="fr-card__desc">
-          {{ demo.hypothesis }}
+          {{ $t(`demos.${demo.slug}.hypothesis`) }}
         </p>
       </div>
     </div>

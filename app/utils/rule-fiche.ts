@@ -11,25 +11,25 @@ export type RuleFicheTabKey
 
 export interface RuleFicheTab {
   key: RuleFicheTabKey
-  label: string
+  labelKey: string
 }
 
-/** Labels au masculin : ils qualifient le modèle (« modèle ouvert »), pas la règle. */
-const natureMeta: Record<RuleNature, { label: string, badgeClass: string, meaning: string }> = {
+/** Libellés au masculin : ils qualifient le modèle (« modèle ouvert »), pas la règle. */
+const natureMeta: Record<RuleNature, { labelKey: string, badgeClass: string, meaningKey: string }> = {
   ouverte: {
-    label: 'Ouvert',
+    labelKey: 'nature.ouverte.label',
     badgeClass: 'fr-badge--green-menthe',
-    meaning: 'Code source et artefacts de vérification publiquement consultables.',
+    meaningKey: 'nature.ouverte.meaning',
   },
   hybride: {
-    label: 'Hybride',
+    labelKey: 'nature.hybride.label',
     badgeClass: 'fr-badge--yellow-tournesol',
-    meaning: 'Publication partielle : documentation et API exposées, certaines briques restent internes.',
+    meaningKey: 'nature.hybride.meaning',
   },
   fermee: {
-    label: 'Fermé',
+    labelKey: 'nature.fermee.label',
     badgeClass: 'fr-badge--beige-gris-galet',
-    meaning: 'Moteur interne à l\'administration, non publié en source ouverte.',
+    meaningKey: 'nature.fermee.meaning',
   },
 }
 
@@ -45,30 +45,30 @@ export function formatRuleVersion(version: string): string {
 }
 
 const baseTabs: RuleFicheTab[] = [
-  { key: 'description', label: 'Présentation' },
-  { key: 'legal', label: 'Bases légales' },
+  { key: 'description', labelKey: 'fiche.tabs.description' },
+  { key: 'legal', labelKey: 'fiche.tabs.legal' },
 ]
 
-const endTabs: RuleFicheTab[] = [{ key: 'versions', label: 'Versions' }]
+const endTabs: RuleFicheTab[] = [{ key: 'versions', labelKey: 'fiche.tabs.versions' }]
 
 export function tabsFor(rule: Rule): RuleFicheTab[] {
   const tabs = [...baseTabs]
   const caps = rule.capabilities ?? {}
 
   if (caps.hasCalculationPreview || rule.officialSimulatorUrl) {
-    tabs.push({ key: 'simulation', label: 'Aperçu de calcul' })
+    tabs.push({ key: 'simulation', labelKey: 'fiche.tabs.simulation' })
   }
 
   if (caps.hasApiDocumentation || rule.apiUrl) {
-    tabs.push({ key: 'api', label: 'API' })
+    tabs.push({ key: 'api', labelKey: 'fiche.tabs.api' })
   }
 
   if (caps.hasLegalTraceability || rule.sourceUrl) {
-    tabs.push({ key: 'traceability', label: 'Traçabilité' })
+    tabs.push({ key: 'traceability', labelKey: 'fiche.tabs.traceability' })
   }
 
   if (caps.hasPublicTestCases) {
-    tabs.push({ key: 'tests', label: 'Cas de tests' })
+    tabs.push({ key: 'tests', labelKey: 'fiche.tabs.tests' })
   }
 
   return [...tabs, ...endTabs]

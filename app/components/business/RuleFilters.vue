@@ -23,24 +23,52 @@ const props = defineProps<{ facets: FacetCounts }>()
 
 const state = defineModel<RuleFiltersState>({ required: true })
 
-const engineLabel: Record<RuleEngine, string> = {
-  publicodes: 'Publicodes',
-  openfisca: 'OpenFisca',
-  catala: 'Catala',
-  proprietaire: 'Moteur propriétaire',
-  autre: 'Autre moteur',
+const { t } = useI18n()
+
+const engineKey: Record<RuleEngine, string> = {
+  publicodes: 'engine.publicodes',
+  openfisca: 'engine.openfisca',
+  catala: 'engine.catala',
+  proprietaire: 'engine.proprietaire',
+  autre: 'engine.autre',
 }
 
-const natureLabel: Record<RuleNature, string> = {
-  ouverte: 'Ouvert',
-  hybride: 'Hybride',
-  fermee: 'Fermé',
+const natureKey: Record<RuleNature, string> = {
+  ouverte: 'nature.ouverte.label',
+  hybride: 'nature.hybride.label',
+  fermee: 'nature.fermee.label',
 }
+
+const domainOptions = computed(() => domainScale.map(d => ({
+  value: d.domain,
+  label: t(d.labelKey),
+  icon: d.icon,
+  count: props.facets.domain[d.domain] ?? 0,
+})))
+
+const maturityOptions = computed(() => maturityScale.map(m => ({
+  value: m.level,
+  label: t(m.actionKey),
+  count: props.facets.maturity[m.level] ?? 0,
+  hint: t(m.meaningKey),
+})))
+
+const natureOptions = computed(() => (['ouverte', 'hybride', 'fermee'] as RuleNature[]).map(n => ({
+  value: n,
+  label: t(natureKey[n]),
+  count: props.facets.nature[n] ?? 0,
+})))
+
+const engineOptions = computed(() => (Object.keys(engineKey) as RuleEngine[]).map(e => ({
+  value: e,
+  label: t(engineKey[e]),
+  count: props.facets.engine[e] ?? 0,
+})))
 
 /** Organismes présents dans le catalogue, triés par volume décroissant. */
 const organismOptions = computed(() =>
   Object.entries(props.facets.organism)
-    .map(([id, v]) => ({ id, label: v.label, count: v.count }))
+    .map(([id, v]) => ({ value: id, label: v.label, count: v.count }))
     .sort((a, b) => b.count - a.count),
 )
 
@@ -82,7 +110,7 @@ function reset() {
 
 <template>
   <aside
-    aria-label="Filtres de recherche"
+    :aria-label="$t('filters.ariaLabel')"
     class="space-y-5 pl-1 pr-4"
   >
     <!-- Recherche -->
@@ -90,21 +118,21 @@ function reset() {
       <label
         class="fr-label fr-text--bold !mb-1.5"
         for="rule-search"
-      >Rechercher</label>
+      >{{ $t('filters.searchLabel') }}</label>
       <div class="fr-search-bar">
         <input
           id="rule-search"
           v-model="state.search"
           class="fr-input"
           type="search"
-          placeholder="Mot-clé, organisme…"
+          :placeholder="$t('filters.searchPlaceholder')"
         >
         <button
           type="submit"
           class="fr-btn"
-          title="Rechercher"
+          :title="$t('filters.searchSubmit')"
         >
-          Rechercher
+          {{ $t('filters.searchSubmit') }}
         </button>
       </div>
     </div>
@@ -112,7 +140,7 @@ function reset() {
     <!-- En-tête filtres + reset -->
     <div class="flex items-center justify-between border-b border-gray-200">
       <h2 class="fr-text--sm font-bold uppercase tracking-wide text-gray-700 m-0">
-        Affiner
+        {{ $t('filters.refine') }}
       </h2>
       <button
         v-if="activeCount > 0"
@@ -120,7 +148,7 @@ function reset() {
         class="fr-link fr-link--sm"
         @click="reset"
       >
-        Tout effacer ({{ activeCount }})
+        {{ $t('filters.clearAll', { count: activeCount }) }}
       </button>
     </div>
 
@@ -128,8 +156,8 @@ function reset() {
       <!-- Domaine -->
       <div class="py-0">
         <FilterFacet
-          legend="Domaine"
-          :options="domainScale.map(d => ({ value: d.domain, label: d.label, icon: d.icon, count: facets.domain[d.domain] ?? 0 }))"
+          :legend="$t('filters.domain')"
+          :options="domainOptions"
           :selected="state.domain"
           @toggle="(v) => toggle('domain', v as RuleDomain)"
         />
@@ -138,8 +166,8 @@ function reset() {
       <!-- Ce que la règle permet (maturité, sélection cumulative : ce niveau et au-delà) -->
       <div class="py-3">
         <FilterFacet
-          legend="Ce que la règle permet"
-          :options="maturityScale.map(m => ({ value: m.level, label: m.action, count: facets.maturity[m.level] ?? 0, hint: m.meaning }))"
+          :legend="$t('filters.maturity')"
+          :options="maturityOptions"
           :selected="state.maturity"
           @toggle="(v) => toggle('maturity', v as MaturityLevel)"
         />
@@ -148,8 +176,8 @@ function reset() {
       <!-- Modèle (nature de publication) -->
       <div class="py-3">
         <FilterFacet
-          legend="Modèle"
-          :options="(['ouverte', 'hybride', 'fermee'] as RuleNature[]).map(n => ({ value: n, label: natureLabel[n], count: facets.nature[n] ?? 0 }))"
+          :legend="$t('filters.model')"
+          :options="natureOptions"
           :selected="state.nature"
           @toggle="(v) => toggle('nature', v as RuleNature)"
         />
@@ -158,8 +186,8 @@ function reset() {
       <!-- Organisme producteur -->
       <div class="py-3">
         <FilterFacet
-          legend="Organisme producteur"
-          :options="organismOptions.map(o => ({ value: o.id, label: o.label, count: o.count }))"
+          :legend="$t('filters.organism')"
+          :options="organismOptions"
           :selected="state.organismId"
           :max-visible="6"
           @toggle="(v) => toggle('organismId', v as string)"
@@ -169,9 +197,9 @@ function reset() {
       <!-- Moteur de calcul : replié par défaut (info technique) -->
       <div class="py-3">
         <FilterFacet
-          legend="Moteur de calcul"
+          :legend="$t('filters.engine')"
           collapsed-by-default
-          :options="(Object.keys(engineLabel) as RuleEngine[]).map(e => ({ value: e, label: engineLabel[e], count: facets.engine[e] ?? 0 }))"
+          :options="engineOptions"
           :selected="state.engine"
           @toggle="(v) => toggle('engine', v as RuleEngine)"
         />

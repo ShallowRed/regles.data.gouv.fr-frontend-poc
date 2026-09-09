@@ -12,6 +12,8 @@ const props = withDefaults(defineProps<{
   compact: false,
 })
 
+const { t } = useI18n()
+
 const isOpposable = computed(() => props.opposability === 'opposable')
 
 const alertClass = computed(() =>
@@ -19,15 +21,11 @@ const alertClass = computed(() =>
 )
 
 const title = computed(() =>
-  isOpposable.value
-    ? 'Règle opposable'
-    : 'Règle indicative',
+  t(isOpposable.value ? 'opposability.bindingTitle' : 'opposability.indicativeTitle'),
 )
 
 const description = computed(() =>
-  isOpposable.value
-    ? 'Cette modélisation fait foi : un agent ou un usager peut s\u2019en prévaloir.'
-    : 'Aide à la lecture du droit. La décision reste prise par l\'administration.',
+  t(isOpposable.value ? 'opposability.bindingText' : 'opposability.indicativeText'),
 )
 </script>
 
@@ -41,7 +39,7 @@ const description = computed(() =>
       class="fr-badge fr-badge--sm"
       :class="isOpposable ? 'fr-badge--green-emeraude' : 'fr-badge--yellow-tournesol'"
     >
-      {{ isOpposable ? 'Opposable' : 'Indicatif' }}
+      {{ isOpposable ? $t('opposability.bindingBadge') : $t('opposability.indicativeBadge') }}
     </span>
     <span
       v-if="source"
@@ -62,7 +60,7 @@ const description = computed(() =>
       v-if="source"
       class="text-sm"
     >
-      <strong>Source :</strong> {{ source }}
+      <strong>{{ $t('opposability.source') }}</strong> {{ source }}
     </p>
   </div>
 </template>

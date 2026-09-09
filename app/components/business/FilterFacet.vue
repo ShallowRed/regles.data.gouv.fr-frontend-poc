@@ -137,7 +137,7 @@ const hiddenCount = computed(() =>
         class="fr-link fr-link--sm mt-1 ml-2"
         @click="expanded = true"
       >
-        Voir {{ hiddenCount }} de plus
+        {{ $t('filters.showMore', { count: hiddenCount }) }}
       </button>
       <button
         v-else-if="maxVisible && expanded && options.length > maxVisible"
@@ -145,7 +145,7 @@ const hiddenCount = computed(() =>
         class="fr-link fr-link--sm mt-1 ml-2"
         @click="expanded = false"
       >
-        Voir moins
+        {{ $t('filters.showLess') }}
       </button>
     </div>
   </fieldset>

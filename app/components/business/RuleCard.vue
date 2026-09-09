@@ -12,20 +12,25 @@ const props = withDefaults(defineProps<{
   variant: 'default',
 })
 
-const testsCount = computed(() => ruleTestsMock.filter(t => t.ruleId === props.rule.id).length)
+const { t } = useI18n()
+const localePath = useLocalePath()
+const { formatShort } = useLocaleDate()
+const { resolveTag } = useQualifiedTags()
+const { ruleTests } = useCatalog()
+
+const testsCount = computed(() => ruleTests.value.filter(t => t.ruleId === props.rule.id).length)
 
 const domain = computed(() => domainMeta(props.rule.domain))
-const qualifiedTags = computed(() => qualifiedTagsFor(props.rule))
-const engineTag = computed(() => engineTagFor(props.rule))
+const qualifiedTags = computed(() => qualifiedTagsFor(props.rule).map(resolveTag))
+const engineTag = computed(() => resolveTag(engineTagFor(props.rule)))
 
-const dateFormatter = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
-const updatedLabel = computed(() => dateFormatter.format(new Date(props.rule.updatedAt)))
+const updatedLabel = computed(() => formatShort(props.rule.updatedAt))
 
 /** Ligne version : le numéro seulement s'il est semver ; sinon la date de mise à jour suffit. */
 const versionLine = computed(() =>
   /^\d/.test(props.rule.version)
-    ? `${formatRuleVersion(props.rule.version)} · maj ${updatedLabel.value}`
-    : `maj ${updatedLabel.value}`,
+    ? t('ruleCard.versionLine', { version: formatRuleVersion(props.rule.version), date: updatedLabel.value })
+    : t('ruleCard.updatedLine', { date: updatedLabel.value }),
 )
 
 /**
@@ -36,13 +41,19 @@ const availableServices = computed(() => {
   const c = props.rule.capabilities ?? {}
   const services: { icon: string, label: string }[] = []
   if (props.rule.apiUrl)
-    services.push({ icon: 'fr-icon-terminal-box-line', label: 'API' })
+    services.push({ icon: 'fr-icon-terminal-box-line', label: t('ruleCard.api') })
   if (c.hasCalculationPreview)
-    services.push({ icon: 'fr-icon-calculator-line', label: 'Aperçu de calcul' })
+    services.push({ icon: 'fr-icon-calculator-line', label: t('ruleCard.preview') })
   if (c.hasLegalTraceability)
-    services.push({ icon: 'fr-icon-scales-3-line', label: 'Traçabilité' })
-  if (c.hasPublicTestCases)
-    services.push({ icon: 'fr-icon-checkbox-circle-line', label: `${testsCount.value || 'Cas de'} tests` })
+    services.push({ icon: 'fr-icon-scales-3-line', label: t('ruleCard.traceability') })
+  if (c.hasPublicTestCases) {
+    services.push({
+      icon: 'fr-icon-checkbox-circle-line',
+      label: testsCount.value
+        ? t('ruleCard.testCasesCount', { count: testsCount.value })
+        : t('ruleCard.testCases'),
+    })
+  }
   return services
 })
 </script>
@@ -58,7 +69,7 @@ const availableServices = computed(() => {
     <NatureBadge :nature="rule.nature" />
     <NuxtLink
       :id="`rule-${rule.id}-title`"
-      :to="`/mvp/regles/${rule.slug}`"
+      :to="localePath(`/mvp/regles/${rule.slug}`)"
       class="fr-link flex-1 truncate"
     >
       {{ rule.title }}
@@ -89,7 +100,7 @@ const availableServices = computed(() => {
               class="fr-icon--xs"
               aria-hidden="true"
             />
-            {{ domain.label }}
+            {{ $t(domain.labelKey) }}
           </span>
         </div>
 
@@ -99,7 +110,7 @@ const availableServices = computed(() => {
             class="fr-h6 m-0 leading-snug"
           >
             <NuxtLink
-              :to="`/mvp/regles/${rule.slug}`"
+              :to="localePath(`/mvp/regles/${rule.slug}`)"
               class="bg-none text-gray-900 before:absolute before:inset-0 before:content-['']"
             >
               {{ rule.title }}
@@ -132,7 +143,7 @@ const availableServices = computed(() => {
           v-else
           class="fr-text--xs mb-0 text-gray-500 italic m-0"
         >
-          Métadonnées de référencement
+          {{ $t('ruleCard.metadataOnly') }}
         </p>
       </div>
 

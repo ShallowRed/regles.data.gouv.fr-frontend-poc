@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import type { FacetCounts, RuleFiltersState } from '~/components/business/RuleFilters.vue'
+import type { Rule, RuleDomain } from '~/types'
 
-useHead({ title: 'Catalogue des règles' })
-
+const { t, locale } = useI18n()
 const route = useRoute()
+const { rules } = useCatalog()
+
+useHead(() => ({ title: t('catalogue.title') }))
 
 const filters = ref<RuleFiltersState>({
   search: String(route.query.q ?? ''),
-  domain: null,
+  domain: (typeof route.query.domain === 'string' ? route.query.domain as RuleDomain : null),
   organismId: null,
   maturity: null,
   engine: null,
@@ -21,7 +24,7 @@ const sort = ref<SortKey>('recent')
 const mobileFiltersOpen = ref(false)
 
 /** Applique tous les filtres sauf un (pour des décomptes de facette cohérents). */
-function matches(rule: typeof rulesMock[number], except?: keyof RuleFiltersState) {
+function matches(rule: Rule, except?: keyof RuleFiltersState) {
   const f = filters.value
   if (except !== 'search' && f.search) {
     const q = f.search.trim().toLowerCase()
@@ -45,13 +48,13 @@ function matches(rule: typeof rulesMock[number], except?: keyof RuleFiltersState
 }
 
 const filtered = computed(() => {
-  const list = rulesMock.filter(r => matches(r))
+  const list = rules.value.filter(r => matches(r))
   const sorted = [...list]
   if (sort.value === 'recent') {
     sorted.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
   }
   else if (sort.value === 'alpha') {
-    sorted.sort((a, b) => a.title.localeCompare(b.title, 'fr'))
+    sorted.sort((a, b) => a.title.localeCompare(b.title, locale.value))
   }
   else {
     sorted.sort((a, b) => maturityMeta(b.maturity).rank - maturityMeta(a.maturity).rank)
@@ -63,26 +66,26 @@ const filtered = computed(() => {
 const facets = computed<FacetCounts>(() => {
   const result: FacetCounts = { domain: {}, organism: {}, maturity: {}, engine: {}, nature: {} }
 
-  for (const rule of rulesMock.filter(r => matches(r, 'domain'))) {
+  for (const rule of rules.value.filter(r => matches(r, 'domain'))) {
     result.domain[rule.domain] = (result.domain[rule.domain] ?? 0) + 1
   }
-  for (const rule of rulesMock.filter(r => matches(r, 'organismId'))) {
+  for (const rule of rules.value.filter(r => matches(r, 'organismId'))) {
     const o = rule.organism
     const entry = result.organism[o.id] ?? { label: o.acronym ?? o.name, count: 0 }
     entry.count++
     result.organism[o.id] = entry
   }
   // Décompte cumulatif : une règle exécutable permet aussi tout ce que permettent les niveaux inférieurs.
-  const maturityPool = rulesMock.filter(r => matches(r, 'maturity'))
+  const maturityPool = rules.value.filter(r => matches(r, 'maturity'))
   for (const meta of maturityScale) {
     result.maturity[meta.level] = maturityPool
       .filter(r => maturityMeta(r.maturity).rank >= meta.rank)
       .length
   }
-  for (const rule of rulesMock.filter(r => matches(r, 'engine'))) {
+  for (const rule of rules.value.filter(r => matches(r, 'engine'))) {
     result.engine[rule.engine] = (result.engine[rule.engine] ?? 0) + 1
   }
-  for (const rule of rulesMock.filter(r => matches(r, 'nature'))) {
+  for (const rule of rules.value.filter(r => matches(r, 'nature'))) {
     result.nature[rule.nature] = (result.nature[rule.nature] ?? 0) + 1
   }
   return result
@@ -93,15 +96,15 @@ const activeChips = computed(() => {
   const f = filters.value
   const chips: { key: keyof RuleFiltersState, label: string }[] = []
   if (f.search)
-    chips.push({ key: 'search', label: `« ${f.search} »` })
+    chips.push({ key: 'search', label: t('catalogue.chipSearch', { query: f.search }) })
   if (f.domain)
-    chips.push({ key: 'domain', label: domainLabel(f.domain) })
+    chips.push({ key: 'domain', label: t(domainMeta(f.domain).labelKey) })
   if (f.organismId)
     chips.push({ key: 'organismId', label: facets.value.organism[f.organismId]?.label ?? f.organismId })
   if (f.maturity)
-    chips.push({ key: 'maturity', label: maturityMeta(f.maturity).action })
+    chips.push({ key: 'maturity', label: t(maturityMeta(f.maturity).actionKey) })
   if (f.nature)
-    chips.push({ key: 'nature', label: `Modèle ${ruleNatureMeta(f.nature).label.toLowerCase()}` })
+    chips.push({ key: 'nature', label: t('catalogue.chipModel', { value: t(ruleNatureMeta(f.nature).labelKey).toLowerCase() }) })
   if (f.engine)
     chips.push({ key: 'engine', label: f.engine })
   return chips
@@ -122,18 +125,17 @@ function clearChip(key: keyof RuleFiltersState) {
       <div class="fr-container">
         <Breadcrumbs
           :items="[
-            { to: '/mvp', label: 'Accueil' },
-            { to: null, label: 'Catalogue' },
+            { to: '/mvp', label: $t('breadcrumb.home') },
+            { to: null, label: $t('breadcrumb.catalogue') },
           ]"
         />
 
         <header class="space-y-2 max-w-3xl">
           <h1 class="fr-h2 m-0">
-            Catalogue des règles
+            {{ $t('catalogue.title') }}
           </h1>
           <p class="fr-text--lead text-gray-700 m-0">
-            Les règles de calcul des droits et services publics, référencées par les
-            administrations qui les produisent.
+            {{ $t('catalogue.lead') }}
           </p>
         </header>
       </div>
@@ -145,7 +147,7 @@ function clearChip(key: keyof RuleFiltersState) {
       class="lg:hidden flex items-center gap-2 fr-btn fr-btn--secondary fr-icon-filter-line fr-btn--icon-left w-full justify-center"
       @click="mobileFiltersOpen = !mobileFiltersOpen"
     >
-      {{ mobileFiltersOpen ? 'Masquer les filtres' : 'Filtrer' }}
+      {{ mobileFiltersOpen ? $t('catalogue.hideFilters') : $t('catalogue.showFilters') }}
       <span
         v-if="activeChips.length"
         class="fr-badge fr-badge--sm fr-badge--blue-cumulus"
@@ -179,27 +181,26 @@ function clearChip(key: keyof RuleFiltersState) {
             <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 pb-3">
               <p class="m-0">
                 <strong class="text-lg">{{ filtered.length }}</strong>
-                <span class="text-gray-700"> règle{{ filtered.length > 1 ? 's' : '' }} référencée{{ filtered.length > 1
-                  ? 's' : '' }}</span>
+                <span class="text-gray-700">&nbsp;{{ $t('catalogue.results', filtered.length) }}</span>
               </p>
               <div class="flex items-center gap-2">
                 <label
                   for="sort"
                   class="fr-text--sm text-gray-600 m-0"
-                >Trier par</label>
+                >{{ $t('catalogue.sortLabel') }}</label>
                 <select
                   id="sort"
                   v-model="sort"
                   class="fr-select !w-auto !mt-0 fr-select--sm"
                 >
                   <option value="recent">
-                    Mise à jour récente
+                    {{ $t('catalogue.sortRecent') }}
                   </option>
                   <option value="maturity">
-                    Services disponibles
+                    {{ $t('catalogue.sortMaturity') }}
                   </option>
                   <option value="alpha">
-                    Ordre alphabétique
+                    {{ $t('catalogue.sortAlpha') }}
                   </option>
                 </select>
               </div>
@@ -242,11 +243,10 @@ function clearChip(key: keyof RuleFiltersState) {
               class="fr-callout fr-callout--brown-caramel"
             >
               <p class="fr-callout__title">
-                Aucune règle ne correspond
+                {{ $t('catalogue.emptyTitle') }}
               </p>
               <p class="fr-callout__text">
-                Élargissez les filtres ou réinitialisez la recherche pour retrouver
-                l'ensemble du catalogue.
+                {{ $t('catalogue.emptyBody') }}
               </p>
             </div>
           </div>

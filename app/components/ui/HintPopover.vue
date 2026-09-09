@@ -9,17 +9,19 @@ withDefaults(defineProps<{
   text: string
   /** Libellé accessible du déclencheur. */
   label?: string
-  /** Lien d'approfondissement affiché sous le texte. */
+  /** Lien d'approfondissement affiché sous le texte, chemin non préfixé par la locale. */
   moreTo?: string
   moreLabel?: string
   /** Ancrage horizontal du panneau par rapport au déclencheur. */
   align?: 'left' | 'right'
 }>(), {
-  label: 'Plus d’information',
+  label: undefined,
   moreTo: undefined,
-  moreLabel: 'En savoir plus',
+  moreLabel: undefined,
   align: 'left',
 })
+
+const localePath = useLocalePath()
 
 /** Ouverture volatile (survol) et épinglée (clic), cumulées : le clic maintient le panneau. */
 const hover = ref(false)
@@ -66,7 +68,7 @@ onBeforeUnmount(() => {
           aria-hidden="true"
         >?</span>
       </slot>
-      <span class="sr-only">{{ label }}</span>
+      <span class="sr-only">{{ label ?? $t('hint.trigger') }}</span>
     </button>
     <span
       v-if="open"
@@ -78,10 +80,10 @@ onBeforeUnmount(() => {
         <span class="block fr-text--xs mb-0 text-gray-700 font-normal normal-case tracking-normal whitespace-normal">{{ text }}</span>
         <NuxtLink
           v-if="moreTo"
-          :to="moreTo"
+          :to="localePath(moreTo)"
           class="fr-link fr-text--xs inline-block mt-2"
         >
-          {{ moreLabel }}
+          {{ moreLabel ?? $t('hint.more') }}
         </NuxtLink>
       </span>
     </span>

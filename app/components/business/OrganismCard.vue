@@ -53,7 +53,7 @@ withDefaults(defineProps<{
           v-if="ruleCount !== undefined"
           class="fr-card__desc"
         >
-          {{ ruleCount }} règle{{ ruleCount > 1 ? 's' : '' }} publiée{{ ruleCount > 1 ? 's' : '' }}
+          {{ $t('organism.ruleCount', { count: ruleCount }, ruleCount) }}
         </p>
       </div>
     </div>

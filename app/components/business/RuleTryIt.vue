@@ -74,11 +74,11 @@ async function run() {
     <div class="space-y-1">
       <div class="flex flex-wrap items-center gap-2">
         <p class="fr-badge fr-badge--sm fr-badge--blue-cumulus m-0">
-          Tester un cas
+          {{ $t('tryIt.badge') }}
         </p>
       </div>
       <p class="fr-text--xs mb-0 text-gray-500 m-0">
-        Résultat indicatif, calculé par le producteur.
+        {{ $t('tryIt.caption') }}
       </p>
     </div>
 
@@ -87,11 +87,10 @@ async function run() {
       class="rounded border border-[#0063cb]/30 bg-[#f4f6ff] p-3 space-y-1"
     >
       <p class="fr-text--sm mb-0 font-medium text-[#0063cb] m-0">
-        Formulaire momentanément indisponible
+        {{ $t('tryIt.unavailableTitle') }}
       </p>
       <p class="fr-text--xs mb-0 text-gray-700 m-0">
-        La description des entrées de cette règle est en cours de mise à jour par le
-        producteur. Le détail figure dans la note technique de la fiche.
+        {{ $t('tryIt.unavailableBody') }}
       </p>
     </div>
 
@@ -153,7 +152,7 @@ async function run() {
           class="fr-btn fr-btn--sm"
           :disabled="pending"
         >
-          {{ pending ? 'Calcul en cours…' : 'Calculer via l\'API' }}
+          {{ pending ? $t('tryIt.pending') : $t('tryIt.submit') }}
         </button>
       </div>
     </form>
@@ -163,22 +162,22 @@ async function run() {
       class="rounded border border-gray-200 bg-gray-50 p-4 space-y-2"
     >
       <p class="fr-text--xs uppercase tracking-wide text-gray-500 m-0">
-        Résultat renvoyé par l'API
+        {{ $t('tryIt.resultTitle') }}
       </p>
       <p class="text-lg font-semibold text-blue-900 m-0">
-        {{ result.value ?? '(pas de champ value)' }}
+        {{ result.value ?? $t('tryIt.noValueField') }}
       </p>
       <p
         v-if="result.explanation"
         class="fr-text--sm mb-0 text-gray-700 m-0"
       >
-        Détail du calcul : <code class="fr-text--xs">{{ result.explanation }}</code>
+        {{ $t('tryIt.explanation') }} <code class="fr-text--xs">{{ result.explanation }}</code>
       </p>
       <p
         v-if="calledUrl"
         class="fr-text--xs mb-0 text-gray-500 m-0 break-all"
       >
-        Appel : <code class="fr-text--xs">{{ calledUrl }}</code>
+        {{ $t('tryIt.calledUrl') }} <code class="fr-text--xs">{{ calledUrl }}</code>
       </p>
     </div>
     <div
@@ -190,18 +189,17 @@ async function run() {
           class="fr-icon-alert-line fr-icon--sm"
           aria-hidden="true"
         />
-        Écart détecté entre la fiche et l'API
+        {{ $t('tryIt.gapTitle') }}
       </p>
       <p class="fr-text--sm mb-0 text-gray-700 m-0">
-        L'API du producteur a refusé les paramètres décrits par la fiche&nbsp;: son schéma a
-        changé depuis le référencement. La fiche doit être mise à jour.
+        {{ $t('tryIt.gapBody') }}
       </p>
     </div>
     <p
       v-else-if="requestError"
       class="fr-text--sm mb-0 text-[#ce0500] m-0"
     >
-      L'appel à l'API a échoué ({{ requestError }}). L'API du producteur est peut-être indisponible.
+      {{ $t('tryIt.requestFailed', { error: requestError }) }}
     </p>
   </div>
 </template>

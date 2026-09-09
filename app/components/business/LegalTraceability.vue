@@ -24,12 +24,12 @@ defineProps<{
   codeAnchor?: string
 }>()
 
-const engineLabel: Record<RuleEngine, string> = {
-  publicodes: 'Publicodes',
-  openfisca: 'OpenFisca',
-  catala: 'Catala',
-  proprietaire: 'Moteur proprietaire',
-  autre: 'Code',
+const engineKey: Record<RuleEngine, string> = {
+  publicodes: 'engine.publicodes',
+  openfisca: 'engine.openfisca',
+  catala: 'engine.catala',
+  proprietaire: 'engine.proprietaire',
+  autre: 'engine.code',
 }
 </script>
 
@@ -46,7 +46,7 @@ const engineLabel: Record<RuleEngine, string> = {
         rel="noopener"
         class="fr-link fr-link--sm"
       >
-        Lire sur Légifrance
+        {{ $t('traceabilityBlock.readOnLegifrance') }}
       </a>
     </header>
 
@@ -54,7 +54,7 @@ const engineLabel: Record<RuleEngine, string> = {
       <!-- Colonne légale -->
       <div class="p-4 bg-white">
         <p class="fr-text--xs uppercase tracking-wide text-gray-500 m-0 mb-2">
-          Texte légal
+          {{ $t('traceabilityBlock.legalText') }}
         </p>
         <blockquote class="m-0 italic text-gray-800 border-l-4 border-blue-300 pl-3">
           {{ legalExcerpt }}
@@ -64,7 +64,7 @@ const engineLabel: Record<RuleEngine, string> = {
       <!-- Colonne code -->
       <div class="p-4 bg-gray-50">
         <p class="fr-text--xs uppercase tracking-wide text-gray-500 m-0 mb-2 flex items-center justify-between">
-          <span>{{ engineLabel[engine] }}</span>
+          <span>{{ $t(engineKey[engine]) }}</span>
           <span
             v-if="codeAnchor"
             class="font-mono text-gray-700 normal-case"

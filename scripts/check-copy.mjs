@@ -2,8 +2,9 @@
 /**
  * Lint éditorial de la copie UI (doctrine 15 : affordance, pas de méta).
  *
- * Balaie les chaînes visibles (templates .vue, mocks affichés) à la recherche des
- * patterns interdits : antithèses, négations défensives, vocabulaire de doctrine.
+ * Balaie les chaînes visibles (templates .vue, mocks affichés, fichiers de traduction)
+ * à la recherche des patterns interdits : antithèses, négations défensives, vocabulaire
+ * de doctrine. Les patterns portant `only` ne s'appliquent qu'aux fichiers correspondants.
  * Les lignes de commentaires (code) sont ignorées ; les exceptions justifiées vivent
  * dans scripts/copy-allowlist.txt (une par ligne : `chemin:extrait`).
  *
@@ -20,8 +21,8 @@ import { fileURLToPath } from 'node:url'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 
-const ROOTS = ['app/pages', 'app/components', 'app/mocks']
-const EXTENSIONS = ['.vue', '.ts']
+const ROOTS = ['app/pages', 'app/components', 'app/mocks', 'i18n/locales']
+const EXTENSIONS = ['.vue', '.ts', '.json']
 
 const PATTERNS = [
   { name: 'tiret cadratin', regex: /—/ },
@@ -37,6 +38,8 @@ const PATTERNS = [
   { name: 'jargon interne « rejouer »', regex: /rejou/i },
   { name: 'jargon interne « dérive »', regex: /dérive/i },
   { name: 'minimisation « se contente de »', regex: /se contente de/i },
+  { name: 'jargon interne « replay »', regex: /\breplay/i, only: /\.json$/ },
+  { name: 'jargon interne « drift »', regex: /\bdrift/i, only: /\.json$/ },
 ]
 
 const allowlistPath = join(root, 'scripts/copy-allowlist.txt')
@@ -74,6 +77,8 @@ for (const rootDir of ROOTS) {
       if (COMMENT_LINE.test(line))
         return
       for (const pattern of PATTERNS) {
+        if (pattern.only && !pattern.only.test(file))
+          continue
         if (pattern.regex.test(line) && !isAllowed(file, line.trim()))
           findings.push({ file, line: index + 1, name: pattern.name, text: line.trim().slice(0, 110) })
       }

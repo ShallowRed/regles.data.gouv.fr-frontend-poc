@@ -1,66 +1,49 @@
 <script setup lang="ts">
 import verificationData from '~/data/verification.json'
 
+const { t, locale } = useI18n()
+const localePath = useLocalePath()
+const { formatLong } = useLocaleDate()
+const { resolveTag } = useQualifiedTags()
 const route = useRoute()
+const { ruleBySlug, ruleTests, ruleVersions, rulePreviews, organisms, legalReferences } = useCatalog()
 
 const slug = computed(() => String(route.params.slug ?? ''))
-const rule = computed(() => ruleBySlug[slug.value])
+const rule = computed(() => ruleBySlug.value[slug.value])
 
 const domain = computed(() => (rule.value ? domainMeta(rule.value.domain) : null))
-const qualifiedTags = computed(() => (rule.value ? qualifiedTagsFor(rule.value) : []))
-const engineTag = computed(() => (rule.value ? engineTagFor(rule.value) : null))
+const qualifiedTags = computed(() => (rule.value ? qualifiedTagsFor(rule.value).map(resolveTag) : []))
+const engineTag = computed(() => (rule.value ? resolveTag(engineTagFor(rule.value)) : null))
 
 const primaryReference = computed(() => rule.value?.legalReferences[0])
 
 /** Tag du régime de certification, rendu comme ses voisins (axe : valeur + hint). */
 const regimeTag = computed(() => {
-  const regime = rule.value?.certificationRegime
-  if (!regime)
-    return null
-  const meta = {
-    frontiere: {
-      axis: 'résultats',
-      value: 'certifiés',
-      tone: 'green',
-      hint: 'L\'administration certifie le résultat de la règle sur les faits déclarés, à une version donnée.',
-    },
-    implementation: {
-      axis: 'résultats',
-      value: 'testés',
-      tone: 'blue',
-      hint: 'Le calcul est contrôlé par la suite de tests de la règle, à chaque version publiée.',
-    },
-    referencement: {
-      axis: 'résultats',
-      value: 'non vérifiés',
-      tone: 'grey',
-      hint: 'Fiche descriptive seule : le code et les cas de tests ne sont pas publiés.',
-    },
-  } as const
-  return meta[regime]
+  const spec = rule.value ? certificationTagFor(rule.value) : null
+  return spec ? resolveTag(spec) : null
 })
 
 /** Présentation des natures d'entrées à la frontière de la règle. */
-const boundaryKindMeta: Record<string, { label: string, icon: string, description: string }> = {
+const boundaryKindMeta: Record<string, { labelKey: string, icon: string, descriptionKey: string }> = {
   'declaration': {
-    label: 'Faits déclarés',
+    labelKey: 'fiche.boundaryKind.declarationLabel',
     icon: 'fr-icon-edit-line',
-    description: 'Déclarés par l\'usager, non vérifiés.',
+    descriptionKey: 'fiche.boundaryKind.declarationDescription',
   },
   'donnee-attestee': {
-    label: 'Données attestées',
+    labelKey: 'fiche.boundaryKind.attestedLabel',
     icon: 'fr-icon-checkbox-circle-line',
-    description: 'Attestées par une administration propriétaire, mobilisables via une API.',
+    descriptionKey: 'fiche.boundaryKind.attestedDescription',
   },
   'sortie-regle': {
-    label: 'Sorties d\'autres règles',
+    labelKey: 'fiche.boundaryKind.ruleOutputLabel',
     icon: 'fr-icon-git-merge-line',
-    description: 'Résultats d\'autres règles ou paramètres partagés, comme le SMIC.',
+    descriptionKey: 'fiche.boundaryKind.ruleOutputDescription',
   },
   'contexte': {
-    label: 'Paramètres de contexte',
+    labelKey: 'fiche.boundaryKind.contextLabel',
     icon: 'fr-icon-settings-5-line',
-    description: 'Changent la règle appliquée (par exemple le type d\'élection).',
+    descriptionKey: 'fiche.boundaryKind.contextDescription',
   },
 }
 
@@ -76,7 +59,7 @@ const boundaryGroups = computed(() => {
 const explanationOutputs = computed(() => (rule.value?.outputs ?? []).filter(o => o.isExplanation))
 
 /** Aperçu de calcul pré-calculé (cas d'exemple), si la règle en expose un. */
-const preview = computed(() => (rule.value ? rulePreviewsMock[rule.value.slug] : undefined))
+const preview = computed(() => (rule.value ? rulePreviews.value[rule.value.slug] : undefined))
 
 /**
  * Formulaire « essayer cette règle », généré depuis la fiche metadata.jsonld
@@ -84,7 +67,7 @@ const preview = computed(() => (rule.value ? rulePreviewsMock[rule.value.slug] :
  * seule règle dont l'API déclarée est appelable depuis le navigateur.
  */
 const tryItForm = computed(() =>
-  rule.value?.slug === 'prestagri' ? prestagriQuotientFamilialForm : null,
+  rule.value?.slug === 'prestagri' ? prestagriQuotientFamilialFormFor(locale.value) : null,
 )
 
 /** Appariements texte légal ↔ code pour la traçabilité, résolus avec leur référence. */
@@ -94,7 +77,7 @@ const traceabilityMappings = computed(() => {
     return []
   const mappings = ruleTraceabilityMock[r.slug] ?? []
   return mappings
-    .map(m => ({ ...m, reference: legalReferencesMock[m.referenceId] }))
+    .map(m => ({ ...m, reference: legalReferences.value[m.referenceId] }))
     .filter((m): m is typeof m & { reference: NonNullable<typeof m.reference> } => Boolean(m.reference))
 })
 
@@ -108,32 +91,32 @@ const availableServices = computed(() => {
   if (c.hasCalculationPreview || r.officialSimulatorUrl) {
     services.push({
       icon: 'fr-icon-calculator-line',
-      label: 'Estimer un cas',
-      description: 'Obtenir un résultat indicatif à partir d\'une situation.',
+      label: t('fiche.services.estimateLabel'),
+      description: t('fiche.services.estimateDescription'),
       tab: 'simulation',
     })
   }
   if (r.apiUrl || c.hasApiDocumentation) {
     services.push({
       icon: 'fr-icon-terminal-box-line',
-      label: 'Intégrer dans un service',
-      description: 'Appeler la règle via son API documentée.',
+      label: t('fiche.services.integrateLabel'),
+      description: t('fiche.services.integrateDescription'),
       tab: 'api',
     })
   }
   if (c.hasLegalTraceability || r.sourceUrl) {
     services.push({
       icon: 'fr-icon-git-commit-line',
-      label: 'Remonter à la loi',
-      description: 'Relier chaque résultat à son texte de référence.',
+      label: t('fiche.services.traceLabel'),
+      description: t('fiche.services.traceDescription'),
       tab: 'traceability',
     })
   }
   if (c.hasPublicTestCases) {
     services.push({
       icon: 'fr-icon-checkbox-circle-line',
-      label: 'Consulter les cas de tests',
-      description: 'Situations types et résultats attendus, publiés par le producteur.',
+      label: t('fiche.services.testsLabel'),
+      description: t('fiche.services.testsDescription'),
       tab: 'tests',
     })
   }
@@ -159,31 +142,31 @@ const tabIcon: Record<RuleFicheTabKey, string> = {
   versions: 'fr-icon-git-commit-line',
 }
 
-const versionKindMeta: Record<string, { label: string, badgeClass: string }> = {
-  majeur: { label: 'Majeur', badgeClass: 'fr-badge--purple-glycine' },
-  mineur: { label: 'Mineur', badgeClass: 'fr-badge--blue-cumulus' },
-  correctif: { label: 'Correctif', badgeClass: 'fr-badge--yellow-tournesol' },
-  editorial: { label: 'Éditorial', badgeClass: 'fr-badge--grey' },
+const versionKindMeta: Record<string, { labelKey: string, badgeClass: string }> = {
+  majeur: { labelKey: 'fiche.versions.majeur', badgeClass: 'fr-badge--purple-glycine' },
+  mineur: { labelKey: 'fiche.versions.mineur', badgeClass: 'fr-badge--blue-cumulus' },
+  correctif: { labelKey: 'fiche.versions.correctif', badgeClass: 'fr-badge--yellow-tournesol' },
+  editorial: { labelKey: 'fiche.versions.editorial', badgeClass: 'fr-badge--grey' },
 }
 
 const versions = computed(() => {
   const r = rule.value
   if (!r)
     return []
-  return ruleVersionsMock
+  return ruleVersions.value
     .filter(v => v.ruleId === r.id)
     .slice(0, 6)
     .map(v => ({
       ...v,
       kindMeta: versionKindMeta[v.kind] ?? versionKindMeta.mineur,
-      trigger: v.triggeredBy ? legalReferencesMock[v.triggeredBy] : undefined,
+      trigger: v.triggeredBy ? legalReferences.value[v.triggeredBy] : undefined,
       isCurrent: v.version === r.version,
     }))
 })
 
 const tests = computed(() => {
   const r = rule.value
-  return r ? ruleTestsMock.filter(t => t.ruleId === r.id) : []
+  return r ? ruleTests.value.filter(t => t.ruleId === r.id) : []
 })
 
 /**
@@ -222,10 +205,24 @@ const autoVerification = computed(() => {
   }
 })
 
-/** Décompte des cas de test par statut, pour la barre de synthèse. */
+/** Phrase de synthèse du dernier contrôle automatique. */
+const verificationSummary = computed(() => {
+  const v = autoVerification.value
+  if (!v)
+    return ''
+  const date = formatLong(v.checkedAt)
+  if (v.drift)
+    return t('fiche.tests.summaryGap', { date })
+  if (v.total === 1)
+    return t('fiche.tests.summaryOne', { date })
+  if (v.allPassing)
+    return t('fiche.tests.summaryAll', { total: v.total, date })
+  return t('fiche.tests.summaryPartial', { passing: v.passing, total: v.total, date })
+})
+
 const certifyingOrganism = computed(() => {
   const cert = rule.value?.certification
-  return cert ? organismsMock[cert.byOrganismId] : undefined
+  return cert ? organisms.value[cert.byOrganismId] : undefined
 })
 
 /** Champ d'entrée typé, dérivé du cas d'exemple de l'aperçu. */
@@ -292,29 +289,29 @@ const integrationModes = computed(() => {
   const modes: { icon: string, label: string, hint: string, available: boolean }[] = []
   modes.push({
     icon: 'fr-icon-terminal-box-line',
-    label: 'API de calcul',
-    hint: 'Appel REST renvoyant un résultat à partir d\'une situation.',
+    label: t('fiche.api.modeApiLabel'),
+    hint: t('fiche.api.modeApiHint'),
     available: Boolean(r.apiUrl),
   })
   const lightEngine = r.engine === 'publicodes' || r.engine === 'catala'
   modes.push({
     icon: 'fr-icon-window-line',
-    label: 'Widget intégrable',
-    hint: 'Module de simulation à embarquer (iframe / web component).',
+    label: t('fiche.api.modeWidgetLabel'),
+    hint: t('fiche.api.modeWidgetHint'),
     available: lightEngine && r.maturity === 'N3',
   })
   modes.push({
     icon: 'fr-icon-download-line',
-    label: 'Paquet exécutable',
-    hint: 'Exécution côté client, adaptée au mobile et à la vie privée.',
+    label: t('fiche.api.modePackageLabel'),
+    hint: t('fiche.api.modePackageHint'),
     available: lightEngine && r.maturity === 'N3',
   })
   return modes
 })
 
-const formatDate = formatDateFr
-
-const title = computed(() => (rule.value ? `${rule.value.title} | Catalogue des règles` : 'Règle introuvable'))
+const title = computed(() => (rule.value
+  ? `${rule.value.title} | ${t('fiche.titleSuffix')}`
+  : t('fiche.notFoundTitle')))
 useHead(() => ({ title: title.value }))
 </script>
 
@@ -328,8 +325,8 @@ useHead(() => ({ title: title.value }))
       <div class="fr-container">
         <Breadcrumbs
           :items="[
-            { to: '/mvp', label: 'Accueil' },
-            { to: '/mvp/regles/', label: 'Catalogue' },
+            { to: '/mvp', label: $t('breadcrumb.home') },
+            { to: '/mvp/regles/', label: $t('breadcrumb.catalogue') },
             { to: null, label: rule.title },
           ]"
         />
@@ -362,7 +359,7 @@ useHead(() => ({ title: title.value }))
                   class="fr-icon--sm"
                   aria-hidden="true"
                 />
-                {{ domain.label }}
+                {{ $t(domain.labelKey) }}
               </span>
             </div>
           </hgroup>
@@ -404,7 +401,7 @@ useHead(() => ({ title: title.value }))
         <div class="bg-white rounded-sm shadow-[0_4px_24px_rgba(0,0,145,0.08)] border border-gray-200/60">
           <!-- Onglets pleine largeur -->
           <nav
-            aria-label="Sections de la fiche"
+            :aria-label="$t('fiche.tabsLabel')"
             class="border-b border-gray-200 overflow-x-auto px-5 md:px-8"
           >
             <ul class="flex gap-1 list-none p-0 m-0 min-w-max">
@@ -414,7 +411,7 @@ useHead(() => ({ title: title.value }))
                 class="pb-[1px]"
               >
                 <NuxtLink
-                  :to="`/mvp/regles/${rule.slug}?tab=${tab.key}`"
+                  :to="localePath(`/mvp/regles/${rule.slug}?tab=${tab.key}`)"
                   class="inline-flex items-center gap-2 px-4 py-3 -mb-px border-b-2 font-medium transition-colors bg-none whitespace-nowrap"
                   :class="activeTab === tab.key
                     ? 'border-[#000091] text-[#000091]'
@@ -425,7 +422,7 @@ useHead(() => ({ title: title.value }))
                     class="fr-icon--sm"
                     aria-hidden="true"
                   />
-                  {{ tab.label }}
+                  {{ $t(tab.labelKey) }}
                 </NuxtLink>
               </li>
             </ul>
@@ -440,7 +437,7 @@ useHead(() => ({ title: title.value }))
               <section class="space-y-8 min-w-0">
                 <div class="space-y-3">
                   <h2 class="fr-h5 m-0">
-                    Ce que fait cette règle
+                    {{ $t('fiche.description.whatItDoes') }}
                   </h2>
                   <p class="text-gray-700 m-0 max-w-2xl">
                     {{ rule.shortDescription }}
@@ -453,7 +450,7 @@ useHead(() => ({ title: title.value }))
                   class="space-y-3"
                 >
                   <h2 class="fr-h6 m-0">
-                    Ce que vous pouvez en faire
+                    {{ $t('fiche.description.whatYouCanDo') }}
                   </h2>
                   <ul class="grid sm:grid-cols-2 gap-3 list-none p-0 m-0">
                     <li
@@ -461,7 +458,7 @@ useHead(() => ({ title: title.value }))
                       :key="service.label"
                     >
                       <NuxtLink
-                        :to="`/mvp/regles/${rule.slug}?tab=${service.tab}`"
+                        :to="localePath(`/mvp/regles/${rule.slug}?tab=${service.tab}`)"
                         class="group flex items-center gap-3 border border-gray-200 rounded p-3 h-full bg-none hover:border-[#000091] transition-colors"
                       >
                         <span
@@ -503,7 +500,7 @@ useHead(() => ({ title: title.value }))
                   class="space-y-3"
                 >
                   <h2 class="fr-h6 m-0">
-                    S'appuie sur d'autres règles
+                    {{ $t('fiche.description.dependsOn') }}
                   </h2>
                   <ul class="list-none p-0 m-0 space-y-2">
                     <li
@@ -511,7 +508,7 @@ useHead(() => ({ title: title.value }))
                       :key="dep"
                     >
                       <NuxtLink
-                        :to="`/mvp/regles/${dep}`"
+                        :to="localePath(`/mvp/regles/${dep}`)"
                         class="inline-flex items-center gap-2 fr-link fr-icon-arrow-right-line fr-link--icon-right"
                       >
                         {{ ruleBySlug[dep]?.title ?? dep }}
@@ -526,7 +523,7 @@ useHead(() => ({ title: title.value }))
                   class="space-y-3"
                 >
                   <summary class="fr-h6 m-0 cursor-pointer">
-                    Les entrées de la règle
+                    {{ $t('fiche.description.boundary') }}
                   </summary>
                   <div class="space-y-4">
                     <div
@@ -540,10 +537,10 @@ useHead(() => ({ title: title.value }))
                           class="fr-icon--sm text-[#000091]"
                           aria-hidden="true"
                         />
-                        {{ group.meta.label }}
+                        {{ $t(group.meta.labelKey) }}
                       </p>
                       <p class="fr-text--xs mb-0 text-gray-600 m-0">
-                        {{ group.meta.description }}
+                        {{ $t(group.meta.descriptionKey) }}
                       </p>
                       <ul class="list-none p-0 m-0 space-y-1">
                         <li
@@ -565,7 +562,7 @@ useHead(() => ({ title: title.value }))
                           <template v-if="input.evidenceSource">
                             <br>
                             <span class="fr-text--xs text-gray-600">
-                              Attestée par : {{ input.evidenceSource.label }}
+                              {{ $t('fiche.description.attestedBy', { source: input.evidenceSource.label }) }}
                             </span>
                           </template>
                         </li>
@@ -580,7 +577,7 @@ useHead(() => ({ title: title.value }))
                       class="fr-icon-questionnaire-line fr-icon--sm text-[#000091]"
                       aria-hidden="true"
                     />
-                    En plus du résultat, cette règle produit une trace d'explication
+                    {{ $t('fiche.description.explanationBefore') }}
                     <template
                       v-for="(output, i) in explanationOutputs"
                       :key="output.id"
@@ -589,7 +586,7 @@ useHead(() => ({ title: title.value }))
                         ,
                       </template><code class="fr-text--xs">{{ output.id }}</code>
                     </template>
-                    - utile pour expliquer un refus.
+                    - {{ $t('fiche.description.explanationAfter') }}
                   </p>
                 </details>
 
@@ -600,11 +597,11 @@ useHead(() => ({ title: title.value }))
                 >
                   <div class="flex items-center gap-2">
                     <h2 class="fr-h6 m-0">
-                      Correspondances recensées
+                      {{ $t('fiche.description.mappingsTitle') }}
                     </h2>
                     <HintPopover
-                      text="Tables de passage maintenues par des réutilisateurs, entre le format d'un service et les entrées de la règle."
-                      label="Que sont les correspondances ?"
+                      :text="$t('fiche.description.mappingsHint')"
+                      :label="$t('fiche.description.mappingsHintLabel')"
                     />
                   </div>
                   <ul class="list-none p-0 m-0 space-y-2">
@@ -623,8 +620,8 @@ useHead(() => ({ title: title.value }))
                         {{ mapping.label }}
                       </NuxtLink>
                       <span class="block fr-text--xs text-gray-600 mt-1 mb-0">
-                        Maintenu par {{ mapping.maintainedBy }}
-                        <template v-if="mapping.ciStatus && mapping.ciStatus !== 'unknown'"> · tests automatiques {{ mapping.ciStatus === 'passing' ? 'au vert' : 'en échec' }}</template>
+                        {{ $t('fiche.description.maintainedBy', { who: mapping.maintainedBy }) }}
+                        <template v-if="mapping.ciStatus && mapping.ciStatus !== 'unknown'"> · {{ mapping.ciStatus === 'passing' ? $t('fiche.description.ciPassing') : $t('fiche.description.ciFailing') }}</template>
                       </span>
                     </li>
                   </ul>
@@ -636,7 +633,7 @@ useHead(() => ({ title: title.value }))
                   class="border border-dashed border-gray-300 rounded p-3"
                 >
                   <summary class="fr-text--xs mb-0 text-gray-600 cursor-pointer">
-                    Note technique : champs du référencement absents de la fiche du producteur
+                    {{ $t('fiche.description.profileGapsSummary') }}
                   </summary>
                   <ul class="fr-text--xs text-gray-600 mt-2 mb-0 pl-5 space-y-1">
                     <li
@@ -653,12 +650,12 @@ useHead(() => ({ title: title.value }))
               <aside class="space-y-5">
                 <div class="border border-gray-200 rounded">
                   <h2 class="fr-text--sm mb-0 font-bold uppercase tracking-wide text-gray-700 m-0 px-4 py-3 border-b border-gray-200">
-                    Informations
+                    {{ $t('fiche.meta.title') }}
                   </h2>
                   <dl class="m-0 p-0 divide-y divide-gray-100">
                     <div class="px-4 py-3">
                       <dt class="fr-text--xs mb-0 uppercase tracking-wide text-gray-500 m-0">
-                        Producteur
+                        {{ $t('fiche.meta.producer') }}
                       </dt>
                       <dd class="m-0 mt-0.5 p-0 fr-text--sm mb-0 text-gray-900">
                         {{ rule.organism.name }}
@@ -666,7 +663,7 @@ useHead(() => ({ title: title.value }))
                     </div>
                     <div class="px-4 py-3">
                       <dt class="fr-text--xs mb-0 uppercase tracking-wide text-gray-500 m-0">
-                        Identifiant
+                        {{ $t('fiche.meta.identifier') }}
                       </dt>
                       <dd class="m-0 mt-0.5 p-0">
                         <code class="fr-text--xs mb-0 bg-gray-100 px-1.5 py-0.5 rounded">{{ rule.id }}</code>
@@ -674,10 +671,10 @@ useHead(() => ({ title: title.value }))
                     </div>
                     <div class="px-4 py-3">
                       <dt class="fr-text--xs mb-0 uppercase tracking-wide text-gray-500 m-0">
-                        Dernière mise à jour
+                        {{ $t('fiche.meta.updatedAt') }}
                       </dt>
                       <dd class="m-0 p-0 mt-0.5 fr-text--sm mb-0 text-gray-900">
-                        {{ formatDate(rule.updatedAt) }}
+                        {{ formatLong(rule.updatedAt) }}
                       </dd>
                     </div>
                     <div
@@ -685,7 +682,7 @@ useHead(() => ({ title: title.value }))
                       class="px-4 py-3"
                     >
                       <dt class="fr-text--xs mb-0 uppercase tracking-wide text-gray-500 m-0">
-                        Base légale principale
+                        {{ $t('fiche.meta.primaryLegalBasis') }}
                       </dt>
                       <dd class="m-0 p-0 mt-1 fr-text--sm mb-0">
                         <LegalReferenceLink
@@ -708,12 +705,10 @@ useHead(() => ({ title: title.value }))
                       class="fr-icon--sm"
                       aria-hidden="true"
                     />
-                    {{ rule.opposability === 'opposable' ? 'Résultat opposable' : 'Résultat indicatif' }}
+                    {{ rule.opposability === 'opposable' ? $t('opposability.bindingResult') : $t('opposability.indicativeResult') }}
                   </p>
                   <p class="fr-text--xs mb-0 text-gray-700 m-0">
-                    {{ rule.opposability === 'opposable'
-                      ? 'Cette modélisation fait foi : un agent ou un usager peut s\'en prévaloir.'
-                      : 'Aide à la lecture du droit. La décision reste prise par l\'administration.' }}
+                    {{ rule.opposability === 'opposable' ? $t('opposability.bindingText') : $t('opposability.indicativeText') }}
                   </p>
                 </div>
                 <div
@@ -725,17 +720,17 @@ useHead(() => ({ title: title.value }))
                       class="fr-icon-success-fill fr-icon--sm"
                       aria-hidden="true"
                     />
-                    Résultats certifiés
+                    {{ $t('fiche.meta.certifiedResults') }}
                   </h3>
                   <p class="fr-text--xs mb-0 text-gray-700 m-0">
-                    Certifiés par <strong>{{ certifyingOrganism.acronym ?? certifyingOrganism.name }}</strong>
-                    le {{ formatDate(rule.certification.at) }}.
+                    {{ $t('fiche.meta.certifiedBy') }} <strong>{{ certifyingOrganism.acronym ?? certifyingOrganism.name }}</strong>
+                    {{ $t('fiche.meta.certifiedOn', { date: formatLong(rule.certification.at) }) }}
                   </p>
                   <p
                     v-if="rule.certification.ref"
                     class="fr-text--xs mb-0 text-gray-600 m-0"
                   >
-                    Référence : {{ rule.certification.ref }}
+                    {{ $t('fiche.meta.certificationRef', { ref: rule.certification.ref }) }}
                   </p>
                 </div>
               </aside>
@@ -752,10 +747,10 @@ useHead(() => ({ title: title.value }))
               >
                 <div class="space-y-2 max-w-2xl">
                   <h2 class="fr-h5 m-0">
-                    Bases légales
+                    {{ $t('fiche.legal.title') }}
                   </h2>
                   <p class="fr-text--sm text-gray-700 m-0">
-                    Les textes officiels qui fondent cette règle.
+                    {{ $t('fiche.legal.lead') }}
                   </p>
                 </div>
 
@@ -779,7 +774,7 @@ useHead(() => ({ title: title.value }))
                 class="space-y-6"
               >
                 <h2 class="fr-h5 m-0">
-                  Aperçu de calcul
+                  {{ $t('fiche.simulation.title') }}
                 </h2>
 
                 <!-- Aperçu exécuté en direct : moteur Publicodes chargé dans la page -->
@@ -800,7 +795,7 @@ useHead(() => ({ title: title.value }))
                   <!-- Situation d'exemple -->
                   <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 md:p-5">
                     <p class="fr-text--xs uppercase tracking-wide text-gray-500 m-0 mb-3">
-                      Situation d'exemple
+                      {{ $t('fiche.simulation.exampleSituation') }}
                     </p>
                     <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-24 gap-y-2 m-0 p-0">
                       <div
@@ -824,7 +819,7 @@ useHead(() => ({ title: title.value }))
                     :opposability="rule.opposability"
                     :source="primaryReference?.label"
                     :explanation="preview.explanation"
-                    :computed-at="formatDate(preview.computedAt)"
+                    :computed-at="formatLong(preview.computedAt)"
                   />
 
                   <!-- Formulaire généré depuis la fiche, exécuté contre l'API déclarée -->
@@ -837,14 +832,14 @@ useHead(() => ({ title: title.value }))
                     v-if="rule.officialSimulatorUrl"
                     class="fr-text--sm mb-0 text-gray-600 m-0"
                   >
-                    Pour une estimation personnalisée, utilisez le
+                    {{ $t('fiche.simulation.officialBefore') }}
                     <a
                       :href="rule.officialSimulatorUrl"
                       target="_blank"
                       rel="noopener"
                       class="fr-link"
                     >
-                      simulateur officiel de {{ rule.organism.acronym ?? rule.organism.name }}</a>.
+                      {{ $t('fiche.simulation.officialLink', { organism: rule.organism.acronym ?? rule.organism.name }) }}</a>.
                   </p>
                 </template>
 
@@ -860,12 +855,10 @@ useHead(() => ({ title: title.value }))
                     />
                     <div class="space-y-1.5">
                       <h3 class="fr-h6 m-0">
-                        Calcul opéré en interne
+                        {{ $t('fiche.simulation.internalTitle') }}
                       </h3>
                       <p class="fr-text--sm mb-0 text-gray-700 m-0 max-w-2xl">
-                        Le moteur de cette règle reste interne à {{ rule.organism.acronym ?? rule.organism.name }}.
-                        Le catalogue n'expose donc pas d'aperçu de calcul intégré, mais référence
-                        les conditions, la base légale et, le cas échéant, l'accès au service officiel.
+                        {{ $t('fiche.simulation.internalBody', { organism: rule.organism.acronym ?? rule.organism.name }) }}
                       </p>
                     </div>
                   </div>
@@ -877,14 +870,14 @@ useHead(() => ({ title: title.value }))
                       rel="noopener"
                       class="fr-btn fr-btn--secondary fr-icon-external-link-line fr-btn--icon-right"
                     >
-                      Simulateur officiel
+                      {{ $t('fiche.simulation.officialSimulator') }}
                     </a>
                     <NuxtLink
                       v-if="rule.apiUrl"
-                      :to="`/mvp/regles/${rule.slug}?tab=api`"
+                      :to="localePath(`/mvp/regles/${rule.slug}?tab=api`)"
                       class="fr-btn fr-btn--tertiary fr-icon-terminal-box-line fr-btn--icon-left"
                     >
-                      Voir l'API d'exécution
+                      {{ $t('fiche.simulation.seeApi') }}
                     </NuxtLink>
                   </div>
                 </div>
@@ -895,7 +888,7 @@ useHead(() => ({ title: title.value }))
                 class="space-y-8"
               >
                 <h2 class="fr-h5 m-0">
-                  Intégrer cette règle
+                  {{ $t('fiche.api.title') }}
                 </h2>
 
                 <!-- Modes d'intégration disponibles -->
@@ -916,7 +909,7 @@ useHead(() => ({ title: title.value }))
                         class="fr-badge fr-badge--sm"
                         :class="mode.available ? 'fr-badge--success' : 'fr-badge--grey'"
                       >
-                        {{ mode.available ? 'Disponible' : 'Indisponible' }}
+                        {{ mode.available ? $t('fiche.api.available') : $t('fiche.api.unavailable') }}
                       </span>
                     </div>
                     <p
@@ -937,7 +930,7 @@ useHead(() => ({ title: title.value }))
                   class="space-y-5"
                 >
                   <h3 class="fr-h6 m-0">
-                    API de calcul
+                    {{ $t('fiche.api.docTitle') }}
                   </h3>
 
                   <!-- Endpoint -->
@@ -952,20 +945,20 @@ useHead(() => ({ title: title.value }))
                     class="space-y-2"
                   >
                     <p class="fr-text--sm mb-0 font-semibold text-gray-900 m-0">
-                      Paramètres d'entrée
+                      {{ $t('fiche.api.inputParams') }}
                     </p>
                     <div class="rounded-lg border border-gray-200 overflow-hidden">
                       <table class="w-full text-left border-collapse">
                         <thead class="bg-gray-50 border-b border-gray-200">
                           <tr>
                             <th class="fr-text--xs mb-0 uppercase tracking-wide text-gray-500 font-semibold px-3 py-2">
-                              Champ
+                              {{ $t('fiche.api.columnField') }}
                             </th>
                             <th class="fr-text--xs mb-0 uppercase tracking-wide text-gray-500 font-semibold px-3 py-2">
-                              Type
+                              {{ $t('fiche.api.columnType') }}
                             </th>
                             <th class="fr-text--xs mb-0 uppercase tracking-wide text-gray-500 font-semibold px-3 py-2">
-                              Description
+                              {{ $t('fiche.api.columnDescription') }}
                             </th>
                           </tr>
                         </thead>
@@ -993,20 +986,20 @@ useHead(() => ({ title: title.value }))
                   <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <div class="space-y-1.5">
                       <p class="fr-text--xs mb-0 uppercase tracking-wide text-gray-500 m-0">
-                        Exemple de requête
+                        {{ $t('fiche.api.requestExample') }}
                       </p>
                       <pre class="m-0 bg-[#1b1b35] text-gray-100 rounded-lg p-4 text-xs overflow-auto"><code>{{ apiDoc.requestExample }}</code></pre>
                     </div>
                     <div class="space-y-1.5">
                       <p class="fr-text--xs mb-0 uppercase tracking-wide text-gray-500 m-0">
-                        Exemple de réponse
+                        {{ $t('fiche.api.responseExample') }}
                       </p>
                       <pre class="m-0 bg-[#1b1b35] text-gray-100 rounded-lg p-4 text-xs overflow-auto"><code>{{ apiDoc.responseExample }}</code></pre>
                     </div>
                   </div>
 
                   <p class="fr-text--xs mb-0 text-gray-500 m-0">
-                    Schéma illustratif dérivé d'un cas d'exemple.
+                    {{ $t('fiche.api.schemaNote') }}
                   </p>
                 </div>
               </section>
@@ -1017,13 +1010,13 @@ useHead(() => ({ title: title.value }))
               >
                 <div class="flex items-center gap-2">
                   <h2 class="fr-h5 m-0">
-                    Traçabilité loi ↔ code
+                    {{ $t('fiche.traceability.title') }}
                   </h2>
                   <HintPopover
-                    text="Chaque fragment du texte officiel est mis en regard du code qui l'applique."
-                    label="Qu'est-ce que la traçabilité ?"
+                    :text="$t('fiche.traceability.hint')"
+                    :label="$t('fiche.traceability.hintLabel')"
                     more-to="/mvp/comprendre/verifier-une-regle"
-                    more-label="Comprendre la vérification"
+                    :more-label="$t('fiche.traceability.hintMore')"
                   />
                 </div>
 
@@ -1043,7 +1036,7 @@ useHead(() => ({ title: title.value }))
                     v-if="rule.sourceUrl"
                     class="fr-text--sm mb-0 text-gray-600 m-0"
                   >
-                    Code source complet&nbsp;:
+                    {{ $t('fiche.traceability.fullSource') }}
                     <a
                       :href="rule.sourceUrl"
                       target="_blank"
@@ -1066,11 +1059,10 @@ useHead(() => ({ title: title.value }))
                       />
                       <div class="space-y-1.5">
                         <h3 class="fr-h6 m-0">
-                          Bases légales référencées
+                          {{ $t('fiche.traceability.emptyTitle') }}
                         </h3>
                         <p class="fr-text--sm mb-0 text-gray-700 m-0">
-                          L'appariement détaillé entre le texte et le code n'est pas
-                          publié pour cette règle.
+                          {{ $t('fiche.traceability.emptyBody') }}
                         </p>
                       </div>
                     </div>
@@ -1093,13 +1085,13 @@ useHead(() => ({ title: title.value }))
               >
                 <div class="flex items-center gap-2">
                   <h2 class="fr-h5 m-0">
-                    Cas de tests
+                    {{ $t('fiche.tests.title') }}
                   </h2>
                   <HintPopover
-                    text="Situations types et résultats attendus, fournis par le producteur. Le catalogue contrôle automatiquement que le calcul les respecte."
-                    label="À quoi servent les cas de tests ?"
+                    :text="$t('fiche.tests.hint')"
+                    :label="$t('fiche.tests.hintLabel')"
                     more-to="/mvp/comprendre/verifier-une-regle"
-                    more-label="Comprendre la vérification"
+                    :more-label="$t('fiche.tests.hintMore')"
                   />
                 </div>
 
@@ -1117,38 +1109,32 @@ useHead(() => ({ title: title.value }))
                         class="fr-badge fr-badge--sm"
                         :class="autoVerification.drift || !autoVerification.allPassing ? 'fr-badge--warning' : 'fr-badge--success'"
                       >
-                        {{ autoVerification.drift ? 'Écart détecté' : autoVerification.allPassing ? 'Cas conformes' : 'Écart détecté' }}
+                        {{ autoVerification.drift || !autoVerification.allPassing ? $t('fiche.tests.badgeGap') : $t('fiche.tests.badgeConform') }}
                       </span>
                       <span class="fr-text--sm mb-0 text-gray-700">
-                        {{ autoVerification.drift
-                          ? `Contrôle du ${formatDate(autoVerification.checkedAt)}.`
-                          : autoVerification.total === 1
-                            ? `1 cas vérifié le ${formatDate(autoVerification.checkedAt)}, résultat conforme.`
-                            : autoVerification.allPassing
-                              ? `${autoVerification.total} cas vérifiés le ${formatDate(autoVerification.checkedAt)}, résultats conformes.`
-                              : `${autoVerification.passing} cas sur ${autoVerification.total} conformes au contrôle du ${formatDate(autoVerification.checkedAt)}.` }}
+                        {{ verificationSummary }}
                       </span>
                     </div>
                     <p
                       v-if="autoVerification.drift"
                       class="fr-text--sm mb-0 text-gray-700 m-0"
                     >
-                      L'API du producteur n'accepte plus les paramètres déclarés par la fiche
+                      {{ $t('fiche.tests.gapBefore') }}
                       (<code class="fr-text--xs">{{ autoVerification.declaredNotAccepted.join(', ') }}</code>).
-                      Elle attend désormais
+                      {{ $t('fiche.tests.gapMiddle') }}
                       <code class="fr-text--xs">{{ autoVerification.acceptedNotDeclared.slice(0, 3).join(', ') }}…</code>
-                      La fiche de référencement doit être mise à jour par le producteur.
+                      {{ $t('fiche.tests.gapAfter') }}
                     </p>
                   </div>
 
                   <ul class="list-none p-0 m-0 space-y-3">
                     <li
-                      v-for="t in tests"
-                      :key="t.id"
+                      v-for="testCase in tests"
+                      :key="testCase.id"
                     >
                       <RuleTestCase
-                        :test="t"
-                        :verification="verificationByTestId[t.id]"
+                        :test="testCase"
+                        :verification="verificationByTestId[testCase.id]"
                       />
                     </li>
                   </ul>
@@ -1166,13 +1152,10 @@ useHead(() => ({ title: title.value }))
                     />
                     <div class="space-y-1.5">
                       <h3 class="fr-h6 m-0">
-                        Pas de cas de test publics
+                        {{ $t('fiche.tests.emptyTitle') }}
                       </h3>
                       <p class="fr-text--sm mb-0 text-gray-700 m-0">
-                        Cette règle ne publie pas ses jeux de tests. Cela ne signifie pas
-                        qu'elle n'est pas validée&nbsp;: {{ rule.organism.acronym ?? rule.organism.name }}
-                        peut effectuer cette validation en interne, sans en exposer le détail
-                        (sensibilité des données, charge de maintenance).
+                        {{ $t('fiche.tests.emptyBody', { organism: rule.organism.acronym ?? rule.organism.name }) }}
                       </p>
                     </div>
                   </div>
@@ -1180,7 +1163,7 @@ useHead(() => ({ title: title.value }))
                     v-if="rule.certification"
                     class="fr-text--xs mb-0 text-gray-600 m-0 pl-9"
                   >
-                    Cette règle dispose toutefois d'une certification de ses résultats par l'administration productrice.
+                    {{ $t('fiche.tests.emptyCertified') }}
                   </p>
                 </div>
               </section>
@@ -1190,14 +1173,14 @@ useHead(() => ({ title: title.value }))
                 class="space-y-6"
               >
                 <h2 class="fr-h5 m-0">
-                  Historique des versions
+                  {{ $t('fiche.versions.title') }}
                 </h2>
 
                 <p
                   v-if="!versions.length"
                   class="fr-text--sm mb-0 text-gray-600 m-0"
                 >
-                  Aucune version antérieure publiée.
+                  {{ $t('fiche.versions.empty') }}
                 </p>
 
                 <!-- Frise chronologique -->
@@ -1229,18 +1212,18 @@ useHead(() => ({ title: title.value }))
                         <span
                           class="fr-badge fr-badge--sm"
                           :class="(v.kindMeta as {
-                            label: string;
+                            labelKey: string;
                             badgeClass: string;
                           }).badgeClass"
-                        >{{ (v.kindMeta as {
-                          label: string;
+                        >{{ $t((v.kindMeta as {
+                          labelKey: string;
                           badgeClass: string;
-                        }).label }}</span>
+                        }).labelKey) }}</span>
                         <span
                           v-if="v.isCurrent"
                           class="fr-badge fr-badge--sm fr-badge--green-emeraude"
-                        >Version courante</span>
-                        <span class="fr-text--xs mb-0 text-gray-500">{{ formatDate(v.publishedAt) }}</span>
+                        >{{ $t('fiche.versions.current') }}</span>
+                        <span class="fr-text--xs mb-0 text-gray-500">{{ formatLong(v.publishedAt) }}</span>
                       </div>
 
                       <p class="fr-text--sm mb-0 text-gray-700 m-0">
@@ -1255,7 +1238,7 @@ useHead(() => ({ title: title.value }))
                           class="fr-icon-scales-3-line fr-icon--xs align-middle mr-1"
                           aria-hidden="true"
                         />
-                        Déclenchée par
+                        {{ $t('fiche.versions.triggeredBy') }}
                         <a
                           v-if="v.trigger.eli"
                           :href="v.trigger.eli"
@@ -1281,16 +1264,16 @@ useHead(() => ({ title: title.value }))
     class="space-y-4 py-10"
   >
     <h1 class="fr-h2">
-      Règle introuvable
+      {{ $t('fiche.notFoundTitle') }}
     </h1>
     <p class="text-gray-700">
-      Aucune règle ne correspond à l'identifiant <code>{{ slug }}</code>.
+      {{ $t('fiche.notFoundBody') }} <code>{{ slug }}</code>.
     </p>
     <NuxtLink
-      to="/mvp/regles/"
+      :to="localePath('/mvp/regles/')"
       class="fr-btn fr-btn--secondary fr-icon-arrow-left-line fr-btn--icon-left"
     >
-      Retour au catalogue
+      {{ $t('fiche.backToCatalogue') }}
     </NuxtLink>
   </section>
 </template>

@@ -33,7 +33,7 @@ const toneClass: Record<string, string> = {
   <HintPopover
     v-if="hint"
     :text="hint"
-    :label="`${axis} ${value} : plus d’information`"
+    :label="$t('hint.tag', { axis, value })"
     align="right"
   >
     <span

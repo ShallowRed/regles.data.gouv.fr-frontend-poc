@@ -18,6 +18,7 @@ defineProps<{
   source?: string
 }>()
 
+const { t } = useI18n()
 const { evaluate, rulesMeta } = usePublicodesEngine()
 
 /** Dépenses de recherche éligibles, éditables (assiette du crédit d'impôt). */
@@ -31,9 +32,9 @@ const depensesDom = ref(0)
  */
 const regimeFiscal = ref<'reel-normal' | 'reel-simplifie' | 'micro'>('reel-normal')
 const regimeFiscalOptions = [
-  { value: 'reel-normal', label: 'Réel normal' },
-  { value: 'reel-simplifie', label: 'Réel simplifié' },
-  { value: 'micro', label: 'Micro-entreprise' },
+  { value: 'reel-normal', labelKey: 'liveCalculation.regimeReelNormal' },
+  { value: 'reel-simplifie', labelKey: 'liveCalculation.regimeReelSimplifie' },
+  { value: 'micro', labelKey: 'liveCalculation.regimeMicro' },
 ] as const
 
 function sanitize(n: number): number {
@@ -78,8 +79,8 @@ function formatEuros(value: unknown): string {
  * producteur (cf. cas de test cir-non-eligible-artisanale-bnc).
  */
 const result = computed(() => ({
-  value: eligible.value ? formatEuros(evaluation.value?.['cir . montant']?.value) : 'Non éligible',
-  label: 'Crédit d\'impôt recherche',
+  value: eligible.value ? formatEuros(evaluation.value?.['cir . montant']?.value) : t('liveCalculation.notEligible'),
+  label: t('liveCalculation.resultLabel'),
 }))
 
 /**
@@ -93,31 +94,32 @@ const explanation = computed<ExplanationNode[]>(() => {
   const e = evaluation.value
   if (!e)
     return []
+  const yesNo = (condition: boolean) => t(condition ? 'liveCalculation.yes' : 'liveCalculation.no')
   const nodes: ExplanationNode[] = [
     {
-      label: 'Éligibilité au CIR',
-      value: e['cir . eligibilite']?.value === true ? 'Oui' : 'Non',
-      source: 'cir.publicodes : « cir . eligibilite » (activité commerciale, industrielle ou agricole au régime réel)',
+      label: t('liveCalculation.eligibilityLabel'),
+      value: yesNo(e['cir . eligibilite']?.value === true),
+      source: t('liveCalculation.eligibilitySource'),
     },
   ]
   if (!eligible.value) {
     nodes.push({
-      label: 'Régime réel ou condition d\'exonération',
-      value: e.regimeFiscalReelOuConditionDExoneration?.value === true ? 'Oui' : 'Non',
-      source: 'variables.publicodes : « regimeFiscalReelOuConditionDExoneration » (la condition qui fait tomber l\'éligibilité ici)',
+      label: t('liveCalculation.regimeConditionLabel'),
+      value: yesNo(e.regimeFiscalReelOuConditionDExoneration?.value === true),
+      source: t('liveCalculation.regimeConditionSource'),
     })
     return nodes
   }
   nodes.push({
-    label: 'Crédit métropole : barème 30 % jusqu\'à 100 M€, puis 5 %',
+    label: t('liveCalculation.creditMainlandLabel'),
     value: formatEuros(e['cir . creditMetropole']?.value),
-    source: 'cir.publicodes : « cir . creditMetropole » (CGI art. 244 quater B)',
+    source: t('liveCalculation.creditMainlandSource'),
   })
   if (sanitize(depensesDom.value) > 0) {
     nodes.push({
-      label: 'Crédit outre-mer : barème 50 % jusqu\'à 100 M€, puis 5 %',
+      label: t('liveCalculation.creditOverseasLabel'),
       value: formatEuros(e['cir . creditDom']?.value),
-      source: 'cir.publicodes : « cir . creditDom » (CGI art. 244 quater B)',
+      source: t('liveCalculation.creditOverseasSource'),
     })
   }
   return nodes
@@ -133,17 +135,17 @@ const explanation = computed<ExplanationNode[]>(() => {
           class="fr-icon-flashlight-line fr-icon--xs mr-1"
           aria-hidden="true"
         />
-        Calculé dans votre navigateur
+        {{ $t('liveCalculation.badge') }}
       </p>
       <p class="fr-text--xs mb-0 text-gray-600 m-0">
-        Règles
+        {{ $t('liveCalculation.rulesPrefix') }}
         <a
           :href="`${rulesMeta.repoUrl}/tree/${rulesMeta.sha}`"
           target="_blank"
           rel="noopener"
           class="fr-link fr-text--xs"
         >{{ rulesMeta.repo }}</a>
-        à la version <code class="fr-text--xs bg-gray-100 px-1 py-0.5 rounded">{{ rulesMeta.shortSha }}</code>
+        {{ $t('liveCalculation.rulesVersion') }} <code class="fr-text--xs bg-gray-100 px-1 py-0.5 rounded">{{ rulesMeta.shortSha }}</code>
       </p>
     </div>
 
@@ -151,23 +153,23 @@ const explanation = computed<ExplanationNode[]>(() => {
       <!-- Situation d'exemple : champs de dépenses éditables, recalcul immédiat -->
       <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 md:p-5">
         <p class="fr-text--xs uppercase tracking-wide text-gray-500 m-0 mb-3">
-          Situation d'exemple : modifiez les dépenses ou le régime pour recalculer
+          {{ $t('liveCalculation.situationTitle') }}
         </p>
         <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-24 gap-y-2 m-0 p-0 mb-4">
           <div class="flex justify-between gap-3 border-b border-gray-200 pb-1.5">
             <dt class="fr-text--sm mb-0 text-gray-600">
-              Nature de l'activité
+              {{ $t('liveCalculation.activityNature') }}
             </dt>
             <dd class="fr-text--sm mb-0 font-medium text-gray-900 m-0 text-right">
-              Industrielle
+              {{ $t('liveCalculation.activityNatureValue') }}
             </dd>
           </div>
           <div class="flex justify-between gap-3 border-b border-gray-200 pb-1.5">
             <dt class="fr-text--sm mb-0 text-gray-600">
-              Type d'imposition
+              {{ $t('liveCalculation.taxType') }}
             </dt>
             <dd class="fr-text--sm mb-0 font-medium text-gray-900 m-0 text-right">
-              Impôt sur les sociétés
+              {{ $t('liveCalculation.taxTypeValue') }}
             </dd>
           </div>
         </dl>
@@ -176,8 +178,8 @@ const explanation = computed<ExplanationNode[]>(() => {
             class="fr-label"
             for="live-regime-fiscal"
           >
-            Régime fiscal
-            <span class="fr-hint-text">Le régime micro fait tomber l'éligibilité</span>
+            {{ $t('liveCalculation.taxRegime') }}
+            <span class="fr-hint-text">{{ $t('liveCalculation.taxRegimeHint') }}</span>
           </label>
           <select
             id="live-regime-fiscal"
@@ -189,7 +191,7 @@ const explanation = computed<ExplanationNode[]>(() => {
               :key="option.value"
               :value="option.value"
             >
-              {{ option.label }}
+              {{ $t(option.labelKey) }}
             </option>
           </select>
         </div>
@@ -199,8 +201,8 @@ const explanation = computed<ExplanationNode[]>(() => {
               class="fr-label"
               for="live-depenses-metropole"
             >
-              Dépenses de recherche éligibles (métropole)
-              <span class="fr-hint-text">En euros</span>
+              {{ $t('liveCalculation.expensesMainland') }}
+              <span class="fr-hint-text">{{ $t('liveCalculation.inEuros') }}</span>
             </label>
             <input
               id="live-depenses-metropole"
@@ -216,8 +218,8 @@ const explanation = computed<ExplanationNode[]>(() => {
               class="fr-label"
               for="live-depenses-dom"
             >
-              Dépenses de recherche éligibles (outre-mer)
-              <span class="fr-hint-text">En euros</span>
+              {{ $t('liveCalculation.expensesOverseas') }}
+              <span class="fr-hint-text">{{ $t('liveCalculation.inEuros') }}</span>
             </label>
             <input
               id="live-depenses-dom"
@@ -245,7 +247,7 @@ const explanation = computed<ExplanationNode[]>(() => {
         class="rounded border border-gray-200 bg-white p-3"
       >
         <p class="fr-text--xs mb-0 text-gray-600 m-0 mb-2">
-          Informations non renseignées dans cet aperçu, qui affineraient le montant :
+          {{ $t('liveCalculation.missingTitle') }}
         </p>
         <ul class="flex flex-wrap gap-1 list-none p-0 m-0">
           <li
@@ -258,7 +260,7 @@ const explanation = computed<ExplanationNode[]>(() => {
             v-if="missingInfo.length > 6"
             class="fr-text--xs text-gray-500"
           >
-            + {{ missingInfo.length - 6 }} autres
+            {{ $t('liveCalculation.missingMore', { count: missingInfo.length - 6 }) }}
           </li>
         </ul>
       </div>
@@ -270,11 +272,10 @@ const explanation = computed<ExplanationNode[]>(() => {
       class="rounded-lg border border-gray-200 bg-white p-6 space-y-1.5"
     >
       <h3 class="fr-h6 m-0">
-        Calcul indisponible
+        {{ $t('liveCalculation.unavailableTitle') }}
       </h3>
       <p class="fr-text--sm mb-0 text-gray-700 m-0 max-w-2xl">
-        Le moteur Publicodes n'a pas pu évaluer la règle dans cette page.
-        Le code source complet reste consultable sur
+        {{ $t('liveCalculation.unavailableBefore') }}
         <a
           :href="rulesMeta.repoUrl"
           target="_blank"

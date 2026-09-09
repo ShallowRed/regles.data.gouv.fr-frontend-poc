@@ -1,9 +1,10 @@
 <script setup lang="ts">
-await navigateTo('/mvp', { redirectCode: 302 })
+const localePath = useLocalePath()
+await navigateTo(localePath('/mvp'), { redirectCode: 302 })
 </script>
 
 <template>
   <p class="sr-only">
-    Redirection vers le catalogue des règles publiques.
+    {{ $t('redirect.toCatalogue') }}
   </p>
 </template>

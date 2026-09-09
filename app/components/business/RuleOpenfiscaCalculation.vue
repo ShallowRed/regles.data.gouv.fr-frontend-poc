@@ -14,9 +14,11 @@ defineProps<{
   sourceUrl?: string
 }>()
 
+const { formatMonthYear } = useLocaleDate()
+
 /** Mois de référence figé (validé contre les paramètres OpenFisca France). */
 const TARGET_MONTH = '2025-03'
-const TARGET_MONTH_LABEL = new Date(`${TARGET_MONTH}-01`).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+const targetMonthLabel = computed(() => formatMonthYear(`${TARGET_MONTH}-01`))
 /**
  * Instance OpenFisca visée. L'API publique convient au POC ; une instance dédiée
  * (ex. celle d'aides-simplifiées) donnerait davantage de garanties de disponibilité.
@@ -52,10 +54,11 @@ async function calculate() {
   }
 }
 
+const { locale } = useI18n()
 const formattedPpa = computed(() =>
   ppa.value === null
     ? null
-    : ppa.value.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    : ppa.value.toLocaleString(locale.value, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
 )
 </script>
 
@@ -63,7 +66,7 @@ const formattedPpa = computed(() =>
   <div class="rounded-lg border border-[#000091]/30 bg-white p-4 md:p-5 space-y-4">
     <div class="flex flex-wrap items-center gap-2">
       <p class="fr-badge fr-badge--sm fr-badge--blue-cumulus m-0">
-        Calculé par openfisca-france
+        {{ $t('openfiscaCalculation.badge') }}
       </p>
     </div>
 
@@ -73,10 +76,10 @@ const formattedPpa = computed(() =>
           for="of-salaire"
           class="block fr-text--sm mb-0 font-medium text-gray-800"
         >
-          Salaire net mensuel
+          {{ $t('openfiscaCalculation.salaryLabel') }}
         </label>
         <p class="fr-text--xs mb-0 text-gray-500 m-0">
-          Étalé sur le trimestre de référence
+          {{ $t('openfiscaCalculation.salaryHint') }}
         </p>
         <input
           id="of-salaire"
@@ -91,7 +94,7 @@ const formattedPpa = computed(() =>
         :disabled="pending"
         @click="calculate"
       >
-        {{ pending ? 'Calcul en cours…' : 'Calculer la prime d\'activité' }}
+        {{ pending ? $t('openfiscaCalculation.pending') : $t('openfiscaCalculation.submit') }}
       </button>
     </div>
 
@@ -100,20 +103,20 @@ const formattedPpa = computed(() =>
       class="rounded border border-gray-200 bg-gray-50 p-4 space-y-2"
     >
       <p class="fr-text--xs uppercase tracking-wide text-gray-500 m-0">
-        Prime d'activité pour {{ TARGET_MONTH_LABEL }}
+        {{ $t('openfiscaCalculation.resultLabel', { month: targetMonthLabel }) }}
       </p>
       <p class="text-lg font-semibold text-blue-900 m-0">
         {{ formattedPpa }} €
       </p>
       <p class="fr-text--xs mb-0 text-gray-600 m-0">
-        Estimation à partir des ressources du trimestre de référence.
+        {{ $t('openfiscaCalculation.resultCaption') }}
       </p>
     </div>
     <p
       v-else-if="requestError"
       class="fr-text--sm mb-0 text-[#ce0500] m-0"
     >
-      L'appel au moteur OpenFisca a échoué ({{ requestError }}).
+      {{ $t('openfiscaCalculation.requestFailed', { error: requestError }) }}
     </p>
 
     <div
@@ -121,7 +124,7 @@ const formattedPpa = computed(() =>
       class="border-t border-gray-100 pt-3"
     >
       <p class="fr-text--xs mb-0 text-gray-500 m-0">
-        Source&nbsp;:
+        {{ $t('openfiscaCalculation.source') }}
         <a
           :href="sourceUrl"
           target="_blank"

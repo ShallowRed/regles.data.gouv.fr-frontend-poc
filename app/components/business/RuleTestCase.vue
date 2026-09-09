@@ -13,6 +13,9 @@ const props = defineProps<{
   verification?: { status: string, got: unknown, checkedAt: string }
 }>()
 
+const { t } = useI18n()
+const { formatLong } = useLocaleDate()
+
 const autoCheck = computed(() => {
   const v = props.verification
   if (!v)
@@ -24,18 +27,18 @@ const autoCheck = computed(() => {
 const badge = computed(() => {
   if (autoCheck.value) {
     return autoCheck.value.conforme
-      ? { label: 'Conforme', cls: 'fr-badge--success' }
-      : { label: 'Écart détecté', cls: 'fr-badge--error' }
+      ? { key: 'testCase.conform', cls: 'fr-badge--success' }
+      : { key: 'testCase.gap', cls: 'fr-badge--error' }
   }
   switch (props.test.status) {
     case 'valide':
-      return { label: 'Validé', cls: 'fr-badge--success' }
+      return { key: 'testCase.valid', cls: 'fr-badge--success' }
     case 'en_revue':
-      return { label: 'En revue', cls: 'fr-badge--new' }
+      return { key: 'testCase.inReview', cls: 'fr-badge--new' }
     case 'echec':
-      return { label: 'En échec', cls: 'fr-badge--error' }
+      return { key: 'testCase.failed', cls: 'fr-badge--error' }
     default:
-      return { label: 'Statut inconnu', cls: 'fr-badge--grey' }
+      return { key: 'testCase.unknown', cls: 'fr-badge--grey' }
   }
 })
 
@@ -57,7 +60,7 @@ const expectedIsStructured = computed(() =>
 const expectedDisplay = computed(() => {
   const e = props.test.expected
   if (typeof e === 'boolean')
-    return e ? 'éligible' : 'non éligible'
+    return t(e ? 'testCase.eligible' : 'testCase.notEligible')
   if (e === null || e === undefined)
     return '∅'
   if (typeof e === 'object')
@@ -67,20 +70,23 @@ const expectedDisplay = computed(() => {
 
 /** Provenance condensée du pied de carte, séparée par « · ». */
 const metaItems = computed(() => {
-  const t = props.test
+  const test = props.test
   const items: string[] = []
   if (autoCheck.value?.conforme)
-    items.push(`Vérifié le ${formatDateFr(autoCheck.value.checkedAt)}`)
-  if (t.validatedBy)
-    items.push(`Validé par ${t.validatedBy}${t.validatedAt ? ` le ${formatDateFr(t.validatedAt)}` : ''}`)
-  if (t.period)
-    items.push(`Période législative ${t.period}`)
-  if (t.engineVersion)
-    items.push(`Moteur ${t.engineVersion}`)
-  if (t.realCaseSource)
-    items.push(`Dossier réel anonymisé : ${t.realCaseSource}`)
-  if (t.legalAnchor)
-    items.push(`Texte visé : ${t.legalAnchor}`)
+    items.push(t('testCase.checkedOn', { date: formatLong(autoCheck.value.checkedAt) }))
+  if (test.validatedBy) {
+    items.push(test.validatedAt
+      ? t('testCase.validatedByOn', { who: test.validatedBy, date: formatLong(test.validatedAt) })
+      : t('testCase.validatedBy', { who: test.validatedBy }))
+  }
+  if (test.period)
+    items.push(t('testCase.period', { period: test.period }))
+  if (test.engineVersion)
+    items.push(t('testCase.engineVersion', { version: test.engineVersion }))
+  if (test.realCaseSource)
+    items.push(t('testCase.realCase', { source: test.realCaseSource }))
+  if (test.legalAnchor)
+    items.push(t('testCase.legalAnchor', { anchor: test.legalAnchor }))
   return items
 })
 </script>
@@ -103,7 +109,7 @@ const metaItems = computed(() => {
         class="fr-badge fr-badge--sm shrink-0"
         :class="badge.cls"
       >
-        {{ badge.label }}
+        {{ $t(badge.key) }}
       </span>
     </header>
 
@@ -111,8 +117,7 @@ const metaItems = computed(() => {
       v-if="autoCheck && !autoCheck.conforme"
       class="fr-text--sm mb-0 m-0 mt-3 text-[#b34000]"
     >
-      Contrôle du {{ formatDateFr(autoCheck.checkedAt) }} : résultat obtenu
-      {{ autoCheck.got ?? '∅' }}, différent du résultat attendu.
+      {{ $t('testCase.gapDetail', { date: formatLong(autoCheck.checkedAt), got: autoCheck.got ?? '∅' }) }}
     </p>
 
     <div
@@ -121,7 +126,7 @@ const metaItems = computed(() => {
     >
       <div>
         <p class="fr-text--xs uppercase tracking-wide text-gray-500 m-0 mb-1">
-          Entrées
+          {{ $t('testCase.inputs') }}
         </p>
         <ul class="list-none p-0 m-0 text-sm space-y-0.5">
           <li
@@ -134,7 +139,7 @@ const metaItems = computed(() => {
       </div>
       <div class="sm:border-l sm:border-gray-200 sm:pl-4">
         <p class="fr-text--xs uppercase tracking-wide text-gray-500 m-0 mb-1">
-          Résultat attendu
+          {{ $t('testCase.expected') }}
         </p>
         <pre
           v-if="expectedIsStructured"
@@ -182,7 +187,7 @@ const metaItems = computed(() => {
           rel="noopener"
           class="fr-link fr-text--xs"
         >
-          Test natif (dépôt source)
+          {{ $t('testCase.nativeTest') }}
         </NuxtLink>
       </template>
     </footer>
