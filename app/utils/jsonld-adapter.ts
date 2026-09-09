@@ -3,7 +3,12 @@
  *
  * Consomme les fiches JSON-LD du dépôt data (profil CPSV-AP + sous-ensemble CPRMV +
  * schema.org + Dublin Core) sans stack RDF : le @context des fiches aplatit déjà les
- * clés utiles (`title`, `description` en français).
+ * clés utiles (`title`, `description`).
+ *
+ * Les littéraux affichés sont multilingues (tableau de `{ @value, @language }`, cf.
+ * contrat-interface/profil-metadonnees.md § 1 bis) : l'adaptateur reçoit la locale
+ * demandée et choisit le littéral de cette langue, avec repli sur le français puis sur
+ * le premier littéral disponible.
  *
  * Rôle stratégique : outil de discussion du contrat d'interface front ↔ data. L'adaptateur
  * remplit ce qu'il peut depuis le profil, et liste explicitement dans `gaps` les champs du
@@ -40,13 +45,37 @@ const nodeTypes = (node: JsonldNode): string[] =>
 const hasType = (node: JsonldNode, type: string): boolean =>
   asArray(node.type).includes(type)
 
-/** Extrait une chaîne d'une valeur JSON-LD (littéral direct ou objet { @value }). */
-const literal = (value: unknown): string | undefined => {
+/** Langue de repli quand la fiche ne porte pas la langue demandée. */
+const FALLBACK_LOCALE = 'fr'
+
+function literalValue(value: unknown): string | undefined {
   if (typeof value === 'string')
     return value
   if (value && typeof value === 'object' && '@value' in value)
     return String((value as Record<string, unknown>)['@value'])
   return undefined
+}
+
+function literalLanguage(value: unknown): string | undefined {
+  return value && typeof value === 'object' && '@language' in value
+    ? String((value as Record<string, unknown>)['@language'])
+    : undefined
+}
+
+/**
+ * Extrait une chaîne d'une valeur JSON-LD : littéral direct, objet { @value } ou tableau
+ * de littéraux multilingues. Dans le dernier cas, la langue demandée l'emporte, puis le
+ * français, puis le premier littéral porteur d'une valeur.
+ */
+export const literal = (value: unknown, locale: string = FALLBACK_LOCALE): string | undefined => {
+  if (Array.isArray(value)) {
+    const candidates = value.filter(item => literalValue(item) !== undefined)
+    const wanted = candidates.find(item => literalLanguage(item) === locale)
+      ?? candidates.find(item => literalLanguage(item) === FALLBACK_LOCALE)
+      ?? candidates[0]
+    return literalValue(wanted)
+  }
+  return literalValue(value)
 }
 
 const nodeId = (value: unknown): string | undefined => {
@@ -55,13 +84,13 @@ const nodeId = (value: unknown): string | undefined => {
   return undefined
 }
 
-/** Titre d'un nœud : alias `title` du @context (langue fr) ou clé `dct:title` historique. */
-const nodeTitle = (node: JsonldNode): string | undefined =>
-  literal(node.title) ?? literal(node['dct:title'])
+/** Titre d'un nœud : alias `title` du @context ou clé `dct:title` historique. */
+const nodeTitle = (node: JsonldNode, locale: string): string | undefined =>
+  literal(node.title, locale) ?? literal(node['dct:title'], locale)
 
 /** Slug lisible depuis un identifiant de paramètre. */
-const inputLabel = (param: JsonldNode): string =>
-  nodeTitle(param) ?? String(param['dct:identifier'] ?? '')
+const inputLabel = (param: JsonldNode, locale: string): string =>
+  nodeTitle(param, locale) ?? String(param['dct:identifier'] ?? '')
 
 /**
  * Entrées du service : `cpsv:hasInput` (la propriété CPSV-AP 3.2.0, tranchée au contrat)
@@ -98,9 +127,10 @@ export interface StructureLeaf {
 export function structureLeaves(
   structure: JsonldNode,
   graph: JsonldNode[],
+  locale: string = FALLBACK_LOCALE,
   trail: string[] = [],
 ): StructureLeaf[] {
-  const title = nodeTitle(structure) ?? String(structure['dct:identifier'] ?? '')
+  const title = nodeTitle(structure, locale) ?? String(structure['dct:identifier'] ?? '')
   const nextTrail = [...trail, title].filter(Boolean)
 
   // Entrée-référence : pas de sh:property propre, un sh:node vers une structure du
@@ -117,6 +147,7 @@ export function structureLeaves(
     return structureLeaves(
       { ...target, 'dct:title': undefined, 'title': undefined, 'dct:identifier': undefined },
       graph,
+      locale,
       nextTrail,
     ).map(leaf => ({ ...leaf, id: prefix ? `${prefix}.${leaf.id}` : leaf.id }))
   }
@@ -128,15 +159,15 @@ export function structureLeaves(
       const target = typeof nested === 'object' && (nested as JsonldNode)['sh:property']
         ? nested as JsonldNode
         : resolveNodeRef(ref, graph)
-      return target ? structureLeaves(target, graph, nextTrail) : []
+      return target ? structureLeaves(target, graph, locale, nextTrail) : []
     }
     const id = shPathName(property['sh:path'])
     if (!id)
       return []
     return [{
       id,
-      label: nodeTitle(property) ?? id,
-      definition: literal(property['cprmv:definition']),
+      label: nodeTitle(property, locale) ?? id,
+      definition: literal(property['cprmv:definition'], locale),
       datatype: literal(property['sh:datatype']),
       required: Number(property['sh:minCount'] ?? 0) >= 1,
       defaultValue: property['schema:defaultValue'],
@@ -196,10 +227,68 @@ const engineFromLanguages = (languages: string[]): RuleEngine => {
   return 'autre'
 }
 
-export function adaptJsonldGraph(raw: string): JsonldAdaptation {
+/**
+ * Écarts de profil affichés sur la fiche. Ils décrivent la fiche source, pas la règle :
+ * leur texte vit donc ici, dans la langue demandée, et non dans les fichiers de traduction
+ * (l'adaptateur tourne aussi hors Nuxt, cf. scripts/check-contrat.mjs).
+ */
+const profileGapText: Record<string, Record<string, string>> = {
+  parentTitle: {
+    fr: 'titre du service parent (dct:title au niveau composite)',
+    en: 'title of the parent service (dct:title at the composite level)',
+  },
+  legalResource: {
+    fr: 'base légale (cv:hasLegalResource absent de la fiche)',
+    en: 'legal basis (cv:hasLegalResource missing from the record)',
+  },
+  competentAuthority: {
+    fr: 'autorité compétente (nœud cv:PublicOrganisation référencé mais non décrit)',
+    en: 'competent authority (cv:PublicOrganisation node referenced but left undescribed)',
+  },
+  maturity: {
+    fr: 'niveau de maturité (échelle N0-N3) - rdgf:maturity',
+    en: 'maturity level (N0-N3 scale) - rdgf:maturity',
+  },
+  certificationRegime: {
+    fr: 'régime de certification (frontière / implémentation / référencement) - rdgf:certificationRegime',
+    en: 'certification regime (boundary / implementation / referenced) - rdgf:certificationRegime',
+  },
+  boundaryKind: {
+    fr: 'qualification de la frontière des entrées (déclaration / donnée attestée / sortie de règle) - rdgf:boundaryKind',
+    en: 'qualification of the input boundary (declared fact / attested data / rule output) - rdgf:boundaryKind',
+  },
+  testCase: {
+    fr: 'cas de tests structurés (seuls des liens bruts dct:source vers les fichiers de tests) - rdgf:testCase',
+    en: 'structured test cases (only raw dct:source links to the test files) - rdgf:testCase',
+  },
+  versionEvent: {
+    fr: 'historique de versions lié aux textes déclencheurs - rdgf:versionEvent',
+    en: 'version history linked to the texts that triggered each change - rdgf:versionEvent',
+  },
+  operationalMapping: {
+    fr: 'projection des structures composites vers les paramètres HTTP (convention d\'aplatissement non déclarée) - rdgf:operationalMapping',
+    en: 'projection of the composite structures onto HTTP parameters (flattening convention undeclared) - rdgf:operationalMapping',
+  },
+  publicationNature: {
+    fr: 'nature de publication (ouverte / hybride / fermée)',
+    en: 'publication model (open / hybrid / closed)',
+  },
+  regulatoryPosition: {
+    fr: 'position réglementaire (simulation → rescrit)',
+    en: 'regulatory position (simulation → binding ruling)',
+  },
+  updatedAt: {
+    fr: 'date de dernière mise à jour',
+    en: 'date of last update',
+  },
+}
+
+export function adaptJsonldGraph(raw: string, locale: string = FALLBACK_LOCALE): JsonldAdaptation {
   const doc = JSON.parse(raw) as { '@graph': JsonldNode[] }
   const graph = doc['@graph']
   const gaps: string[] = []
+  const gap = (key: keyof typeof profileGapText) =>
+    profileGapText[key][locale] ?? profileGapText[key][FALLBACK_LOCALE]!
 
   const services = graph.filter(node => hasType(node, 'cpsv:PublicService'))
   const parent = services.find(node => node['dct:hasPart']) ?? services[0]
@@ -210,36 +299,36 @@ export function adaptJsonldGraph(raw: string): JsonldAdaptation {
   const channels = graph.filter(node => hasType(node, 'cv:Channel'))
 
   // Titre et description : service parent, sinon composition des sous-services.
-  const title = literal(parent?.title)
-    ?? (sourceCode ? literal(sourceCode['schema:name']) : undefined)
-    ?? leaves.map(leaf => literal(leaf.title)).filter(Boolean).join(' + ')
-  if (!literal(parent?.title) && parts.length > 0)
-    gaps.push('titre du service parent (dct:title au niveau composite)')
+  const title = literal(parent?.title, locale)
+    ?? (sourceCode ? literal(sourceCode['schema:name'], locale) : undefined)
+    ?? leaves.map(leaf => literal(leaf.title, locale)).filter(Boolean).join(' + ')
+  if (!literal(parent?.title, locale) && parts.length > 0)
+    gaps.push(gap('parentTitle'))
 
-  const description = literal(parent?.description)
-    ?? leaves.map(leaf => literal(leaf.description)).filter(Boolean).join(' ')
+  const description = literal(parent?.description, locale)
+    ?? leaves.map(leaf => literal(leaf.description, locale)).filter(Boolean).join(' ')
 
   // Références légales (absentes de certaines fiches).
   const legalReferences: LegalReference[] = leaves.flatMap(leaf =>
     asArray(leaf['cv:hasLegalResource'] as JsonldNode | JsonldNode[]).map(resource => ({
       id: nodeId(resource) ?? String(resource['dct:identifier'] ?? ''),
-      label: [literal(resource.title), literal(resource['dct:coverage'])].filter(Boolean).join(' - '),
+      label: [literal(resource.title, locale), literal(resource['dct:coverage'], locale)].filter(Boolean).join(' - '),
       kind: 'autre' as const,
       eli: nodeId(resource),
     })),
   )
   if (legalReferences.length === 0)
-    gaps.push('base légale (cv:hasLegalResource absent de la fiche)')
+    gaps.push(gap('legalResource'))
 
   // Autorité compétente : parfois référencée sans être décrite dans le graphe.
-  const organismLabel = organisation ? literal(organisation['skos:prefLabel']) : undefined
+  const organismLabel = organisation ? literal(organisation['skos:prefLabel'], locale) : undefined
   if (!organismLabel)
-    gaps.push('autorité compétente (nœud cv:PublicOrganisation référencé mais non décrit)')
+    gaps.push(gap('competentAuthority'))
 
   // Canal API → apiUrl.
   const apiChannel = channels.find((channel) => {
     const kind = channel['dct:type'] as JsonldNode | undefined
-    return (literal(kind?.['skos:prefLabel']) ?? '').toLowerCase().includes('api')
+    return (literal(kind?.['skos:prefLabel'], locale) ?? '').toLowerCase().includes('api')
   })
   const apiUrl = apiChannel ? nodeId(apiChannel['foaf:page']) : undefined
 
@@ -258,7 +347,7 @@ export function adaptJsonldGraph(raw: string): JsonldAdaptation {
       // feuilles, pas par le conteneur.
       if (isStructureInput(param)) {
         hasStructureInputs = true
-        return structureLeaves(param, graph).flatMap((field) => {
+        return structureLeaves(param, graph, locale).flatMap((field) => {
           if (seen.has(field.id))
             return []
           seen.add(field.id)
@@ -282,14 +371,14 @@ export function adaptJsonldGraph(raw: string): JsonldAdaptation {
       const evidence = param['rdgf:evidenceSource'] as JsonldNode | undefined
       return [{
         id,
-        label: inputLabel(param),
+        label: inputLabel(param, locale),
         kind: declaredKind ?? ('declaration' as const),
-        definition: literal(param['cprmv:definition']),
+        definition: literal(param['cprmv:definition'], locale),
         required: param['schema:valueRequired'] === true,
         ...(evidence
           ? {
               evidenceSource: {
-                label: nodeTitle(evidence) ?? '',
+                label: nodeTitle(evidence, locale) ?? '',
                 url: nodeId(evidence['foaf:page']),
               },
             }
@@ -302,10 +391,10 @@ export function adaptJsonldGraph(raw: string): JsonldAdaptation {
   const outputs: RuleOutput[] = leaves.flatMap(leaf =>
     asArray(leaf['cpsv:produces'] as JsonldNode | JsonldNode[]).map((output) => {
       const id = String(output['dct:identifier'] ?? '')
-      const definition = literal(output['cprmv:definition'])
+      const definition = literal(output['cprmv:definition'], locale)
       return {
         id,
-        label: nodeTitle(output) ?? id,
+        label: nodeTitle(output, locale) ?? id,
         definition,
         isExplanation: id !== 'value',
       }
@@ -343,22 +432,18 @@ export function adaptJsonldGraph(raw: string): JsonldAdaptation {
   // l'apport du front à la co-écriture du profil. Chaque gap disparaît quand la fiche
   // adopte l'extension rdgf: correspondante.
   if (!maturity)
-    gaps.push('niveau de maturité (échelle N0-N3) - rdgf:maturity')
+    gaps.push(gap('maturity'))
   if (!certificationRegime)
-    gaps.push('régime de certification (frontière / implémentation / référencement) - rdgf:certificationRegime')
+    gaps.push(gap('certificationRegime'))
   if (!boundaryQualified)
-    gaps.push('qualification de la frontière des entrées (déclaration / donnée attestée / sortie de règle) - rdgf:boundaryKind')
+    gaps.push(gap('boundaryKind'))
   if (!hasTestEnvelope)
-    gaps.push('cas de tests structurés (seuls des liens bruts dct:source vers les fichiers de tests) - rdgf:testCase')
+    gaps.push(gap('testCase'))
   if (!hasVersionEvents)
-    gaps.push('historique de versions lié aux textes déclencheurs - rdgf:versionEvent')
+    gaps.push(gap('versionEvent'))
   if (hasStructureInputs)
-    gaps.push('projection des structures composites vers les paramètres HTTP (convention d\'aplatissement non déclarée) - rdgf:operationalMapping')
-  gaps.push(
-    'nature de publication (ouverte / hybride / fermée)',
-    'position réglementaire (simulation → rescrit)',
-    'date de dernière mise à jour',
-  )
+    gaps.push(gap('operationalMapping'))
+  gaps.push(gap('publicationNature'), gap('regulatoryPosition'), gap('updatedAt'))
 
   return { base, boundaryDraft, outputs, gaps }
 }

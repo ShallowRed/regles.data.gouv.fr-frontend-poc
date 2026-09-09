@@ -1,4 +1,6 @@
 import type { ExplanationNode } from '~/components/business/RuleSimulationPreview.vue'
+import type { Multilingual } from '~/utils/localized-text'
+import { byLocale, localizeDeep } from '~/utils/localized-text'
 
 /**
  * Aperçus de calcul pré-calculés, par règle exécutable.
@@ -25,26 +27,48 @@ export interface RulePreview {
   explanation: ExplanationNode[]
 }
 
-export const rulePreviewsMock: Record<string, RulePreview> = {
+export const rulePreviewsSource: Record<string, Multilingual<RulePreview>> = {
   prestagri: {
-    situation: 'Agent du ministère, revenu fiscal de référence de 30 000 €, 2 enfants à charge.',
+    situation: {
+      fr: 'Agent du ministère, revenu fiscal de référence de 30 000 €, 2 enfants à charge.',
+      en: 'Ministry civil servant, reference tax income of 30 000 €, 2 dependent children.',
+    },
     inputs: [
-      { label: 'Revenu fiscal de référence annuel', value: '30 000 €' },
-      { label: 'Enfants à charge', value: '2' },
+      {
+        label: { fr: 'Revenu fiscal de référence annuel', en: 'Annual reference tax income' },
+        value: '30 000 €',
+      },
+      { label: { fr: 'Enfants à charge', en: 'Dependent children' }, value: '2' },
     ],
-    result: { value: '833,33 €', label: 'Quotient familial mensuel' },
+    result: {
+      value: '833,33 €',
+      label: { fr: 'Quotient familial mensuel', en: 'Monthly family quotient' },
+    },
     computedAt: '2026-07-07',
     explanation: [
       {
-        label: 'Unités du foyer',
+        label: { fr: 'Unités du foyer', en: 'Household units' },
         value: '3,0',
-        source: 'Note de service MASA : agent + majorations pour enfants à charge',
+        source: {
+          fr: 'Note de service MASA : agent + majorations pour enfants à charge',
+          en: 'Ministry of Agriculture service note: civil servant + increases for dependent children',
+        },
       },
       {
-        label: 'Quotient familial = revenu / (12 × unités)',
+        label: {
+          fr: 'Quotient familial = revenu / (12 × unités)',
+          en: 'Family quotient = income / (12 × units)',
+        },
         value: '30 000,00 / (12 × 3,0) = 833,33 €',
-        source: 'Détail renvoyé par l\'API Prest\'Agri : « 30000.00 / (12 × 3.0) »',
+        source: {
+          fr: 'Détail renvoyé par l\'API Prest\'Agri : « 30000.00 / (12 × 3.0) »',
+          en: 'Detail returned by the Prest\'Agri API: "30000.00 / (12 × 3.0)"',
+        },
       },
     ],
   },
 }
+
+export const rulePreviewsFor = byLocale(
+  locale => localizeDeep<Record<string, RulePreview>>(rulePreviewsSource, locale),
+)

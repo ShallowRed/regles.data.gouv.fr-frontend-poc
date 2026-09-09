@@ -12,7 +12,10 @@
       "organisation": "Ministère Agriculture",
       "organisationSlug": "ministere-agriculture",
       "slug": "prestagri",
-      "title": "Prest'Agri - moteur de calcul",
+      "title": {
+        "fr": "Prest'Agri - moteur de calcul",
+        "en": "Prest'Agri - calculation engine"
+      },
       "identifier": null,
       "version": "0.1.0",
       "languages": [
@@ -30,7 +33,10 @@
       "organisation": "Ministère Intérieur",
       "organisationSlug": "ministere-interieur",
       "slug": "droits-civiques-elections",
-      "title": "Droit de vote en France",
+      "title": {
+        "fr": "Droit de vote en France",
+        "en": "Right to vote in France"
+      },
       "identifier": "civique.droit-vote.v1",
       "version": "1.0.0",
       "languages": [

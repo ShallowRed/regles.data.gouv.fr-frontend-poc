@@ -118,6 +118,38 @@ Python installable, une API, un dépôt de règles), et le **code source** épin
 précise du dépôt, pas à « la dernière version » : ce que la fiche décrit ne bouge pas sous vos
 pieds.
 
+## Une fiche bilingue
+
+Les textes affichés d'une fiche (titres, descriptions, définitions des entrées et des sorties,
+libellés d'autorité compétente et de base légale) peuvent être écrits dans plusieurs langues à la
+fois. Là où la fiche portait une chaîne, elle porte alors un tableau de littéraux, chacun
+étiqueté par sa langue :
+
+```jsonc
+{
+  "title": [
+    { "@value": "Droit de vote en France", "@language": "fr" },
+    { "@value": "Right to vote in France", "@language": "en" }
+  ]
+}
+```
+
+C'est la forme prévue par JSON-LD 1.1 pour les littéraux multilingues, et elle reste lisible en
+JSON ordinaire. Le site choisit le littéral de la langue demandée, se rabat sur le français, puis
+sur le premier littéral disponible : une fiche qui ne porte qu'une langue s'affiche donc
+partout, et un texte identique dans les deux langues s'écrit une seule fois, sans étiquette.
+
+Ce qui reste en français dans les deux langues : le nom propre des textes de loi, avec une glose
+anglaise à la première mention (« Code électoral (French electoral code) ») ; les extraits de
+texte réglementaire ; le code des règles ; les identifiants, les versions et les valeurs des cas
+de tests.
+
+Les cinq entrées du prototype ne sont pas toutes adossées à une fiche : trois d'entre elles sont
+décrites côté site, dans `app/mocks/`. Elles portent leurs traductions sous la même règle de
+choix, avec des littéraux `{ "fr": "…", "en": "…" }` à la place de la chaîne, résolus par
+`app/utils/localized-text.ts`. Quand ces règles auront une fiche dans le dépôt data, les
+traductions viendront de la fiche comme pour les deux autres.
+
 ## Ce que la fiche promet, et ce qu'elle ne promet pas
 
 Le profil de métadonnées suit une règle stricte d'honnêteté : **un champ manquant est un champ

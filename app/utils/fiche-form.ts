@@ -9,7 +9,8 @@
  */
 
 import prestagriRaw from '~/data/jsonld/ministere-agriculture/prestagri/metadata.jsonld?raw'
-import { isStructureInput, referencedStructureIds, structureLeaves } from '~/utils/jsonld-adapter'
+import { isStructureInput, literal, referencedStructureIds, structureLeaves } from '~/utils/jsonld-adapter'
+import { byLocale } from '~/utils/localized-text'
 
 interface JsonldNode {
   'id'?: string
@@ -45,14 +46,6 @@ function asArray<T>(value: T | T[] | undefined): T[] {
   return value === undefined ? [] : Array.isArray(value) ? value : [value]
 }
 
-function literal(value: unknown): string | undefined {
-  if (typeof value === 'string')
-    return value
-  if (value && typeof value === 'object' && '@value' in value)
-    return String((value as Record<string, unknown>)['@value'])
-  return undefined
-}
-
 function refId(value: unknown): string | undefined {
   return value && typeof value === 'object' && 'id' in value
     ? String((value as Record<string, unknown>).id)
@@ -65,7 +58,7 @@ function compactXsd(value: unknown): string {
   return raw.split(/[#:]/).pop() ?? 'string'
 }
 
-export function extractServiceForm(raw: string, serviceIdentifier: string): FicheForm | null {
+export function extractServiceForm(raw: string, serviceIdentifier: string, locale: string = 'fr'): FicheForm | null {
   const graph = (JSON.parse(raw) as { '@graph': JsonldNode[] })['@graph']
   const service = graph.find(node => node['dct:identifier'] === serviceIdentifier)
   if (!service)
@@ -92,7 +85,7 @@ export function extractServiceForm(raw: string, serviceIdentifier: string): Fich
     if (structureDefinitions.has(String((param as JsonldNode)['@id'] ?? '')))
       return []
     if (isStructureInput(param)) {
-      return structureLeaves(param, graph).map(field => ({
+      return structureLeaves(param, graph, locale).map(field => ({
         id: field.id,
         label: field.group ? `${field.group} · ${field.label}` : field.label,
         definition: field.definition,
@@ -103,8 +96,8 @@ export function extractServiceForm(raw: string, serviceIdentifier: string): Fich
     }
     return [{
       id: String(param['dct:identifier'] ?? ''),
-      label: literal(param.title) ?? literal(param['dct:title']) ?? String(param['dct:identifier'] ?? ''),
-      definition: literal(param['cprmv:definition']),
+      label: literal(param.title, locale) ?? literal(param['dct:title'], locale) ?? String(param['dct:identifier'] ?? ''),
+      definition: literal(param['cprmv:definition'], locale),
       xsdType: compactXsd(param['cprmv:type']),
       required: param['schema:valueRequired'] === true,
       defaultValue: param['schema:defaultValue'] as FicheFormParam['defaultValue'],
@@ -112,8 +105,8 @@ export function extractServiceForm(raw: string, serviceIdentifier: string): Fich
   }).filter(param => param.id)
 
   return {
-    serviceTitle: literal(service.title) ?? literal(service['dct:title']) ?? serviceIdentifier,
-    serviceDescription: literal(service.description) ?? literal(service['dct:description']),
+    serviceTitle: literal(service.title, locale) ?? literal(service['dct:title'], locale) ?? serviceIdentifier,
+    serviceDescription: literal(service.description, locale) ?? literal(service['dct:description'], locale),
     endpoint,
     params,
     ...(compositeWithoutMapping ? { compositeWithoutMapping } : {}),
@@ -121,4 +114,6 @@ export function extractServiceForm(raw: string, serviceIdentifier: string): Fich
 }
 
 /** Formulaire du calcul de quotient familial Prest'Agri, dérivé de la fiche réelle. */
-export const prestagriQuotientFamilialForm = extractServiceForm(prestagriRaw, 'prestagri-quotient-familial')
+export const prestagriQuotientFamilialFormFor = byLocale(
+  locale => extractServiceForm(prestagriRaw, 'prestagri-quotient-familial', locale),
+)

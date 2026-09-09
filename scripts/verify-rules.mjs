@@ -29,7 +29,8 @@ import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const { ruleTestsMock } = await import(join(root, 'app/mocks/rule-tests.ts'))
+const { ruleTestsSource } = await import(join(root, 'app/mocks/rule-tests.ts'))
+const ruleTestsMock = ruleTestsSource
 const { buildPrimeActiviteRequest } = await import(join(root, 'app/utils/openfisca/build-request.ts'))
 
 /** Règles vérifiables et leur mode de rejeu. */

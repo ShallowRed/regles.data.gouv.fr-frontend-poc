@@ -39,6 +39,38 @@ Constaté dans les deux fiches existantes, directement consommable par le front 
 | `schema:HowTo` | schema.org | optionnel | |
 | `dct:source` vers code **et tests** | DC | obligatoire si code publié | remplacé à terme par `rdgf:testCase` (section 6) qui structure l'enveloppe |
 
+## 1 bis. Littéraux multilingues
+
+Les littéraux affichés (`dct:title`, `dct:description`, `cprmv:definition`, `skos:prefLabel`,
+`dct:coverage`, `schema:name`, `schema:description`) s'écrivent en tableau de littéraux étiquetés
+par leur langue, forme prévue par JSON-LD 1.1 :
+
+```jsonc
+{
+  "title": [
+    { "@value": "Droit de vote en France", "@language": "fr" },
+    { "@value": "Right to vote in France", "@language": "en" }
+  ]
+}
+```
+
+Règle de choix côté consommateur (`app/utils/jsonld-adapter.ts`) : la langue demandée, puis le
+français, puis le premier littéral disponible. Un texte identique dans les deux langues s'écrit
+en chaîne simple, sans étiquette.
+
+L'étiquette de langue portée par chaque littéral vaut aussi pour les clés écrites en toutes
+lettres, que les alias `title` / `description` du `@context` ne couvrent pas (cf. section 2,
+« Titres et descriptions balisés langue »).
+
+Les deux fiches vendorées dans `app/data/jsonld/` portent leurs traductions anglaises sous cette
+forme, à titre de démonstration pour la revue GovTech4All. C'est une proposition au dépôt data,
+qui reste la source de vérité des fiches (section 8) : une synchronisation (`pnpm sync:data`) les
+écrase tant que le dépôt data ne les a pas reprises.
+
+Restent en français dans toutes les langues : le nom propre des textes de loi, avec une glose
+anglaise à la première mention ; les extraits de texte réglementaire ; le code des règles ; les
+identifiants, versions et valeurs de tests.
+
 ## 2. Points à trancher (relevés par `rapport-conformite.md`)
 
 Générés automatiquement par `scripts/sync-data-repo.mjs` à chaque synchronisation :
@@ -111,6 +143,8 @@ Généré aujourd'hui côté front par `scripts/sync-data-repo.mjs` (`pnpm sync:
 généré côté dépôt data en CI. Champs par entrée : `organisation`, `organisationSlug`, `slug`,
 `title`, `identifier`, `version`, `languages`, `sourcePath`, `conformite` (compteurs d'écarts).
 En-tête : commit source, date. Le front ne lit **que** l'index et les fiches qu'il référence.
+`title` reprend les littéraux de la fiche : une chaîne quand la fiche n'a qu'une langue, un objet
+`{ "fr": "…", "en": "…" }` quand elle en porte plusieurs (section 1 bis).
 
 ## 6. Extensions « couche confiance » (namespace `rdgf:`)
 

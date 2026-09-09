@@ -30,8 +30,14 @@
       "type": "cpsv:PublicService",
       "dct:identifier": "prestagri-quotient-familial",
       "dct:isPartOf": { "id": "https://github.com/betagouv/prestagri#service" },
-      "title": "Calcul du quotient familial (QF)",
-      "description": "Calcule le quotient familial d'un agent selon la note de service MASA (revenu fiscal de référence rapporté au nombre d'unités du foyer, avec majorations parent isolé / handicap / garde alternée / abattement outre-mer).",
+      "title": [
+        { "@value": "Calcul du quotient familial (QF)", "@language": "fr" },
+        { "@value": "Family quotient calculation", "@language": "en" }
+      ],
+      "description": [
+        { "@value": "Calcule le quotient familial d'un agent selon la note de service MASA (revenu fiscal de référence rapporté au nombre d'unités du foyer, avec majorations parent isolé / handicap / garde alternée / abattement outre-mer).", "@language": "fr" },
+        { "@value": "Calculates the family quotient of a civil servant under the service note of the Ministry of Agriculture and Food Sovereignty (reference tax income divided by the number of household units, with increases for single parent, disability and shared custody, and an allowance for overseas postings).", "@language": "en" }
+      ],
       "cv:hasChannel": { "id": "https://github.com/betagouv/prestagri#channel-quotient-familial" },
       "dct:source": [
         { "id": "https://github.com/betagouv/prestagri/blob/478b3cc2ab28299c73b94fdd192b0559ae5873b8/catala/src/commun/quotient_familial.catala_fr#CalculQuotientFamilial" },
@@ -42,45 +48,81 @@
           "@type": "cprmv:Structure",
           "@id": "ex:structure/menage",
           "dct:identifier": "menage",
-          "dct:title": "Ménage",
-          "cprmv:definition": "Situation familiale et fiscale du foyer de l'agent.",
+          "dct:title": [
+            { "@value": "Ménage", "@language": "fr" },
+            { "@value": "Household", "@language": "en" }
+          ],
+          "cprmv:definition": [
+            { "@value": "Situation familiale et fiscale du foyer de l'agent.", "@language": "fr" },
+            { "@value": "Family and tax situation of the civil servant's household.", "@language": "en" }
+          ],
           "sh:property": [
             {
               "sh:path": "cprmv:beneficiaire_porteur_handicap",
-              "dct:title": "Handicap au foyer",
-              "cprmv:definition": "Un membre du foyer (agent, enfant ou personne à charge) est porteur de handicap.",
+              "dct:title": [
+                { "@value": "Handicap au foyer", "@language": "fr" },
+                { "@value": "Disability in the household", "@language": "en" }
+              ],
+              "cprmv:definition": [
+                { "@value": "Un membre du foyer (agent, enfant ou personne à charge) est porteur de handicap.", "@language": "fr" },
+                { "@value": "A member of the household (the civil servant, a child or a dependent) has a disability.", "@language": "en" }
+              ],
               "sh:datatype": "xsd:boolean",
               "sh:minCount": 0, "sh:maxCount": 1,
               "schema:defaultValue": false
             },
             {
               "sh:path": "cprmv:garde_alternee",
-              "dct:title": "Garde alternée",
-              "cprmv:definition": "L'agent a un ou des enfants en garde alternée.",
+              "dct:title": [
+                { "@value": "Garde alternée", "@language": "fr" },
+                { "@value": "Shared custody", "@language": "en" }
+              ],
+              "cprmv:definition": [
+                { "@value": "L'agent a un ou des enfants en garde alternée.", "@language": "fr" },
+                { "@value": "The civil servant has one or more children in shared custody.", "@language": "en" }
+              ],
               "sh:datatype": "xsd:boolean",
               "sh:minCount": 0, "sh:maxCount": 1,
               "schema:defaultValue": false
             },
             {
               "sh:path": "cprmv:parent_isole",
-              "dct:title": "Parent isolé",
-              "cprmv:definition": "L'agent est parent isolé au sens fiscal (case T).",
+              "dct:title": [
+                { "@value": "Parent isolé", "@language": "fr" },
+                { "@value": "Single parent", "@language": "en" }
+              ],
+              "cprmv:definition": [
+                { "@value": "L'agent est parent isolé au sens fiscal (case T).", "@language": "fr" },
+                { "@value": "The civil servant is a single parent for tax purposes (box T).", "@language": "en" }
+              ],
               "sh:datatype": "xsd:boolean",
               "sh:minCount": 0, "sh:maxCount": 1,
               "schema:defaultValue": false
             },
             {
               "sh:path": "cprmv:outre_mer",
-              "dct:title": "Outre-mer",
-              "cprmv:definition": "L'agent est affecté en outre-mer (abattement de 20% sur le revenu fiscal de référence).",
+              "dct:title": [
+                { "@value": "Outre-mer", "@language": "fr" },
+                { "@value": "Overseas", "@language": "en" }
+              ],
+              "cprmv:definition": [
+                { "@value": "L'agent est affecté en outre-mer (abattement de 20% sur le revenu fiscal de référence).", "@language": "fr" },
+                { "@value": "The civil servant is posted overseas (20% allowance on the reference tax income).", "@language": "en" }
+              ],
               "sh:datatype": "xsd:boolean",
               "sh:minCount": 0, "sh:maxCount": 1,
               "schema:defaultValue": false
             },
             {
               "sh:path": "cprmv:membres_du_foyer",
-              "dct:title": "Membres du foyer fiscal",
-              "cprmv:definition": "Liste des foyers fiscaux composant le ménage (l'agent, et le conjoint si vie à deux).",
+              "dct:title": [
+                { "@value": "Membres du foyer fiscal", "@language": "fr" },
+                { "@value": "Members of the tax household", "@language": "en" }
+              ],
+              "cprmv:definition": [
+                { "@value": "Liste des foyers fiscaux composant le ménage (l'agent, et le conjoint si vie à deux).", "@language": "fr" },
+                { "@value": "List of the tax households making up the household (the civil servant, and the partner if living as a couple).", "@language": "en" }
+              ],
               "sh:node": "ex:structure/foyer_fiscal",
               "sh:class": "cprmv:Foyer_fiscal",
               "sh:minCount": 1
@@ -91,20 +133,35 @@
           "@type": "cprmv:Structure",
           "@id": "ex:structure/foyer_fiscal",
           "dct:identifier": "foyer_fiscal",
-          "dct:title": "Foyer fiscal",
+          "dct:title": [
+            { "@value": "Foyer fiscal", "@language": "fr" },
+            { "@value": "Tax household", "@language": "en" }
+          ],
           "sh:property": [
             {
               "sh:path": "cprmv:revenu_fiscal_reference",
-              "dct:title": "Revenu fiscal de référence",
-              "cprmv:definition": "Revenu fiscal de référence annuel du foyer, en euros.",
+              "dct:title": [
+                { "@value": "Revenu fiscal de référence", "@language": "fr" },
+                { "@value": "Reference tax income", "@language": "en" }
+              ],
+              "cprmv:definition": [
+                { "@value": "Revenu fiscal de référence annuel du foyer, en euros.", "@language": "fr" },
+                { "@value": "Annual reference tax income of the household, in euros.", "@language": "en" }
+              ],
               "sh:datatype": "xsd:decimal",
               "cprmv:unit": "EUR",
               "sh:minCount": 1, "sh:maxCount": 1
             },
             {
               "sh:path": "cprmv:nombre_personnes",
-              "dct:title": "Nombre de personnes",
-              "cprmv:definition": "Nombre de personnes rattachées à ce foyer fiscal.",
+              "dct:title": [
+                { "@value": "Nombre de personnes", "@language": "fr" },
+                { "@value": "Number of people", "@language": "en" }
+              ],
+              "cprmv:definition": [
+                { "@value": "Nombre de personnes rattachées à ce foyer fiscal.", "@language": "fr" },
+                { "@value": "Number of people attached to this tax household.", "@language": "en" }
+              ],
               "sh:datatype": "xsd:integer",
               "sh:minCount": 1, "sh:maxCount": 1
             }
@@ -112,8 +169,32 @@
         }
       ],
       "cpsv:produces": [
-        { "@type": ["cv:Output", "cprmv:Rule"], "dct:identifier": "value", "dct:title": "Quotient familial", "cprmv:definition": "Quotient familial calculé, exprimé en euros (ex. \"812.5€\").", "cprmv:type": "xsd:string" },
-        { "@type": ["cv:Output", "cprmv:Rule"], "dct:identifier": "explanation", "dct:title": "Explication du calcul", "cprmv:definition": "Trace explicative Catala détaillant les étapes et exceptions appliquées au calcul.", "cprmv:type": "xsd:string" }
+        {
+          "@type": ["cv:Output", "cprmv:Rule"],
+          "dct:identifier": "value",
+          "dct:title": [
+            { "@value": "Quotient familial", "@language": "fr" },
+            { "@value": "Family quotient", "@language": "en" }
+          ],
+          "cprmv:definition": [
+            { "@value": "Quotient familial calculé, exprimé en euros (ex. \"812.5€\").", "@language": "fr" },
+            { "@value": "Calculated family quotient, expressed in euros (for example \"812.5€\").", "@language": "en" }
+          ],
+          "cprmv:type": "xsd:string"
+        },
+        {
+          "@type": ["cv:Output", "cprmv:Rule"],
+          "dct:identifier": "explanation",
+          "dct:title": [
+            { "@value": "Explication du calcul", "@language": "fr" },
+            { "@value": "Calculation explanation", "@language": "en" }
+          ],
+          "cprmv:definition": [
+            { "@value": "Trace explicative Catala détaillant les étapes et exceptions appliquées au calcul.", "@language": "fr" },
+            { "@value": "Catala explanation trace detailing the steps and exceptions applied to the calculation.", "@language": "en" }
+          ],
+          "cprmv:type": "xsd:string"
+        }
       ]
     },
 
@@ -121,8 +202,17 @@
       "id": "https://github.com/betagouv/prestagri#channel-quotient-familial",
       "type": "cv:Channel",
       "dct:identifier": "prestagri-channel-quotient-familial",
-      "dct:type": { "@type": "skos:Concept", "skos:prefLabel": { "@value": "En ligne (API)", "@language": "fr" } },
-      "dct:description": { "@value": "Point d'accès HTTP GET, réponses JSON.", "@language": "fr" },
+      "dct:type": {
+        "@type": "skos:Concept",
+        "skos:prefLabel": [
+          { "@value": "En ligne (API)", "@language": "fr" },
+          { "@value": "Online (API)", "@language": "en" }
+        ]
+      },
+      "dct:description": [
+        { "@value": "Point d'accès HTTP GET, réponses JSON.", "@language": "fr" },
+        { "@value": "HTTP GET endpoint, JSON responses.", "@language": "en" }
+      ],
       "foaf:page": { "id": "https://api.prest-agri.beta.gouv.fr/quotient_familial" },
       "cv:ownedBy": { "id": "https://github.com/betagouv/prestagri#organisation" }
     },
@@ -132,8 +222,14 @@
       "type": "cpsv:PublicService",
       "dct:identifier": "prestagri-aide-scolarite",
       "dct:isPartOf": { "id": "https://github.com/betagouv/prestagri#service" },
-      "title": "Calcul de l'aide à la scolarité",
-      "description": "Calcule le montant de l'aide à la scolarité (fiche F16) à partir du quotient familial du foyer, du barème de points (dont l'éloignement domicile-établissement) et du plafond de 1000€ par enfant et par an.",
+      "title": [
+        { "@value": "Calcul de l'aide à la scolarité", "@language": "fr" },
+        { "@value": "School allowance calculation", "@language": "en" }
+      ],
+      "description": [
+        { "@value": "Calcule le montant de l'aide à la scolarité (fiche F16) à partir du quotient familial du foyer, du barème de points (dont l'éloignement domicile-établissement) et du plafond de 1000€ par enfant et par an.", "@language": "fr" },
+        { "@value": "Calculates the amount of the school allowance (sheet F16) from the family quotient of the household, the points scale (including the distance between home and school) and the ceiling of 1000€ per child per year.", "@language": "en" }
+      ],
       "cv:hasChannel": { "id": "https://github.com/betagouv/prestagri#channel-aide-scolarite" },
       "dct:source": [
         { "id": "https://github.com/betagouv/prestagri/blob/478b3cc2ab28299c73b94fdd192b0559ae5873b8/catala/src/aide_scolarite/aide_scolarite.catala_fr#CalculQuotientFamilialAideScolarite" },
@@ -142,13 +238,55 @@
         { "id": "https://github.com/betagouv/prestagri/blob/478b3cc2ab28299c73b94fdd192b0559ae5873b8/backend/app/api/default.py#read_quotient_familial_aide_scolarite" }
       ],
       "cv:hasInput": [
-        { "@type": "cprmv:Parameter", "dct:identifier": "quotient-familial", "dct:title": "Revenu de l'agent", "cprmv:definition": "Revenu fiscal de référence annuel de l'agent, en euros.", "cprmv:type": "xsd:integer", "schema:valueRequired": true },
-        { "@type": "cprmv:Parameter", "dct:identifier": "montant_matériel_spécifique", "dct:title": "Adresse de l'établissement", "cprmv:definition": "Adresse de l'établissement scolaire ou universitaire fréquenté par l'enfant.", "cprmv:type": "xsd:string", "schema:valueRequired": true },
-        { "@type": "cprmv:Parameter", "dct:identifier": "étudiant_en_filière_post_bac", "dct:title": "Revenu du conjoint", "cprmv:definition": "Revenu fiscal de référence annuel du conjoint, en euros.", "cprmv:type": "xsd:integer", "schema:valueRequired": false },
+        {
+          "@type": "cprmv:Parameter",
+          "dct:identifier": "quotient-familial",
+          "dct:title": [
+            { "@value": "Revenu de l'agent", "@language": "fr" },
+            { "@value": "Civil servant's income", "@language": "en" }
+          ],
+          "cprmv:definition": [
+            { "@value": "Revenu fiscal de référence annuel de l'agent, en euros.", "@language": "fr" },
+            { "@value": "Annual reference tax income of the civil servant, in euros.", "@language": "en" }
+          ],
+          "cprmv:type": "xsd:integer",
+          "schema:valueRequired": true
+        },
+        {
+          "@type": "cprmv:Parameter",
+          "dct:identifier": "montant_matériel_spécifique",
+          "dct:title": [
+            { "@value": "Adresse de l'établissement", "@language": "fr" },
+            { "@value": "School address", "@language": "en" }
+          ],
+          "cprmv:definition": [
+            { "@value": "Adresse de l'établissement scolaire ou universitaire fréquenté par l'enfant.", "@language": "fr" },
+            { "@value": "Address of the school or university attended by the child.", "@language": "en" }
+          ],
+          "cprmv:type": "xsd:string",
+          "schema:valueRequired": true
+        },
+        {
+          "@type": "cprmv:Parameter",
+          "dct:identifier": "étudiant_en_filière_post_bac",
+          "dct:title": [
+            { "@value": "Revenu du conjoint", "@language": "fr" },
+            { "@value": "Partner's income", "@language": "en" }
+          ],
+          "cprmv:definition": [
+            { "@value": "Revenu fiscal de référence annuel du conjoint, en euros.", "@language": "fr" },
+            { "@value": "Annual reference tax income of the partner, in euros.", "@language": "en" }
+          ],
+          "cprmv:type": "xsd:integer",
+          "schema:valueRequired": false
+        },
         { 
           "@type": "cprmv:Structure", 
           "dct:identifier": "trajet_depuis_domicile_agent",
-          "dct:title": "Trajet depuis domicile agent",
+          "dct:title": [
+            { "@value": "Trajet depuis domicile agent", "@language": "fr" },
+            { "@value": "Journey from the civil servant's home", "@language": "en" }
+          ],
           "sh:path": "cprmv:trajet",
           "sh:node": "ex:structure/trajet",
           "sh:class": "cprmv:Trajet",
@@ -158,7 +296,10 @@
         { 
           "@type": "cprmv:Structure", 
           "dct:identifier": "trajet_depuis_domicile_étudiant",
-          "dct:title": "Trajet depuis domicile agent",
+          "dct:title": [
+            { "@value": "Trajet depuis domicile agent", "@language": "fr" },
+            { "@value": "Journey from the civil servant's home", "@language": "en" }
+          ],
           "sh:path": "cprmv:trajet",
           "sh:node": "ex:structure/trajet",
           "sh:class": "cprmv:Trajet",
@@ -169,19 +310,34 @@
           "@type": "cprmv:Structure",
           "@id": "ex:structure/trajet",
           "dct:identifier": "trajet",
-          "dct:title": "Trajet",
+          "dct:title": [
+            { "@value": "Trajet", "@language": "fr" },
+            { "@value": "Journey", "@language": "en" }
+          ],
           "sh:property": [
             {
               "sh:path": "cprmv:distance_km",
-              "dct:title": "Distance",
-              "cprmv:definition": "Distance (en km)",
+              "dct:title": [
+                { "@value": "Distance", "@language": "fr" },
+                { "@value": "Distance", "@language": "en" }
+              ],
+              "cprmv:definition": [
+                { "@value": "Distance (en km)", "@language": "fr" },
+                { "@value": "Distance (in km)", "@language": "en" }
+              ],
               "sh:datatype": "xsd:integer",
               "sh:minCount": 1, "sh:maxCount": 1
             },
             {
               "sh:path": "cprmv:durée_minutes",
-              "dct:title": "Durée",
-              "cprmv:definition": "Durée (en minutes)",
+              "dct:title": [
+                { "@value": "Durée", "@language": "fr" },
+                { "@value": "Duration", "@language": "en" }
+              ],
+              "cprmv:definition": [
+                { "@value": "Durée (en minutes)", "@language": "fr" },
+                { "@value": "Duration (in minutes)", "@language": "en" }
+              ],
               "sh:datatype": "xsd:integer",
               "sh:minCount": 1, "sh:maxCount": 1
             }
@@ -189,8 +345,32 @@
         }
       ],
       "cpsv:produces": [
-        { "@type": ["cv:Output", "cprmv:Rule"], "dct:identifier": "value", "dct:title": "Montant de l'aide", "cprmv:definition": "Montant de l'aide à la scolarité calculé, plafonné à 1000€ par enfant et par an, exprimé en euros.", "cprmv:type": "xsd:string" },
-        { "@type": ["cv:Output", "cprmv:Rule"], "dct:identifier": "explanation", "dct:title": "Explication du calcul", "cprmv:definition": "Trace explicative structurée (quotient_familial, criteres_eligibles, aide_scolarite) détaillant chaque étape du calcul.", "cprmv:type": "xsd:string" }
+        {
+          "@type": ["cv:Output", "cprmv:Rule"],
+          "dct:identifier": "value",
+          "dct:title": [
+            { "@value": "Montant de l'aide", "@language": "fr" },
+            { "@value": "Allowance amount", "@language": "en" }
+          ],
+          "cprmv:definition": [
+            { "@value": "Montant de l'aide à la scolarité calculé, plafonné à 1000€ par enfant et par an, exprimé en euros.", "@language": "fr" },
+            { "@value": "Calculated school allowance amount, capped at 1000€ per child per year, expressed in euros.", "@language": "en" }
+          ],
+          "cprmv:type": "xsd:string"
+        },
+        {
+          "@type": ["cv:Output", "cprmv:Rule"],
+          "dct:identifier": "explanation",
+          "dct:title": [
+            { "@value": "Explication du calcul", "@language": "fr" },
+            { "@value": "Calculation explanation", "@language": "en" }
+          ],
+          "cprmv:definition": [
+            { "@value": "Trace explicative structurée (quotient_familial, criteres_eligibles, aide_scolarite) détaillant chaque étape du calcul.", "@language": "fr" },
+            { "@value": "Structured explanation trace (quotient_familial, criteres_eligibles, aide_scolarite) detailing each step of the calculation.", "@language": "en" }
+          ],
+          "cprmv:type": "xsd:string"
+        }
       ]
     },
 
@@ -198,8 +378,17 @@
       "id": "https://github.com/betagouv/prestagri#channel-aide-scolarite",
       "type": "cv:Channel",
       "dct:identifier": "prestagri-channel-aide-scolarite",
-      "dct:type": { "@type": "skos:Concept", "skos:prefLabel": { "@value": "En ligne (API)", "@language": "fr" } },
-      "dct:description": { "@value": "Point d'accès HTTP GET, réponses JSON.", "@language": "fr" },
+      "dct:type": {
+        "@type": "skos:Concept",
+        "skos:prefLabel": [
+          { "@value": "En ligne (API)", "@language": "fr" },
+          { "@value": "Online (API)", "@language": "en" }
+        ]
+      },
+      "dct:description": [
+        { "@value": "Point d'accès HTTP GET, réponses JSON.", "@language": "fr" },
+        { "@value": "HTTP GET endpoint, JSON responses.", "@language": "en" }
+      ],
       "foaf:page": { "id": "https://api.prest-agri.beta.gouv.fr/aide_scolarite" },
       "cv:ownedBy": { "id": "https://github.com/betagouv/prestagri#organisation" }
     },
@@ -207,8 +396,14 @@
     {
       "id": "https://github.com/betagouv/prestagri#source-code",
       "type": "schema:SoftwareSourceCode",
-      "schema:name": "Prest'Agri - moteur de calcul",
-      "schema:description": "Backend FastAPI (Python) exposant des règles de droit codées en Catala (calcul du quotient familial et de l'aide à la scolarité), compilées en bibliothèque Python.",
+      "schema:name": [
+        { "@value": "Prest'Agri - moteur de calcul", "@language": "fr" },
+        { "@value": "Prest'Agri - calculation engine", "@language": "en" }
+      ],
+      "schema:description": [
+        { "@value": "Backend FastAPI (Python) exposant des règles de droit codées en Catala (calcul du quotient familial et de l'aide à la scolarité), compilées en bibliothèque Python.", "@language": "fr" },
+        { "@value": "FastAPI backend (Python) exposing legal rules written in Catala (family quotient and school allowance calculations), compiled into a Python library.", "@language": "en" }
+      ],
       "schema:codeRepository": "https://github.com/betagouv/prestagri/tree/478b3cc2ab28299c73b94fdd192b0559ae5873b8",
       "schema:programmingLanguage": ["Python", "Catala"],
       "schema:runtimePlatform": [

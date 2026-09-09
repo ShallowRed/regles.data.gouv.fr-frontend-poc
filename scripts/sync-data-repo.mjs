@@ -46,7 +46,16 @@ function slugify(name) {
 }
 
 const asArray = v => (v === undefined ? [] : Array.isArray(v) ? v : [v])
-const literal = v => (typeof v === 'string' ? v : v && typeof v === 'object' && '@value' in v ? String(v['@value']) : undefined)
+/** Littéral JSON-LD : chaîne, objet { @value } ou tableau multilingue (français par défaut). */
+function literal(v, lang = 'fr') {
+  if (Array.isArray(v)) {
+    const found = v.find(item => item?.['@language'] === lang) ?? v.find(item => item?.['@language'] === 'fr') ?? v[0]
+    return literal(found, lang)
+  }
+  if (typeof v === 'string')
+    return v
+  return v && typeof v === 'object' && '@value' in v ? String(v['@value']) : undefined
+}
 const types = node => asArray(node?.type).concat(asArray(node?.['@type']))
 
 /** Contrôles structurels d'une fiche. Retourne { errors, warnings }. */
@@ -145,9 +154,13 @@ for (const relPath of ficheFiles) {
   const services = graph.filter(n => types(n).includes('cpsv:PublicService'))
   const parent = services.find(n => n['dct:hasPart']) ?? services[0]
   const sourceCode = graph.find(n => types(n).includes('schema:SoftwareSourceCode'))
-  const title = literal(parent?.title)
-    ?? literal(sourceCode?.['schema:name'])
-    ?? services.filter(n => n['dct:isPartOf']).map(n => literal(n.title)).filter(Boolean).join(' + ')
+  /** Titre de l'index, dans chaque langue portée par la fiche (cf. profil, section 1 bis). */
+  const titleIn = lang => literal(parent?.title, lang)
+    ?? literal(sourceCode?.['schema:name'], lang)
+    ?? services.filter(n => n['dct:isPartOf']).map(n => literal(n.title, lang)).filter(Boolean).join(' + ')
+  const titleFr = titleIn('fr')
+  const titleEn = titleIn('en')
+  const title = titleEn && titleEn !== titleFr ? { fr: titleFr, en: titleEn } : titleFr
 
   const { errors, warnings } = checkFiche(doc, relPath)
 
@@ -163,7 +176,7 @@ for (const relPath of ficheFiles) {
     localPath: relative(root, dest),
     conformite: { errors: errors.length, warnings: warnings.length },
   })
-  reportRows.push({ relPath, title: title ?? ruleSlug, errors, warnings })
+  reportRows.push({ relPath, title: titleFr ?? ruleSlug, errors, warnings })
 }
 
 // ── Index de catalogue ──────────────────────────────────────────────────────

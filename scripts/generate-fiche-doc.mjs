@@ -21,7 +21,16 @@ import { dirname, join } from 'node:path'
 import { isStructureInput, referencedStructureIds, structureLeaves } from '../app/utils/jsonld-adapter.ts'
 
 const asArray = v => (v === undefined ? [] : Array.isArray(v) ? v : [v])
-const literal = v => (typeof v === 'string' ? v : v && typeof v === 'object' && '@value' in v ? String(v['@value']) : undefined)
+/** Littéral JSON-LD : chaîne, objet { @value } ou tableau multilingue (français par défaut). */
+function literal(v, lang = 'fr') {
+  if (Array.isArray(v)) {
+    const found = v.find(item => item?.['@language'] === lang) ?? v.find(item => item?.['@language'] === 'fr') ?? v[0]
+    return literal(found, lang)
+  }
+  if (typeof v === 'string')
+    return v
+  return v && typeof v === 'object' && '@value' in v ? String(v['@value']) : undefined
+}
 const nodeId = v => (v && typeof v === 'object' && ('id' in v || '@id' in v) ? String(v.id ?? v['@id']) : undefined)
 const types = node => asArray(node?.type).concat(asArray(node?.['@type']))
 const title = node => literal(node?.title) ?? literal(node?.['dct:title'])
