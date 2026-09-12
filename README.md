@@ -34,7 +34,7 @@ app/
 │   ├── jsonld/         # fiches metadata.jsonld synchronisées depuis le dépôt data (ne pas éditer)
 │   └── catalog.json    # index de catalogue généré (pnpm sync:data)
 ├── layouts/default.vue # layout par défaut
-├── mocks/              # données des entrées (branche demo-resserree : sourcées, pas inventées)
+├── mocks/              # données des entrées, sourcées, jamais inventées
 ├── pages/
 │   ├── index.vue       # page d'accueil des démos
 │   ├── mvp/            # démos horizon 6 mois (préfixe d'URL)
