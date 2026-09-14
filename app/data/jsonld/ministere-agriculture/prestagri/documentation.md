@@ -7,6 +7,10 @@ Calcule le quotient familial d'un agent selon la note de service MASA (revenu fi
 
 - **Version** : 0.1.0
 
+## Garantie du producteur
+
+Règle référencée : le producteur ne s'engage pas sur les résultats. La fiche décrit la règle, sa base légale et son organisme.
+
 ## Calcul du quotient familial (QF)
 
 Calcule le quotient familial d'un agent selon la note de service MASA (revenu fiscal de référence rapporté au nombre d'unités du foyer, avec majorations parent isolé / handicap / garde alternée / abattement outre-mer).

@@ -69,7 +69,7 @@
     "N2": {
       "label": "Verified",
       "action": "Check code and tests",
-      "meaning": "Open code and published test cases: traceability between the law and the code can be checked."
+      "meaning": "Published test cases, run by the registry with the expected results."
     },
     "N3": {
       "label": "Executable",
@@ -123,14 +123,19 @@
       "autre": "other",
       "hint": "Calculation engine: {value}."
     },
+    "guarantee": {
+      "axis": "guarantee",
+      "certified": "certified results",
+      "selfAssessed": "code and tests published",
+      "hintCertified": "The rule owner answers for the results calculated on declared facts, at the stated version.",
+      "hintSelfAssessed": "The rule owner publishes the code and the tests of the rule at a designated commit."
+    },
     "results": {
       "axis": "results",
-      "frontiere": "certified",
-      "implementation": "tested",
-      "referencement": "unverified",
-      "hintFrontiere": "The administration certifies the result of the rule on declared facts, at a given version.",
-      "hintImplementation": "The calculation is checked by the rule's test suite, at every published version.",
-      "hintReferencement": "Descriptive record only: the code and the test cases stay unpublished."
+      "tested": "tested",
+      "gap": "gap detected",
+      "hintTested": "The registry ran the published test cases and obtained the expected results.",
+      "hintGap": "The registry ran the published test cases; at least one result differs from the expected one."
     }
   },
   "legalKind": {
@@ -275,7 +280,7 @@
       "whatYouCanDo": "What you can do with it",
       "dependsOn": "Builds on other rules",
       "boundary": "The inputs of the rule",
-      "attestedBy": "Attested by: {source}",
+      "attestedBy": "Attested by {source}",
       "explanationBefore": "Besides the result, this rule produces an explanation trace",
       "explanationAfter": "useful to explain a refusal.",
       "mappingsTitle": "Listed mappings",
@@ -296,15 +301,15 @@
       "testsLabel": "Read the test cases",
       "testsDescription": "Typical situations and expected results, published by the rule owner."
     },
-    "boundaryKind": {
-      "declarationLabel": "Declared facts",
-      "declarationDescription": "Declared by the user, unchecked.",
+    "factKind": {
+      "declaredLabel": "Declared facts",
+      "declaredDescription": "Declared by the person, unchecked.",
       "attestedLabel": "Attested data",
-      "attestedDescription": "Attested by the administration that owns them, available through an API.",
-      "ruleOutputLabel": "Outputs of other rules",
-      "ruleOutputDescription": "Results of other rules or shared parameters, such as the minimum wage.",
+      "attestedDescription": "Attested by the administration that answers for them, available through an API.",
+      "derivedLabel": "Outputs of other rules",
+      "derivedDescription": "Results of other rules or shared parameters, such as the minimum wage.",
       "contextLabel": "Context parameters",
-      "contextDescription": "Change which rule applies (for example the type of election)."
+      "contextDescription": "Choose which rule applies (for example the type of election)."
     },
     "meta": {
       "title": "Information",
@@ -312,10 +317,14 @@
       "identifier": "Identifier",
       "updatedAt": "Last update",
       "primaryLegalBasis": "Main legal basis",
-      "certifiedResults": "Certified results",
-      "certifiedBy": "Certified by",
-      "certifiedOn": "on {date}.",
-      "certificationRef": "Reference: {ref}"
+      "guaranteeTitle": "Producer guarantee",
+      "guaranteeCertified": "Certified results",
+      "guaranteeSelfAssessed": "Code and tests published",
+      "guaranteeNone": "Referenced rule",
+      "guaranteeBy": "Commitment by {who}",
+      "guaranteeOn": "on {date}",
+      "guaranteeVersion": "version {version}",
+      "guaranteeNoneText": "The rule owner makes no commitment on the results: the record describes the rule, its legal basis and its organisation."
     },
     "legal": {
       "title": "Legal basis",
@@ -370,22 +379,20 @@
       "summaryOne": "1 case checked on {date}, matching result.",
       "summaryAll": "{total} cases checked on {date}, matching results.",
       "summaryPartial": "{passing} of {total} cases matching in the check of {date}.",
-      "gapBefore": "The rule owner's API no longer accepts the parameters declared in the record",
-      "gapMiddle": "It now expects",
+      "gapBefore": "The rule owner's API no longer accepts the parameters declared in the record.",
       "gapAfter": "The referencing record must be updated by the rule owner.",
       "emptyTitle": "No public test cases",
       "emptyBody": "This rule publishes no test suite. {organism} may run that validation internally and keep the detail private (data sensitivity, maintenance load).",
-      "emptyCertified": "This rule does carry a certification of its results by the producing administration."
+      "emptyCertified": "The rule owner does commit to the results of this rule (see “Producer guarantee”)."
     },
     "versions": {
       "title": "Version history",
       "empty": "No earlier version published.",
       "current": "Current version",
       "triggeredBy": "Triggered by",
-      "majeur": "Major",
-      "mineur": "Minor",
-      "correctif": "Fix",
-      "editorial": "Editorial"
+      "major": "Major",
+      "minor": "Minor",
+      "legal": "Legal"
     }
   },
   "testCase": {

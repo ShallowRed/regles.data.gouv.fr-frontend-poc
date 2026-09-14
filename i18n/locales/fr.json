@@ -69,7 +69,7 @@
     "N2": {
       "label": "Vérifiée",
       "action": "Vérifier code et tests",
-      "meaning": "Code ouvert et cas de tests publiés : la traçabilité entre la loi et le code est contrôlable."
+      "meaning": "Cas de tests publiés et exécutés par le registre avec les résultats attendus."
     },
     "N3": {
       "label": "Exécutable",
@@ -123,14 +123,19 @@
       "autre": "autre",
       "hint": "Moteur de calcul : {value}."
     },
+    "guarantee": {
+      "axis": "garantie",
+      "certified": "résultats certifiés",
+      "selfAssessed": "code et tests publiés",
+      "hintCertified": "Le producteur répond des résultats calculés sur les faits déclarés, à la version indiquée.",
+      "hintSelfAssessed": "Le producteur publie le code et les tests de la règle à un commit désigné."
+    },
     "results": {
       "axis": "résultats",
-      "frontiere": "certifiés",
-      "implementation": "testés",
-      "referencement": "non vérifiés",
-      "hintFrontiere": "L'administration certifie le résultat de la règle sur les faits déclarés, à une version donnée.",
-      "hintImplementation": "Le calcul est contrôlé par la suite de tests de la règle, à chaque version publiée.",
-      "hintReferencement": "Fiche descriptive seule : le code et les cas de tests ne sont pas publiés."
+      "tested": "testés",
+      "gap": "écart détecté",
+      "hintTested": "Le registre a exécuté les cas de tests publiés et obtenu les résultats attendus.",
+      "hintGap": "Le registre a exécuté les cas de tests publiés ; au moins un résultat diffère du résultat attendu."
     }
   },
   "legalKind": {
@@ -275,7 +280,7 @@
       "whatYouCanDo": "Ce que vous pouvez en faire",
       "dependsOn": "S'appuie sur d'autres règles",
       "boundary": "Les entrées de la règle",
-      "attestedBy": "Attestée par : {source}",
+      "attestedBy": "Attestée par {source}",
       "explanationBefore": "En plus du résultat, cette règle produit une trace d'explication",
       "explanationAfter": "utile pour expliquer un refus.",
       "mappingsTitle": "Correspondances recensées",
@@ -296,15 +301,15 @@
       "testsLabel": "Consulter les cas de tests",
       "testsDescription": "Situations types et résultats attendus, publiés par le producteur."
     },
-    "boundaryKind": {
-      "declarationLabel": "Faits déclarés",
-      "declarationDescription": "Déclarés par l'usager, non vérifiés.",
+    "factKind": {
+      "declaredLabel": "Faits déclarés",
+      "declaredDescription": "Déclarés par la personne, non vérifiés.",
       "attestedLabel": "Données attestées",
-      "attestedDescription": "Attestées par une administration propriétaire, mobilisables via une API.",
-      "ruleOutputLabel": "Sorties d'autres règles",
-      "ruleOutputDescription": "Résultats d'autres règles ou paramètres partagés, comme le SMIC.",
+      "attestedDescription": "Attestées par l'administration qui en répond, mobilisables via une API.",
+      "derivedLabel": "Sorties d'autres règles",
+      "derivedDescription": "Résultats d'autres règles ou paramètres partagés, comme le SMIC.",
       "contextLabel": "Paramètres de contexte",
-      "contextDescription": "Changent la règle appliquée (par exemple le type d'élection)."
+      "contextDescription": "Choisissent la règle appliquée (par exemple le type d'élection)."
     },
     "meta": {
       "title": "Informations",
@@ -312,10 +317,14 @@
       "identifier": "Identifiant",
       "updatedAt": "Dernière mise à jour",
       "primaryLegalBasis": "Base légale principale",
-      "certifiedResults": "Résultats certifiés",
-      "certifiedBy": "Certifiés par",
-      "certifiedOn": "le {date}.",
-      "certificationRef": "Référence : {ref}"
+      "guaranteeTitle": "Garantie du producteur",
+      "guaranteeCertified": "Résultats certifiés",
+      "guaranteeSelfAssessed": "Code et tests publiés",
+      "guaranteeNone": "Règle référencée",
+      "guaranteeBy": "Engagement de {who}",
+      "guaranteeOn": "le {date}",
+      "guaranteeVersion": "version {version}",
+      "guaranteeNoneText": "Le producteur ne s'engage pas sur les résultats : la fiche décrit la règle, sa base légale et son organisme."
     },
     "legal": {
       "title": "Bases légales",
@@ -370,22 +379,20 @@
       "summaryOne": "1 cas vérifié le {date}, résultat conforme.",
       "summaryAll": "{total} cas vérifiés le {date}, résultats conformes.",
       "summaryPartial": "{passing} cas sur {total} conformes au contrôle du {date}.",
-      "gapBefore": "L'API du producteur n'accepte plus les paramètres déclarés par la fiche",
-      "gapMiddle": "Elle attend désormais",
+      "gapBefore": "L'API du producteur n'accepte plus les paramètres déclarés par la fiche.",
       "gapAfter": "La fiche de référencement doit être mise à jour par le producteur.",
       "emptyTitle": "Pas de cas de test publics",
       "emptyBody": "Cette règle ne publie pas ses jeux de tests. Cela ne signifie pas qu'elle n'est pas validée : {organism} peut effectuer cette validation en interne, sans en exposer le détail (sensibilité des données, charge de maintenance).",
-      "emptyCertified": "Cette règle dispose toutefois d'une certification de ses résultats par l'administration productrice."
+      "emptyCertified": "Le producteur s'engage toutefois sur les résultats de cette règle (voir « Garantie du producteur »)."
     },
     "versions": {
       "title": "Historique des versions",
       "empty": "Aucune version antérieure publiée.",
       "current": "Version courante",
       "triggeredBy": "Déclenchée par",
-      "majeur": "Majeur",
-      "mineur": "Mineur",
-      "correctif": "Correctif",
-      "editorial": "Éditorial"
+      "major": "Majeur",
+      "minor": "Mineur",
+      "legal": "Réglementaire"
     }
   },
   "testCase": {

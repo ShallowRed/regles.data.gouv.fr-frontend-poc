@@ -16,9 +16,10 @@
  *      fiche vs ACCEPTÉS par l'API (openapi.json). Détecte un producteur qui change son API
  *      sans mettre à jour sa fiche.
  *
- * Statuts datés écrits dans app/data/verification.json, adossés par `testId` à chaque cas
- * daté/versionné et affichés sur la fiche. Sortie code 1 si un cas échoue ou si dérive :
- * comportement de CI - une rupture producteur doit se voir.
+ * Résultats écrits dans app/data/verification.json sous forme d'assertions EARL (ADR-0006) :
+ * une assertion par cas rejoué (sujet = code ou API vérifié, test = le cas, résultat daté) et
+ * une assertion par contrôle de dérive fiche/API. La fiche affiche ces assertions. Sortie
+ * code 1 si un cas échoue ou si dérive : comportement de CI, une rupture producteur doit se voir.
  *
  * Usage : pnpm verify:rules
  */
@@ -163,9 +164,28 @@ async function replayOpenfiscaPost(api, test) {
   return { got: ppa, ok: response.ok, url: `${api} (POST, ppa ${test.period})` }
 }
 
-const caseResults = []
-const schemaChecks = []
+const REGISTRY = 'https://regles.data.gouv.fr'
+const today = new Date().toISOString().slice(0, 10)
+const assertions = []
 let failed = false
+
+/** Assertion EARL : le registre affirme, à une date, le résultat d'un test sur un sujet. */
+function assertion({ subject, test, outcome, info, description }) {
+  return {
+    'type': 'earl:Assertion',
+    'earl:assertor': { id: REGISTRY },
+    'earl:subject': { id: subject },
+    'earl:test': test,
+    'earl:result': {
+      'type': 'earl:TestResult',
+      'earl:outcome': outcome,
+      'dct:date': today,
+      ...(description ? { 'dct:description': description } : {}),
+      ...(info !== undefined && info !== null ? { 'earl:info': String(info) } : {}),
+    },
+    'earl:mode': 'earl:automatic',
+  }
+}
 
 for (const [ruleId, config] of Object.entries(verifiable)) {
   let endpoint
@@ -183,16 +203,21 @@ for (const [ruleId, config] of Object.entries(verifiable)) {
       const declaredNotAccepted = service.declaredParams.filter(p => !accepted.includes(p))
       const acceptedNotDeclared = accepted.filter(p => !service.declaredParams.includes(p))
       const drift = declaredNotAccepted.length > 0
-      schemaChecks.push({
-        ruleId,
-        endpoint,
-        drift,
-        declaredNotAccepted,
-        acceptedNotDeclared,
-        ...(service.hasStructures
-          ? { comparison: 'champs feuilles des structures SHACL, appariement par nom exact (projection HTTP non déclarée par la fiche)' }
-          : {}),
-      })
+      assertions.push(assertion({
+        subject: endpoint,
+        test: {
+          'id': `${REGISTRY}/regles/${ruleId}#api-parameters`,
+          'dct:identifier': `${ruleId}:api-parameters`,
+          'dct:title': 'Les paramètres déclarés par la fiche sont acceptés par l\'API',
+        },
+        outcome: drift ? 'earl:failed' : 'earl:passed',
+        description: service.hasStructures
+          ? 'champs feuilles des structures SHACL, appariement par nom exact (projection HTTP non déclarée par la fiche)'
+          : 'paramètres plats, appariement par nom exact',
+        info: drift
+          ? `déclarés non acceptés : ${declaredNotAccepted.join(', ')} ; acceptés non déclarés : ${acceptedNotDeclared.join(', ')}`
+          : undefined,
+      }))
       if (drift) {
         failed = true
         console.log(`⚠ ${ruleId} : dérive fiche/API - déclarés non acceptés : ${declaredNotAccepted.join(', ')}`)
@@ -217,8 +242,9 @@ for (const [ruleId, config] of Object.entries(verifiable)) {
   const tests = allCases.filter(test => test.replayable !== false && isFlat(test.inputs))
   for (const skipped of allCases.filter(test => !tests.includes(test))) {
     const reason = skipped.replayable === false ? 'exclu du rejeu (replayable: false)' : 'entrées natives structurées'
-    console.log(`- ${ruleId} / ${skipped.label} : non rejoué - ${reason}`)
+    console.log(`- ${ruleId} / ${typeof skipped.label === 'string' ? skipped.label : skipped.label.fr} : non rejoué - ${reason}`)
   }
+  const labelOf = test => (typeof test.label === 'string' ? test.label : test.label.fr)
   for (const test of tests) {
     let status = 'echec'
     let got = null
@@ -238,29 +264,45 @@ for (const [ruleId, config] of Object.entries(verifiable)) {
     }
     if (status === 'echec')
       failed = true
-    caseResults.push({
-      ruleId,
-      testId: test.id,
-      label: test.label,
-      expected: test.expected,
-      got,
-      status,
-      period: test.period ?? null,
-      engineVersion: test.engineVersion ?? null,
-      url,
-    })
-    console.log(`${status === 'conforme' ? '✓' : '✗'} ${ruleId} / ${test.label} : attendu ${test.expected}, obtenu ${got}`)
+    const context = [test.period ? `période ${test.period}` : null, test.engineVersion ? `moteur ${test.engineVersion}` : null].filter(Boolean).join(', ')
+    assertions.push(assertion({
+      subject: test.nativeRef ?? url,
+      test: {
+        'id': `${REGISTRY}/regles/${ruleId}#test-${test.id}`,
+        'dct:identifier': test.id,
+        'dct:title': labelOf(test),
+      },
+      outcome: status === 'conforme' ? 'earl:passed' : 'earl:failed',
+      description: `attendu ${test.expected}, obtenu ${got}${context ? ` (${context})` : ''} via ${url}`,
+      info: got,
+    }))
+    console.log(`${status === 'conforme' ? '✓' : '✗'} ${ruleId} / ${labelOf(test)} : attendu ${test.expected}, obtenu ${got}`)
   }
 }
 
 const verification = {
-  checkedAt: new Date().toISOString().slice(0, 10),
-  method: 'rejeu des cas plats de l\'enveloppe (rest-get + openfisca-post + publicodes-node) + contrôle de dérive fiche/API (champs feuilles pour les fiches composites), adossé par testId aux cas datés/versionnés ; cas natifs structurés non rejoués (le test natif fait foi)',
-  schemaChecks,
-  results: caseResults,
+  '@context': {
+    'earl': 'http://www.w3.org/ns/earl#',
+    'dct': 'http://purl.org/dc/terms/',
+    'xsd': 'http://www.w3.org/2001/XMLSchema#',
+    'id': '@id',
+    'type': '@type',
+    'earl:assertor': { '@type': '@id' },
+    'earl:subject': { '@type': '@id' },
+    'earl:test': { '@type': '@id' },
+    'earl:outcome': { '@type': '@vocab' },
+    'earl:mode': { '@type': '@vocab' },
+    'dct:date': { '@type': 'xsd:date' },
+  },
+  'id': `${REGISTRY}/verification/${today}`,
+  'type': 'earl:Software',
+  'dct:title': 'Vérification automatique du registre',
+  'dct:date': today,
+  'dct:description': 'rejeu des cas plats de l\'enveloppe (rest-get + openfisca-post + publicodes-node) et contrôle de dérive fiche/API (champs feuilles pour les fiches composites) ; cas natifs structurés non rejoués, le test natif constitue la référence',
+  '@graph': assertions,
 }
 writeFileSync(join(root, 'app/data/verification.json'), `${JSON.stringify(verification, null, 2)}\n`)
-console.log(`\n${caseResults.length} cas rejoués, ${schemaChecks.length} contrôle(s) de dérive, écrit dans app/data/verification.json`)
+console.log(`\n${assertions.length} assertion(s) EARL écrite(s) dans app/data/verification.json`)
 
 if (failed)
   process.exit(1)

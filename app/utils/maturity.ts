@@ -65,3 +65,28 @@ const byLevel = Object.fromEntries(
 
 /** Métadonnées d'affichage d'un niveau de maturité. */
 export const maturityMeta = (level: MaturityLevel): MaturityMeta => byLevel[level]
+
+/** Ce que le registre constate sur une règle pour en calculer le niveau (ADR-0003). */
+export interface MaturityEvidence {
+  /** Organisme porteur et base légale présents. */
+  referenced: boolean
+  /** Version, description, entrées et sorties présentes. */
+  documented: boolean
+  /** Au moins un cas exécuté avec succès par le registre, aucun en échec. */
+  testsPassed: boolean
+  /** Canal d'exécution : API déclarée ou moteur embarqué. */
+  executable: boolean
+}
+
+/**
+ * Niveau calculé par le registre à partir de la fiche et de ses exécutions. Chaque palier
+ * suppose le précédent : une règle exécutable dont les tests n'ont pas été exécutés avec
+ * succès reste « documentée ».
+ */
+export function deriveMaturity(evidence: MaturityEvidence): MaturityLevel {
+  if (!evidence.referenced || !evidence.documented)
+    return 'N0'
+  if (!evidence.testsPassed)
+    return 'N1'
+  return evidence.executable ? 'N3' : 'N2'
+}

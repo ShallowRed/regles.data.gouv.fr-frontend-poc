@@ -1,11 +1,14 @@
-import type { BoundaryKind, Rule, RuleBoundaryInput } from '~/types'
+import type { FactKind, Rule, RuleBoundaryInput } from '~/types'
 import type { Multilingual } from '~/utils/localized-text'
 import prestagriRaw from '~/data/jsonld/ministere-agriculture/prestagri/metadata.jsonld?raw'
 import droitVoteRaw from '~/data/jsonld/ministere-interieur/droits-civiques-elections/metadata.jsonld?raw'
 import { adaptJsonldGraph } from '~/utils/jsonld-adapter'
 import { byLocale, localizeDeep } from '~/utils/localized-text'
+import { deriveMaturity } from '~/utils/maturity'
+import { testAssertionsFor } from '~/utils/verification'
 import { legalReferencesFor } from './legal-references'
 import { organismsFor } from './organisms'
+import { ruleTestsSource } from './rule-tests'
 
 /**
  * Démo resserrée : 5 entrées ancrées dans le réel, une par couple moteur × partenaire.
@@ -15,34 +18,51 @@ import { organismsFor } from './organisms'
  *   app/data/jsonld/). Leur champ `profileGaps` liste ce que le profil data ne couvre pas.
  * - Entreprise-innovation (Publicodes, DGE) et Prime d'activité (OpenFisca) sont décrites
  *   depuis leurs dépôts publics respectifs.
- * - Le bonus QF pass Culture illustre le régime « référencement » : une entrée honnêtement
- *   non exécutable.
+ * - Le bonus QF pass Culture illustre la règle référencée, sans engagement du producteur :
+ *   une entrée honnêtement non exécutable.
  *
- * Aucune donnée inventée : quand une information manque, le champ est omis.
+ * Aucune donnée inventée : quand une information manque, le champ est omis. Le niveau
+ * (référencée, documentée, vérifiée, exécutable) est calculé par le registre (ADR-0003) depuis
+ * la fiche et ses assertions EARL, jamais déclaré ici.
  *
  * Les entrées adossées à une fiche tiennent leurs traductions de la fiche (l'adaptateur
  * reçoit la locale) ; les trois autres les portent ici, en littéraux `{ fr, en }` résolus
  * par `localizeDeep`. Un texte laissé en chaîne simple est le même dans les deux langues.
  */
 
-/** Requalifie la frontière issue de l'adaptateur (kind par défaut : déclaration). */
+/** Requalifie la frontière issue de l'adaptateur (kind par défaut : fait déclaré). */
 function qualifyBoundary(
   draft: RuleBoundaryInput[],
-  overrides: Record<string, Partial<RuleBoundaryInput> & { kind?: BoundaryKind }>,
+  overrides: Record<string, Partial<RuleBoundaryInput> & { kind?: FactKind }>,
 ): RuleBoundaryInput[] {
   return draft.map(input => ({ ...input, ...overrides[input.id] }))
+}
+
+/** Niveau calculé par le registre depuis ce que la fiche contient et ce que ses exécutions établissent. */
+function withMaturity(rule: Omit<Rule, 'maturity'>): Rule {
+  const testIds = ruleTestsSource.filter(test => test.ruleId === rule.id).map(test => test.id)
+  const assertions = testAssertionsFor(testIds)
+  return {
+    ...rule,
+    maturity: deriveMaturity({
+      referenced: Boolean(rule.organism) && rule.legalReferences.length > 0,
+      documented: Boolean(rule.version && rule.shortDescription && rule.boundary?.length),
+      testsPassed: assertions.total > 0 && assertions.failing === 0,
+      executable: Boolean(rule.apiUrl || rule.capabilities?.hasCalculationPreview),
+    }),
+  }
 }
 
 function buildRules(locale: string): Rule[] {
   const organisms = organismsFor(locale)
   const legalReferences = legalReferencesFor(locale)
   const ml = <T>(source: Multilingual<T>): T => localizeDeep<T>(source, locale)
-  type BoundaryOverrides = Record<string, Partial<RuleBoundaryInput> & { kind?: BoundaryKind }>
+  type BoundaryOverrides = Record<string, Partial<RuleBoundaryInput> & { kind?: FactKind }>
 
   const prestagriAdaptation = adaptJsonldGraph(prestagriRaw, locale)
   const droitVoteAdaptation = adaptJsonldGraph(droitVoteRaw, locale)
 
-  const prestagri: Rule = {
+  const prestagri: Rule = withMaturity({
     ...prestagriAdaptation.base as Rule,
     title: ml<string>({
       fr: 'Prest\'Agri - quotient familial et aide à la scolarité',
@@ -53,18 +73,24 @@ function buildRules(locale: string): Rule[] {
     nature: 'ouverte',
     domain: 'solidarite',
     engine: 'catala',
-    maturity: 'N3',
     opposability: 'indicatif',
     regulatoryPosition: 'assistance-administration',
     organism: organisms['ministere-agriculture']!,
     legalReferences: [legalReferences['note-service-masa-qf']!],
     tags: ['catala', 'quotient-familial', 'aide-scolarite', 'agents-publics', 'betagouv'],
     updatedAt: '2026-06-26',
-    certificationRegime: 'frontiere',
+    certification: ml<Rule['certification']>({
+      level: 'certified',
+      byOrganismId: 'ministere-agriculture',
+      description: {
+        fr: 'Résultats certifiés sur les faits déclarés, par l\'API du producteur, à la version indiquée par la fiche.',
+        en: 'Results certified on declared facts, through the producer\'s API, at the version stated by the record.',
+      },
+    }),
     boundary: qualifyBoundary(prestagriAdaptation.boundaryDraft, ml<BoundaryOverrides>({
       revenu_fiscal_reference: {
-        kind: 'donnee-attestee' as const,
-        evidenceSource: {
+        kind: 'attested' as const,
+        publisher: {
           label: {
             fr: 'Revenu fiscal de référence (DGFiP, mobilisable via API Particulier)',
             en: 'Reference tax income (DGFiP, available through API Particulier)',
@@ -81,15 +107,14 @@ function buildRules(locale: string): Rule[] {
     },
     profileGaps: prestagriAdaptation.gaps,
     metadataSourcePath: 'app/data/jsonld/ministere-agriculture/prestagri/metadata.jsonld',
-  }
+  })
 
-  const droitVote: Rule = {
+  const droitVote: Rule = withMaturity({
     ...droitVoteAdaptation.base as Rule,
     id: 'droits-civiques-elections',
     slug: 'droits-civiques-elections',
     nature: 'ouverte',
     domain: 'citoyennete',
-    maturity: 'N2',
     opposability: 'indicatif',
     regulatoryPosition: 'simulation-indicative',
     organism: organisms['ministere-interieur']!,
@@ -99,11 +124,18 @@ function buildRules(locale: string): Rule[] {
     ],
     tags: ['python', 'regalgo', 'droit-de-vote', 'code-electoral'],
     updatedAt: '2026-06-25',
-    certificationRegime: 'frontiere',
+    certification: ml<Rule['certification']>({
+      level: 'self-assessed',
+      byLabel: { fr: 'écosystème regalgo', en: 'regalgo ecosystem' },
+      description: {
+        fr: 'Code et suite pytest publiés au commit désigné par la fiche ; extraction indépendante du texte, sans engagement du ministère.',
+        en: 'Code and pytest suite published at the commit designated by the record; independent extraction from the text, without a commitment by the ministry.',
+      },
+    }),
     boundary: qualifyBoundary(droitVoteAdaptation.boundaryDraft, ml<BoundaryOverrides>({
       inscrit_listes_electorales: {
-        kind: 'donnee-attestee' as const,
-        evidenceSource: {
+        kind: 'attested' as const,
+        publisher: {
           label: {
             fr: 'Répertoire électoral unique (Insee) - téléservice « interroger sa situation électorale »',
             en: 'Répertoire électoral unique (single electoral register, Insee) - online service to check one\'s electoral status',
@@ -111,7 +143,7 @@ function buildRules(locale: string): Rule[] {
           url: 'https://www.service-public.fr/particuliers/vosdroits/services-en-ligne-et-formulaires/ISE',
         },
       },
-      type_election: { kind: 'contexte' as const },
+      type_election: { kind: 'context' as const },
     })),
     outputs: droitVoteAdaptation.outputs,
     capabilities: {
@@ -119,9 +151,9 @@ function buildRules(locale: string): Rule[] {
     },
     profileGaps: droitVoteAdaptation.gaps,
     metadataSourcePath: 'app/data/jsonld/ministere-interieur/droits-civiques-elections/metadata.jsonld',
-  }
+  })
 
-  const entrepriseInnovation: Rule = ml<Rule>({
+  const entrepriseInnovation: Rule = withMaturity(ml<Omit<Rule, 'maturity'>>({
     id: 'entreprise-innovation',
     slug: 'entreprise-innovation',
     title: {
@@ -137,7 +169,6 @@ function buildRules(locale: string): Rule[] {
     nature: 'ouverte',
     domain: 'fiscalite',
     engine: 'publicodes',
-    maturity: 'N3',
     opposability: 'indicatif',
     regulatoryPosition: 'simulation-indicative',
     organism: organisms.dge!,
@@ -154,12 +185,19 @@ function buildRules(locale: string): Rule[] {
       hasLegalTraceability: true,
       hasPublicTestCases: true,
     },
-    certificationRegime: 'frontiere',
+    certification: {
+      level: 'certified',
+      byOrganismId: 'dge',
+      description: {
+        fr: 'Résultats certifiés sur les faits déclarés : règles Publicodes coconstruites avec un expert métier de la DGFiP, au commit désigné.',
+        en: 'Results certified on declared facts: Publicodes rules co-built with a DGFiP domain expert, at the designated commit.',
+      },
+    },
     boundary: [
       {
         id: 'natureActivite',
         label: { fr: 'Nature de l\'activité', en: 'Type of activity' },
-        kind: 'declaration',
+        kind: 'declared',
         definition: {
           fr: 'Activité commerciale, industrielle, agricole ou artisanale (conditionne l\'éligibilité au CIR).',
           en: 'Commercial, industrial, agricultural or craft activity (conditions eligibility for the research tax credit).',
@@ -169,7 +207,7 @@ function buildRules(locale: string): Rule[] {
       {
         id: 'regimeFiscal',
         label: { fr: 'Régime fiscal', en: 'Tax regime' },
-        kind: 'declaration',
+        kind: 'declared',
         definition: {
           fr: 'Imposition au régime réel ou condition d\'exonération (CGI, art. 244 quater B).',
           en: 'Taxation under the actual profit regime, or an exemption condition (Code général des impôts, art. 244 quater B).',
@@ -182,7 +220,7 @@ function buildRules(locale: string): Rule[] {
           fr: 'Dépenses de recherche (métropole et DOM)',
           en: 'Research expenditure (mainland France and overseas departments)',
         },
-        kind: 'declaration',
+        kind: 'declared',
         definition: {
           fr: 'Assiette du crédit d\'impôt : 30 % jusqu\'à 100 M€ puis 5 % en métropole, 50 % dans les DOM.',
           en: 'Base of the tax credit: 30% up to 100 M€ then 5% in mainland France, 50% in the overseas departments.',
@@ -213,9 +251,9 @@ function buildRules(locale: string): Rule[] {
       fr: 'fiche metadata.jsonld absente du dépôt data : entrée décrite depuis le dépôt source public',
       en: 'no metadata.jsonld record in the data repository: entry described from the public source repository',
     }],
-  })
+  }))
 
-  const primeActivite: Rule = ml<Rule>({
+  const primeActivite: Rule = withMaturity(ml<Omit<Rule, 'maturity'>>({
     id: 'prime-activite-openfisca',
     slug: 'prime-activite-openfisca',
     title: { fr: 'Prime d\'activité', en: 'In-work benefit (prime d\'activité)' },
@@ -228,7 +266,6 @@ function buildRules(locale: string): Rule[] {
     nature: 'ouverte',
     domain: 'solidarite',
     engine: 'openfisca',
-    maturity: 'N2',
     opposability: 'indicatif',
     regulatoryPosition: 'simulation-indicative',
     organism: organisms.cnaf!,
@@ -237,7 +274,15 @@ function buildRules(locale: string): Rule[] {
     updatedAt: '2026-07-07',
     version: 'openfisca-france 169.15.0',
     sourceUrl: 'https://github.com/openfisca/openfisca-france',
-    certificationRegime: 'implementation',
+    certification: {
+      level: 'self-assessed',
+      byLabel: { fr: 'communauté openfisca-france', en: 'openfisca-france community' },
+      version: 'france-169.15.0',
+      description: {
+        fr: 'Code et suite de tests native publiés ; le calcul de référence est celui d\'openfisca-france à la version indiquée, sans engagement de la CNAF.',
+        en: 'Code and native test suite published; the reference calculation is openfisca-france at the stated version, without a commitment by the CNAF.',
+      },
+    },
     capabilities: {
       hasPublicTestCases: true,
       hasCalculationPreview: true,
@@ -246,7 +291,7 @@ function buildRules(locale: string): Rule[] {
       {
         id: 'salaire_de_base',
         label: { fr: 'Salaires des 3 derniers mois', en: 'Wages of the last 3 months' },
-        kind: 'declaration',
+        kind: 'declared',
         definition: {
           fr: 'Revenus d\'activité déclarés par l\'usager sur le trimestre de référence.',
           en: 'Earned income declared by the user for the reference quarter.',
@@ -256,8 +301,8 @@ function buildRules(locale: string): Rule[] {
       {
         id: 'rfr',
         label: { fr: 'Revenu fiscal de référence', en: 'Reference tax income' },
-        kind: 'donnee-attestee',
-        evidenceSource: {
+        kind: 'attested',
+        publisher: {
           label: {
             fr: 'DGFiP, mobilisable via API Particulier',
             en: 'DGFiP, available through API Particulier',
@@ -268,7 +313,7 @@ function buildRules(locale: string): Rule[] {
       {
         id: 'montant_forfaitaire',
         label: { fr: 'Montant forfaitaire et SMIC', en: 'Flat-rate amount and minimum wage' },
-        kind: 'sortie-regle',
+        kind: 'derived',
         definition: {
           fr: 'Paramètres législatifs partagés du cœur socio-fiscal, maintenus dans openfisca-france.',
           en: 'Shared legislative parameters of the tax and benefit core, maintained in openfisca-france.',
@@ -307,9 +352,9 @@ function buildRules(locale: string): Rule[] {
       fr: 'fiche metadata.jsonld absente du dépôt data : entrée décrite depuis le dépôt source public',
       en: 'no metadata.jsonld record in the data repository: entry described from the public source repository',
     }],
-  })
+  }))
 
-  const passCultureBonusQf: Rule = ml<Rule>({
+  const passCultureBonusQf: Rule = withMaturity(ml<Omit<Rule, 'maturity'>>({
     id: 'pass-culture-bonus-qf',
     slug: 'pass-culture-bonus-qf',
     title: {
@@ -325,7 +370,6 @@ function buildRules(locale: string): Rule[] {
     nature: 'fermee',
     domain: 'culture',
     engine: 'autre',
-    maturity: 'N0',
     opposability: 'indicatif',
     regulatoryPosition: 'simulation-indicative',
     organism: organisms['pass-culture']!,
@@ -336,8 +380,7 @@ function buildRules(locale: string): Rule[] {
     tags: ['pass-culture', 'quotient-familial', 'jeunesse'],
     updatedAt: '2026-04-04',
     version: { fr: 'non publiée', en: 'not published' },
-    certificationRegime: 'referencement',
-  })
+  }))
 
   return [
     prestagri,

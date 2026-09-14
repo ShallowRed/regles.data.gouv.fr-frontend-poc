@@ -1,103 +1,210 @@
 {
-  "checkedAt": "2026-08-13",
-  "method": "rejeu des cas plats de l'enveloppe (rest-get + openfisca-post + publicodes-node) + contrôle de dérive fiche/API (champs feuilles pour les fiches composites), adossé par testId aux cas datés/versionnés ; cas natifs structurés non rejoués (le test natif fait foi)",
-  "schemaChecks": [
-    {
-      "ruleId": "prestagri",
-      "endpoint": "https://api.prest-agri.beta.gouv.fr/quotient_familial",
-      "drift": true,
-      "declaredNotAccepted": [
-        "revenu_fiscal_reference",
-        "nombre_personnes"
-      ],
-      "acceptedNotDeclared": [
-        "foyer_fiscal_agent_revenu",
-        "foyer_fiscal_agent_membres",
-        "foyer_fiscal_conjoint_revenu",
-        "foyer_fiscal_conjoint_membres",
-        "foyer_fiscal_etudiant_revenu",
-        "foyer_fiscal_etudiant_membres"
-      ],
-      "comparison": "champs feuilles des structures SHACL, appariement par nom exact (projection HTTP non déclarée par la fiche)"
+  "@context": {
+    "earl": "http://www.w3.org/ns/earl#",
+    "dct": "http://purl.org/dc/terms/",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "id": "@id",
+    "type": "@type",
+    "earl:assertor": {
+      "@type": "@id"
+    },
+    "earl:subject": {
+      "@type": "@id"
+    },
+    "earl:test": {
+      "@type": "@id"
+    },
+    "earl:outcome": {
+      "@type": "@vocab"
+    },
+    "earl:mode": {
+      "@type": "@vocab"
+    },
+    "dct:date": {
+      "@type": "xsd:date"
     }
-  ],
-  "results": [
+  },
+  "id": "https://regles.data.gouv.fr/verification/2026-09-12",
+  "type": "earl:Software",
+  "dct:title": "Vérification automatique du registre",
+  "dct:date": "2026-09-12",
+  "dct:description": "rejeu des cas plats de l'enveloppe (rest-get + openfisca-post + publicodes-node) et contrôle de dérive fiche/API (champs feuilles pour les fiches composites) ; cas natifs structurés non rejoués, le test natif constitue la référence",
+  "@graph": [
     {
-      "ruleId": "prestagri",
-      "testId": "prestagri-qf-couple-2-enfants",
-      "label": "Agent seul, 30 000 € de revenu, 2 enfants",
-      "expected": "833.33",
-      "got": "833.33€",
-      "status": "conforme",
-      "period": null,
-      "engineVersion": "prestagri 0.1.0",
-      "url": "https://api.prest-agri.beta.gouv.fr/quotient_familial?foyer_fiscal_agent_revenu=30000&foyer_fiscal_agent_membres=3"
+      "type": "earl:Assertion",
+      "earl:assertor": {
+        "id": "https://regles.data.gouv.fr"
+      },
+      "earl:subject": {
+        "id": "https://api.prest-agri.beta.gouv.fr/quotient_familial"
+      },
+      "earl:test": {
+        "id": "https://regles.data.gouv.fr/regles/prestagri#api-parameters",
+        "dct:identifier": "prestagri:api-parameters",
+        "dct:title": "Les paramètres déclarés par la fiche sont acceptés par l'API"
+      },
+      "earl:result": {
+        "type": "earl:TestResult",
+        "earl:outcome": "earl:failed",
+        "dct:date": "2026-09-12",
+        "dct:description": "champs feuilles des structures SHACL, appariement par nom exact (projection HTTP non déclarée par la fiche)",
+        "earl:info": "déclarés non acceptés : revenu_fiscal_reference, nombre_personnes ; acceptés non déclarés : foyer_fiscal_agent_revenu, foyer_fiscal_agent_membres, foyer_fiscal_conjoint_revenu, foyer_fiscal_conjoint_membres, foyer_fiscal_etudiant_revenu, foyer_fiscal_etudiant_membres"
+      },
+      "earl:mode": "earl:automatic"
     },
     {
-      "ruleId": "prestagri",
-      "testId": "prestagri-qf-parent-isole",
-      "label": "Même situation, parent isolé",
-      "expected": "625.0",
-      "got": "625.0€",
-      "status": "conforme",
-      "period": null,
-      "engineVersion": "prestagri 0.1.0",
-      "url": "https://api.prest-agri.beta.gouv.fr/quotient_familial?foyer_fiscal_agent_revenu=30000&foyer_fiscal_agent_membres=3&parent_isole=true"
+      "type": "earl:Assertion",
+      "earl:assertor": {
+        "id": "https://regles.data.gouv.fr"
+      },
+      "earl:subject": {
+        "id": "https://github.com/betagouv/prestagri/tree/478b3cc2ab28299c73b94fdd192b0559ae5873b8/catala"
+      },
+      "earl:test": {
+        "id": "https://regles.data.gouv.fr/regles/prestagri#test-prestagri-qf-couple-2-enfants",
+        "dct:identifier": "prestagri-qf-couple-2-enfants",
+        "dct:title": "Agent seul, 30 000 € de revenu, 2 enfants"
+      },
+      "earl:result": {
+        "type": "earl:TestResult",
+        "earl:outcome": "earl:passed",
+        "dct:date": "2026-09-12",
+        "dct:description": "attendu 833.33, obtenu 833.33€ (moteur prestagri 0.1.0) via https://api.prest-agri.beta.gouv.fr/quotient_familial?foyer_fiscal_agent_revenu=30000&foyer_fiscal_agent_membres=3",
+        "earl:info": "833.33€"
+      },
+      "earl:mode": "earl:automatic"
     },
     {
-      "ruleId": "prime-activite-openfisca",
-      "testId": "prime-activite-celibataire-1000",
-      "label": "Célibataire, 1 000 € net/mois",
-      "expected": "224.39",
-      "got": 224.38591,
-      "status": "conforme",
-      "period": "2025-03",
-      "engineVersion": "france-169.15.0",
-      "url": "https://api.fr.openfisca.org/latest/calculate (POST, ppa 2025-03)"
+      "type": "earl:Assertion",
+      "earl:assertor": {
+        "id": "https://regles.data.gouv.fr"
+      },
+      "earl:subject": {
+        "id": "https://github.com/betagouv/prestagri/tree/478b3cc2ab28299c73b94fdd192b0559ae5873b8/catala"
+      },
+      "earl:test": {
+        "id": "https://regles.data.gouv.fr/regles/prestagri#test-prestagri-qf-parent-isole",
+        "dct:identifier": "prestagri-qf-parent-isole",
+        "dct:title": "Même situation, parent isolé"
+      },
+      "earl:result": {
+        "type": "earl:TestResult",
+        "earl:outcome": "earl:passed",
+        "dct:date": "2026-09-12",
+        "dct:description": "attendu 625.0, obtenu 625.0€ (moteur prestagri 0.1.0) via https://api.prest-agri.beta.gouv.fr/quotient_familial?foyer_fiscal_agent_revenu=30000&foyer_fiscal_agent_membres=3&parent_isole=true",
+        "earl:info": "625.0€"
+      },
+      "earl:mode": "earl:automatic"
     },
     {
-      "ruleId": "entreprise-innovation",
-      "testId": "cir-bareme-metropole-100k",
-      "label": "Industrielle au réel, 100 000 € de dépenses",
-      "expected": 30000,
-      "got": 30000,
-      "status": "conforme",
-      "period": null,
-      "engineVersion": "publicodes 1.10.1 + règles fc8e9a8",
-      "url": "moteur embarqué (cir . montant)"
+      "type": "earl:Assertion",
+      "earl:assertor": {
+        "id": "https://regles.data.gouv.fr"
+      },
+      "earl:subject": {
+        "id": "https://github.com/openfisca/openfisca-france/tree/master/tests"
+      },
+      "earl:test": {
+        "id": "https://regles.data.gouv.fr/regles/prime-activite-openfisca#test-prime-activite-celibataire-1000",
+        "dct:identifier": "prime-activite-celibataire-1000",
+        "dct:title": "Célibataire, 1 000 € net/mois"
+      },
+      "earl:result": {
+        "type": "earl:TestResult",
+        "earl:outcome": "earl:passed",
+        "dct:date": "2026-09-12",
+        "dct:description": "attendu 224.39, obtenu 224.38591 (période 2025-03, moteur france-169.15.0) via https://api.fr.openfisca.org/latest/calculate (POST, ppa 2025-03)",
+        "earl:info": "224.38591"
+      },
+      "earl:mode": "earl:automatic"
     },
     {
-      "ruleId": "entreprise-innovation",
-      "testId": "cir-bareme-metropole-150m",
-      "label": "Industrielle au réel, 150 M€ de dépenses",
-      "expected": 32500000,
-      "got": 32500000,
-      "status": "conforme",
-      "period": null,
-      "engineVersion": "publicodes 1.10.1 + règles fc8e9a8",
-      "url": "moteur embarqué (cir . montant)"
+      "type": "earl:Assertion",
+      "earl:assertor": {
+        "id": "https://regles.data.gouv.fr"
+      },
+      "earl:subject": {
+        "id": "https://github.com/betagouv/publicodes-entreprise-innovation/blob/fc8e9a8ac572b03d75504a2aba39d5633c0b25ea/src/dispositifs/cir.publicodes"
+      },
+      "earl:test": {
+        "id": "https://regles.data.gouv.fr/regles/entreprise-innovation#test-cir-bareme-metropole-100k",
+        "dct:identifier": "cir-bareme-metropole-100k",
+        "dct:title": "Industrielle au réel, 100 000 € de dépenses"
+      },
+      "earl:result": {
+        "type": "earl:TestResult",
+        "earl:outcome": "earl:passed",
+        "dct:date": "2026-09-12",
+        "dct:description": "attendu 30000, obtenu 30000 (moteur publicodes 1.10.1 + règles fc8e9a8) via moteur embarqué (cir . montant)",
+        "earl:info": "30000"
+      },
+      "earl:mode": "earl:automatic"
     },
     {
-      "ruleId": "entreprise-innovation",
-      "testId": "cir-non-eligible-artisanale-bnc",
-      "label": "Artisanale, revenus BNC : non éligible",
-      "expected": false,
-      "got": false,
-      "status": "conforme",
-      "period": null,
-      "engineVersion": "publicodes 1.10.1 + règles fc8e9a8",
-      "url": "moteur embarqué (cir . eligibilite)"
+      "type": "earl:Assertion",
+      "earl:assertor": {
+        "id": "https://regles.data.gouv.fr"
+      },
+      "earl:subject": {
+        "id": "https://github.com/betagouv/publicodes-entreprise-innovation/blob/fc8e9a8ac572b03d75504a2aba39d5633c0b25ea/src/dispositifs/cir.publicodes"
+      },
+      "earl:test": {
+        "id": "https://regles.data.gouv.fr/regles/entreprise-innovation#test-cir-bareme-metropole-150m",
+        "dct:identifier": "cir-bareme-metropole-150m",
+        "dct:title": "Industrielle au réel, 150 M€ de dépenses"
+      },
+      "earl:result": {
+        "type": "earl:TestResult",
+        "earl:outcome": "earl:passed",
+        "dct:date": "2026-09-12",
+        "dct:description": "attendu 32500000, obtenu 32500000 (moteur publicodes 1.10.1 + règles fc8e9a8) via moteur embarqué (cir . montant)",
+        "earl:info": "32500000"
+      },
+      "earl:mode": "earl:automatic"
     },
     {
-      "ruleId": "entreprise-innovation",
-      "testId": "cico-contrat-ordc-non",
-      "label": "CICo sans contrat ORDC : non éligible",
-      "expected": false,
-      "got": false,
-      "status": "conforme",
-      "period": null,
-      "engineVersion": "publicodes 1.10.1 + règles fc8e9a8",
-      "url": "moteur embarqué (cico . eligibilite)"
+      "type": "earl:Assertion",
+      "earl:assertor": {
+        "id": "https://regles.data.gouv.fr"
+      },
+      "earl:subject": {
+        "id": "https://github.com/betagouv/publicodes-entreprise-innovation/blob/fc8e9a8ac572b03d75504a2aba39d5633c0b25ea/src/dispositifs/cir.publicodes"
+      },
+      "earl:test": {
+        "id": "https://regles.data.gouv.fr/regles/entreprise-innovation#test-cir-non-eligible-artisanale-bnc",
+        "dct:identifier": "cir-non-eligible-artisanale-bnc",
+        "dct:title": "Artisanale, revenus BNC : non éligible"
+      },
+      "earl:result": {
+        "type": "earl:TestResult",
+        "earl:outcome": "earl:passed",
+        "dct:date": "2026-09-12",
+        "dct:description": "attendu false, obtenu false (moteur publicodes 1.10.1 + règles fc8e9a8) via moteur embarqué (cir . eligibilite)",
+        "earl:info": "false"
+      },
+      "earl:mode": "earl:automatic"
+    },
+    {
+      "type": "earl:Assertion",
+      "earl:assertor": {
+        "id": "https://regles.data.gouv.fr"
+      },
+      "earl:subject": {
+        "id": "https://github.com/betagouv/publicodes-entreprise-innovation/blob/main/situations/cico.publicodes"
+      },
+      "earl:test": {
+        "id": "https://regles.data.gouv.fr/regles/entreprise-innovation#test-cico-contrat-ordc-non",
+        "dct:identifier": "cico-contrat-ordc-non",
+        "dct:title": "CICo sans contrat ORDC : non éligible"
+      },
+      "earl:result": {
+        "type": "earl:TestResult",
+        "earl:outcome": "earl:passed",
+        "dct:date": "2026-09-12",
+        "dct:description": "attendu false, obtenu false (moteur publicodes 1.10.1 + règles fc8e9a8) via moteur embarqué (cico . eligibilite)",
+        "earl:info": "false"
+      },
+      "earl:mode": "earl:automatic"
     }
   ]
 }

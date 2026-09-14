@@ -6,22 +6,23 @@
  * dans un panneau, provenance condensée en pied de carte sur une ligne.
  */
 import type { RuleTest } from '~/types/rule-test'
+import type { EarlAssertion } from '~/utils/verification'
 
 const props = defineProps<{
   test: RuleTest
-  /** Résultat du dernier contrôle automatique (pnpm verify:rules), adossé à ce cas par testId. */
-  verification?: { status: string, got: unknown, checkedAt: string }
+  /** Assertion EARL du registre pour ce cas (pnpm verify:rules), quand il l'a exécuté. */
+  assertion?: EarlAssertion
 }>()
 
 const { t } = useI18n()
 const { formatLong } = useLocaleDate()
 
 const autoCheck = computed(() => {
-  const v = props.verification
-  if (!v)
+  const a = props.assertion
+  if (!a)
     return null
-  const conforme = v.status === 'conforme'
-  return { conforme, checkedAt: v.checkedAt, got: v.got }
+  const result = a['earl:result']
+  return { conforme: result['earl:outcome'] === 'earl:passed', checkedAt: result['dct:date'], got: result['earl:info'] }
 })
 
 const badge = computed(() => {
@@ -31,11 +32,11 @@ const badge = computed(() => {
       : { key: 'testCase.gap', cls: 'fr-badge--error' }
   }
   switch (props.test.status) {
-    case 'valide':
+    case 'valid':
       return { key: 'testCase.valid', cls: 'fr-badge--success' }
-    case 'en_revue':
+    case 'pending':
       return { key: 'testCase.inReview', cls: 'fr-badge--new' }
-    case 'echec':
+    case 'failing':
       return { key: 'testCase.failed', cls: 'fr-badge--error' }
     default:
       return { key: 'testCase.unknown', cls: 'fr-badge--grey' }

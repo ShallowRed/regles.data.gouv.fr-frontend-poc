@@ -11,12 +11,12 @@
  * le premier littéral disponible.
  *
  * Rôle stratégique : outil de discussion du contrat d'interface front ↔ data. L'adaptateur
- * remplit ce qu'il peut depuis le profil, et liste explicitement dans `gaps` les champs du
- * schéma catalogue SANS équivalent côté data (la « couche confiance » : maturité, régime de
- * certification, enveloppe de tests, frontière...). Cette liste est affichée sur la fiche.
+ * remplit ce qu'il peut depuis le profil, lit la surcouche `rdgf:` quand la fiche la contient
+ * (contrat-interface/decisions/), et liste dans `gaps` les termes de cette surcouche absents
+ * de la fiche. Cette liste est affichée sur la fiche.
  */
 
-import type { LegalReference, Rule, RuleBoundaryInput, RuleEngine, RuleOutput } from '~/types'
+import type { Certification, LegalReference, OperationalMapping, Rule, RuleBoundaryInput, RuleEngine, RuleOutput, RuleTest, RuleVersion } from '~/types'
 
 interface JsonldNode {
   'id'?: string
@@ -27,11 +27,15 @@ interface JsonldNode {
 export interface JsonldAdaptation {
   /** Champs de Rule dérivables du profil data. */
   base: Partial<Rule>
-  /** Entrées (cv:hasInput) projetées en frontière ; kind par défaut `declaration`, à requalifier par la couche catalogue. */
+  /** Entrées (cpsv:hasInput) projetées en frontière ; kind par défaut `declared`, à requalifier côté catalogue. */
   boundaryDraft: RuleBoundaryInput[]
   /** Sorties (cpsv:produces), sorties d'explicabilité détectées. */
   outputs: RuleOutput[]
-  /** Champs du schéma catalogue sans équivalent dans la fiche source. */
+  /** Enveloppes des cas de tests (`rdgf:testCase`), sans les cas eux-mêmes. */
+  tests: RuleTest[]
+  /** Événements de version (`rdgf:versionEvent`). */
+  versions: RuleVersion[]
+  /** Termes de la surcouche `rdgf:` absents de la fiche source. */
   gaps: string[]
 }
 
@@ -227,11 +231,16 @@ const engineFromLanguages = (languages: string[]): RuleEngine => {
   return 'autre'
 }
 
-/**
- * Écarts de profil affichés sur la fiche. Ils décrivent la fiche source, pas la règle :
- * leur texte vit donc ici, dans la langue demandée, et non dans les fichiers de traduction
- * (l'adaptateur tourne aussi hors Nuxt, cf. scripts/check-contrat.mjs).
- */
+/** Libellé d'un organisme référencé par identifiant dans le graphe (`skos:prefLabel`), sinon l'identifiant. */
+function agentLabel(ref: unknown, graph: JsonldNode[], locale: string): string | undefined {
+  const id = typeof ref === 'string' ? ref : nodeId(ref)
+  if (!id)
+    return undefined
+  const node = resolveNodeRef(id, graph)
+  return (node ? literal(node['skos:prefLabel'], locale) ?? nodeTitle(node, locale) : undefined) ?? id
+}
+
+/** Écarts de profil affichés sur la fiche. Ils décrivent la fiche source, pas la règle : leur texte est ici, dans la langue demandée, et non dans les fichiers de traduction (l'adaptateur s'exécute aussi hors Nuxt, cf. scripts/check-contrat.mjs). */
 const profileGapText: Record<string, Record<string, string>> = {
   parentTitle: {
     fr: 'titre du service parent (dct:title au niveau composite)',
@@ -245,21 +254,13 @@ const profileGapText: Record<string, Record<string, string>> = {
     fr: 'autorité compétente (nœud cv:PublicOrganisation référencé mais non décrit)',
     en: 'competent authority (cv:PublicOrganisation node referenced but left undescribed)',
   },
-  maturity: {
-    fr: 'niveau de maturité (échelle N0-N3) - rdgf:maturity',
-    en: 'maturity level (N0-N3 scale) - rdgf:maturity',
-  },
-  certificationRegime: {
-    fr: 'régime de certification (frontière / implémentation / référencement) - rdgf:certificationRegime',
-    en: 'certification regime (boundary / implementation / referenced) - rdgf:certificationRegime',
-  },
-  boundaryKind: {
-    fr: 'qualification de la frontière des entrées (déclaration / donnée attestée / sortie de règle) - rdgf:boundaryKind',
-    en: 'qualification of the input boundary (declared fact / attested data / rule output) - rdgf:boundaryKind',
+  factKind: {
+    fr: 'nature du fait de chaque entrée (déclaré / attesté / dérivé / contexte) - rdgf:factKind',
+    en: 'kind of fact of each input (declared / attested / derived / context) - rdgf:factKind',
   },
   testCase: {
-    fr: 'cas de tests structurés (seuls des liens bruts dct:source vers les fichiers de tests) - rdgf:testCase',
-    en: 'structured test cases (only raw dct:source links to the test files) - rdgf:testCase',
+    fr: 'enveloppe des cas de tests (seuls des liens bruts dct:source vers les fichiers de tests) - rdgf:testCase',
+    en: 'test case envelopes (only raw dct:source links to the test files) - rdgf:testCase',
   },
   versionEvent: {
     fr: 'historique de versions lié aux textes déclencheurs - rdgf:versionEvent',
@@ -332,8 +333,8 @@ export function adaptJsonldGraph(raw: string, locale: string = FALLBACK_LOCALE):
   })
   const apiUrl = apiChannel ? nodeId(apiChannel['foaf:page']) : undefined
 
-  // Entrées → frontière. Si la fiche porte l'extension rdgf:boundaryKind (profil couche
-  // confiance), on la lit ; sinon kind par défaut `declaration`, requalifiable côté catalogue.
+  // Entrées → frontière. Quand la fiche contient `rdgf:factKind` (ADR-0004), l'adaptateur
+  // le lit ; sinon kind par défaut `declared`, requalifiable côté catalogue.
   const seen = new Set<string>()
   let boundaryQualified = false
   let hasStructureInputs = false
@@ -354,7 +355,7 @@ export function adaptJsonldGraph(raw: string, locale: string = FALLBACK_LOCALE):
           return [{
             id: field.id,
             label: field.label,
-            kind: 'declaration' as const,
+            kind: 'declared' as const,
             definition: field.definition,
             required: field.required,
             group: field.group,
@@ -365,23 +366,18 @@ export function adaptJsonldGraph(raw: string, locale: string = FALLBACK_LOCALE):
       if (!id || seen.has(id))
         return []
       seen.add(id)
-      const declaredKind = literal(param['rdgf:boundaryKind']) as RuleBoundaryInput['kind'] | undefined
+      const declaredKind = literal(param['rdgf:factKind']) as RuleBoundaryInput['kind'] | undefined
       if (declaredKind)
         boundaryQualified = true
-      const evidence = param['rdgf:evidenceSource'] as JsonldNode | undefined
+      const publisherLabel = agentLabel(param['dct:publisher'], graph, locale)
       return [{
         id,
         label: inputLabel(param, locale),
-        kind: declaredKind ?? ('declaration' as const),
+        kind: declaredKind ?? ('declared' as const),
         definition: literal(param['cprmv:definition'], locale),
         required: param['schema:valueRequired'] === true,
-        ...(evidence
-          ? {
-              evidenceSource: {
-                label: nodeTitle(evidence, locale) ?? '',
-                url: nodeId(evidence['foaf:page']),
-              },
-            }
+        ...(publisherLabel
+          ? { publisher: { label: publisherLabel, url: nodeId(param['foaf:page']) ?? (typeof param['foaf:page'] === 'string' ? param['foaf:page'] : undefined) } }
           : {}),
       }]
     }),
@@ -403,14 +399,57 @@ export function adaptJsonldGraph(raw: string, locale: string = FALLBACK_LOCALE):
 
   const languages = sourceCode ? asArray(sourceCode['schema:programmingLanguage'] as string | string[]) : []
 
-  // Extensions « couche confiance » (profil rdgf:, cf. contrat-interface/profil-metadonnees.md).
-  // Quand la fiche les porte, l'adaptateur les lit et le gap correspondant disparaît :
-  // profileGaps → zéro est l'indicateur de convergence du contrat d'interface.
-  const maturity = literal(parent?.['rdgf:maturity']) as Rule['maturity'] | undefined
-  const certificationRegime = literal(parent?.['rdgf:certificationRegime']) as Rule['certificationRegime'] | undefined
-  const hasTestEnvelope = leaves.some(leaf => asArray(leaf['rdgf:testCase']).length > 0)
-    || asArray(parent?.['rdgf:testCase']).length > 0
-  const hasVersionEvents = asArray(parent?.['rdgf:versionEvent']).length > 0
+  // Surcouche `rdgf:` (contrat-interface/decisions/). Quand la fiche la contient, l'adaptateur
+  // la lit et l'écart correspondant disparaît : profileGaps → zéro est l'indicateur de
+  // convergence du contrat d'interface. Le niveau N0-N3 est calculé par le registre (ADR-0003).
+  const certificationNode = parent?.['rdgf:certification'] as JsonldNode | undefined
+  const certification: Certification | undefined = certificationNode
+    ? {
+        level: literal(certificationNode['rdgf:certificationLevel']) as Certification['level'],
+        byLabel: agentLabel(certificationNode['prov:wasAttributedTo'], graph, locale),
+        at: literal(certificationNode['dct:issued']),
+        version: literal((certificationNode['dct:conformsTo'] as JsonldNode | undefined)?.['dct:version']),
+        description: literal(certificationNode.description, locale) ?? literal(certificationNode['dct:description'], locale),
+      }
+    : undefined
+
+  const serviceNodes = [...new Set(parent && !leaves.includes(parent) ? [...leaves, parent] : leaves)]
+  const tests: RuleTest[] = serviceNodes.flatMap(node =>
+    asArray(node['rdgf:testCase'] as JsonldNode | JsonldNode[]).map((test, index) => ({
+      id: nodeId(test) ?? `${node['dct:identifier']}-test-${index + 1}`,
+      ruleId: String(parent?.['dct:identifier'] ?? ''),
+      label: nodeTitle(test, locale) ?? '',
+      scenario: literal(test.description, locale) ?? literal(test['dct:description'], locale) ?? '',
+      origin: literal(test['rdgf:origin']) as RuleTest['origin'],
+      status: literal(test['adms:status']) as RuleTest['status'],
+      validatedBy: agentLabel(test['prov:wasAttributedTo'], graph, locale),
+      validatedAt: literal(test['dct:date']),
+      legalAnchor: nodeId(test['cv:hasLegalResource']) ?? literal(test['cv:hasLegalResource']),
+      tolerance: literal(test['rdgf:tolerance']),
+      nativeFormat: literal(test['dct:format']) as RuleTest['nativeFormat'],
+      nativeRef: nodeId(test['dct:source']) ?? literal(test['dct:source']),
+    })),
+  )
+
+  const versions: RuleVersion[] = asArray(parent?.['rdgf:versionEvent'] as JsonldNode | JsonldNode[]).map((event, index) => ({
+    id: nodeId(event) ?? `${parent?.['dct:identifier']}-version-${index + 1}`,
+    ruleId: String(parent?.['dct:identifier'] ?? ''),
+    version: literal(event['dct:version']) ?? '',
+    publishedAt: literal(event['dct:issued']) ?? '',
+    changelog: literal(event.description, locale) ?? literal(event['dct:description'], locale) ?? '',
+    kind: literal(event['rdgf:changeKind']) as RuleVersion['kind'],
+    author: agentLabel(event['prov:wasAttributedTo'], graph, locale) ?? organismLabel ?? '',
+    triggeredBy: nodeId(event['rdgf:triggeredBy']) ?? literal(event['rdgf:triggeredBy']),
+  }))
+
+  const operationalMappings: OperationalMapping[] = asArray(parent?.['rdgf:operationalMapping'] as JsonldNode | JsonldNode[]).map(mapping => ({
+    label: nodeTitle(mapping, locale) ?? '',
+    from: literal(mapping['rdgf:mapsFrom'], locale) ?? '',
+    to: literal(mapping['rdgf:mapsTo'], locale) ?? '',
+    artifactUrl: nodeId(mapping['dct:source']) ?? literal(mapping['dct:source']) ?? '',
+    maintainedBy: agentLabel(mapping['dct:publisher'], graph, locale) ?? literal(mapping['dct:publisher'], locale) ?? '',
+    ciStatus: literal(mapping['adms:status']) as OperationalMapping['ciStatus'],
+  }))
 
   const base: Partial<Rule> = {
     title,
@@ -424,26 +463,22 @@ export function adaptJsonldGraph(raw: string, locale: string = FALLBACK_LOCALE):
     capabilities: {
       hasApiDocumentation: Boolean(apiUrl),
     },
-    ...(maturity ? { maturity } : {}),
-    ...(certificationRegime ? { certificationRegime } : {}),
+    ...(certification ? { certification } : {}),
+    ...(operationalMappings.length ? { operationalMappings } : {}),
+    ...(parent?.['rdgf:engineProfile'] ? { engineProfile: parent['rdgf:engineProfile'] as Rule['engineProfile'] } : {}),
   }
 
-  // Champs du schéma catalogue absents de la fiche : c'est la « couche confiance »,
-  // l'apport du front à la co-écriture du profil. Chaque gap disparaît quand la fiche
-  // adopte l'extension rdgf: correspondante.
-  if (!maturity)
-    gaps.push(gap('maturity'))
-  if (!certificationRegime)
-    gaps.push(gap('certificationRegime'))
+  // Termes de la surcouche absents de la fiche. L'absence d'engagement (`rdgf:certification`)
+  // n'est pas un écart : elle signifie que la règle est référencée (ADR-0002).
   if (!boundaryQualified)
-    gaps.push(gap('boundaryKind'))
-  if (!hasTestEnvelope)
+    gaps.push(gap('factKind'))
+  if (tests.length === 0)
     gaps.push(gap('testCase'))
-  if (!hasVersionEvents)
+  if (versions.length === 0)
     gaps.push(gap('versionEvent'))
-  if (hasStructureInputs)
+  if (hasStructureInputs && operationalMappings.length === 0)
     gaps.push(gap('operationalMapping'))
   gaps.push(gap('publicationNature'), gap('regulatoryPosition'), gap('updatedAt'))
 
-  return { base, boundaryDraft, outputs, gaps }
+  return { base, boundaryDraft, outputs, tests, versions, gaps }
 }

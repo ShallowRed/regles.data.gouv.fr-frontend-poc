@@ -4,8 +4,8 @@
  * Doctrine (ontologie localisée) : le catalogue ne définit pas de format de situation
  * universel - décrire une situation exigerait les entités et périodes du moteur, donc son
  * ontologie. Chaque règle publie ses tests dans le format natif de son moteur, et le
- * catalogue norme l'ENVELOPPE sociale du test : intention, provenance, validateur, statut,
- * période législative et version du moteur.
+ * catalogue norme l'ENVELOPPE du test (`rdgf:TestCase`, ADR-0006) : ce qu'il vérifie, origine,
+ * validateur, statut, période législative et version du moteur.
  *
  * Format aligné sur `shared-test-cases` d'aides-simplifiées (branche `tests-personas` :
  * `shared-test-cases/schema.json`) : source de vérité unique, non-régression CI, snapshots
@@ -56,21 +56,21 @@ export interface RuleTest {
   replayable?: boolean
   /** Unité du résultat attendu si numérique (par exemple `EUR`, `mois`) */
   expectedUnit?: string
-  /** Provenance du cas. */
-  source: 'administration' | 'communaute' | 'jurisprudence' | 'circulaire' | 'cas-reel-anonymise'
-  /** Statut de validation du cas */
-  status: 'valide' | 'en_revue' | 'echec'
-  /** Qui a validé ce cas (administration compétente, CI du dépôt source...). */
+  /** Origine du cas (`rdgf:origin`). */
+  origin: 'administration' | 'case-law' | 'circular' | 'anonymised-case' | 'community'
+  /** Statut de validation du cas (`adms:status`). */
+  status: 'valid' | 'pending' | 'failing'
+  /** Qui a validé ce cas (`prov:wasAttributedTo`) : administration compétente, CI du dépôt source... */
   validatedBy?: string
-  /** Date de validation (ISO 8601). */
+  /** Date de validation (`dct:date`, ISO 8601). */
   validatedAt?: string
   /** Ancre légale visée par le cas (version du texte). */
   legalAnchor?: string
   /** Tolérance d'écart acceptée sur le résultat, si numérique. */
   tolerance?: string
-  /** Format natif du test dans l'espace de noms du moteur. */
+  /** Format natif du test (`dct:format`). */
   nativeFormat?: RuleTestNativeFormat
-  /** Lien vers le test natif qui fait foi (dépôt source, idéalement pinné). */
+  /** Test natif de référence (`dct:source`), au commit désigné. */
   nativeRef?: string
   /**
    * Variable cible du rejeu automatique, dans l'espace de noms du moteur

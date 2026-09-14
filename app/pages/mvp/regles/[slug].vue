@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import verificationData from '~/data/verification.json'
+import { apiParametersAssertion, assertionForTest, testAssertionsFor, verificationDate } from '~/utils/verification'
 
 const { t, locale } = useI18n()
 const localePath = useLocalePath()
@@ -17,40 +17,40 @@ const engineTag = computed(() => (rule.value ? resolveTag(engineTagFor(rule.valu
 
 const primaryReference = computed(() => rule.value?.legalReferences[0])
 
-/** Tag du régime de certification, rendu comme ses voisins (axe : valeur + hint). */
-const regimeTag = computed(() => {
-  const spec = rule.value ? certificationTagFor(rule.value) : null
+/** Tag de l'engagement du producteur (ADR-0002), rendu comme ses voisins (axe : valeur + hint). */
+const guaranteeTag = computed(() => {
+  const spec = rule.value ? guaranteeTagFor(rule.value) : null
   return spec ? resolveTag(spec) : null
 })
 
-/** Présentation des natures d'entrées à la frontière de la règle. */
-const boundaryKindMeta: Record<string, { labelKey: string, icon: string, descriptionKey: string }> = {
-  'declaration': {
-    labelKey: 'fiche.boundaryKind.declarationLabel',
+/** Présentation des natures de fait des entrées (`rdgf:factKind`, ADR-0004). */
+const factKindMeta: Record<string, { labelKey: string, icon: string, descriptionKey: string }> = {
+  declared: {
+    labelKey: 'fiche.factKind.declaredLabel',
     icon: 'fr-icon-edit-line',
-    descriptionKey: 'fiche.boundaryKind.declarationDescription',
+    descriptionKey: 'fiche.factKind.declaredDescription',
   },
-  'donnee-attestee': {
-    labelKey: 'fiche.boundaryKind.attestedLabel',
+  attested: {
+    labelKey: 'fiche.factKind.attestedLabel',
     icon: 'fr-icon-checkbox-circle-line',
-    descriptionKey: 'fiche.boundaryKind.attestedDescription',
+    descriptionKey: 'fiche.factKind.attestedDescription',
   },
-  'sortie-regle': {
-    labelKey: 'fiche.boundaryKind.ruleOutputLabel',
+  derived: {
+    labelKey: 'fiche.factKind.derivedLabel',
     icon: 'fr-icon-git-merge-line',
-    descriptionKey: 'fiche.boundaryKind.ruleOutputDescription',
+    descriptionKey: 'fiche.factKind.derivedDescription',
   },
-  'contexte': {
-    labelKey: 'fiche.boundaryKind.contextLabel',
+  context: {
+    labelKey: 'fiche.factKind.contextLabel',
     icon: 'fr-icon-settings-5-line',
-    descriptionKey: 'fiche.boundaryKind.contextDescription',
+    descriptionKey: 'fiche.factKind.contextDescription',
   },
 }
 
-/** Entrées de la frontière groupées par nature, dans l'ordre déclaré ci-dessus. */
+/** Entrées groupées par nature de fait, dans l'ordre déclaré ci-dessus. */
 const boundaryGroups = computed(() => {
   const boundary = rule.value?.boundary ?? []
-  return Object.entries(boundaryKindMeta)
+  return Object.entries(factKindMeta)
     .map(([kind, meta]) => ({ kind, meta, inputs: boundary.filter(b => b.kind === kind) }))
     .filter(group => group.inputs.length > 0)
 })
@@ -143,10 +143,9 @@ const tabIcon: Record<RuleFicheTabKey, string> = {
 }
 
 const versionKindMeta: Record<string, { labelKey: string, badgeClass: string }> = {
-  majeur: { labelKey: 'fiche.versions.majeur', badgeClass: 'fr-badge--purple-glycine' },
-  mineur: { labelKey: 'fiche.versions.mineur', badgeClass: 'fr-badge--blue-cumulus' },
-  correctif: { labelKey: 'fiche.versions.correctif', badgeClass: 'fr-badge--yellow-tournesol' },
-  editorial: { labelKey: 'fiche.versions.editorial', badgeClass: 'fr-badge--grey' },
+  major: { labelKey: 'fiche.versions.major', badgeClass: 'fr-badge--purple-glycine' },
+  minor: { labelKey: 'fiche.versions.minor', badgeClass: 'fr-badge--blue-cumulus' },
+  legal: { labelKey: 'fiche.versions.legal', badgeClass: 'fr-badge--yellow-tournesol' },
 }
 
 const versions = computed(() => {
@@ -158,7 +157,7 @@ const versions = computed(() => {
     .slice(0, 6)
     .map(v => ({
       ...v,
-      kindMeta: versionKindMeta[v.kind] ?? versionKindMeta.mineur,
+      kindMeta: versionKindMeta[v.kind] ?? versionKindMeta.minor,
       trigger: v.triggeredBy ? legalReferences.value[v.triggeredBy] : undefined,
       isCurrent: v.version === r.version,
     }))
@@ -169,39 +168,34 @@ const tests = computed(() => {
   return r ? ruleTests.value.filter(t => t.ruleId === r.id) : []
 })
 
-/**
- * Résultat de vérification automatique par cas (adossé par testId), avec la date du dernier
- * run. Chaque carte de cas porte ainsi son propre statut « vérifié le / en échec ».
- */
-const verificationByTestId = computed<Record<string, { status: string, got: unknown, checkedAt: string }>>(() => {
-  const map: Record<string, { status: string, got: unknown, checkedAt: string }> = {}
-  for (const entry of verificationData.results ?? [])
-    map[entry.testId] = { status: entry.status, got: entry.got, checkedAt: verificationData.checkedAt }
-  return map
+/** Bilan des cas de la règle exécutés par le registre (assertions EARL, ADR-0006). */
+const testAssertions = computed(() => testAssertionsFor(tests.value.map(t => t.id)))
+
+/** Tag « résultats testés », établi par le registre depuis ses assertions (ADR-0006). */
+const resultsTag = computed(() => {
+  const spec = resultsTagFor(testAssertions.value)
+  return spec ? resolveTag(spec) : null
 })
 
 /**
- * Statut de la vérification automatique (pnpm verify:rules) : rejeu daté des cas de
- * l'enveloppe contre l'API déclarée dans la fiche. Le fichier est produit par le script,
- * jamais édité à la main.
+ * Bilan de la vérification automatique (pnpm verify:rules) : cas rejoués et contrôle de
+ * dérive fiche/API, lus dans les assertions EARL du registre.
  */
 const autoVerification = computed(() => {
   const r = rule.value
   if (!r)
     return null
-  const results = verificationData.results.filter(entry => entry.ruleId === r.id)
-  const schemaCheck = verificationData.schemaChecks?.find(entry => entry.ruleId === r.id)
-  if (!results.length && !schemaCheck)
+  const cases = testAssertions.value
+  const apiCheck = apiParametersAssertion(r.id)
+  if (!cases.total && !apiCheck)
     return null
-  const passing = results.filter(entry => entry.status === 'conforme').length
   return {
-    checkedAt: verificationData.checkedAt,
-    total: results.length,
-    passing,
-    allPassing: results.length > 0 && passing === results.length,
-    drift: schemaCheck?.drift === true,
-    declaredNotAccepted: schemaCheck?.declaredNotAccepted ?? [],
-    acceptedNotDeclared: schemaCheck?.acceptedNotDeclared ?? [],
+    checkedAt: verificationDate,
+    total: cases.total,
+    passing: cases.passing,
+    allPassing: cases.total > 0 && cases.failing === 0,
+    drift: apiCheck !== undefined && apiCheck['earl:result']['earl:outcome'] === 'earl:failed',
+    driftInfo: apiCheck?.['earl:result']['earl:info'] ?? '',
   }
 })
 
@@ -220,9 +214,25 @@ const verificationSummary = computed(() => {
   return t('fiche.tests.summaryPartial', { passing: v.passing, total: v.total, date })
 })
 
-const certifyingOrganism = computed(() => {
+/** Organisme qui s'engage : par identifiant du catalogue, sinon le libellé lu dans la fiche, sinon le producteur. */
+const guaranteeBy = computed(() => {
   const cert = rule.value?.certification
-  return cert ? organisms.value[cert.byOrganismId] : undefined
+  if (!cert)
+    return undefined
+  const organism = cert.byOrganismId ? organisms.value[cert.byOrganismId] : undefined
+  return organism?.acronym ?? organism?.name ?? cert.byLabel ?? rule.value?.organism.acronym ?? rule.value?.organism.name
+})
+
+/** Phrase de l'engagement : qui, depuis quand, sur quelle version. */
+const guaranteeSentence = computed(() => {
+  const cert = rule.value?.certification
+  if (!cert)
+    return ''
+  const parts = [t('fiche.meta.guaranteeBy', { who: guaranteeBy.value })]
+  if (cert.at)
+    parts.push(t('fiche.meta.guaranteeOn', { date: formatLong(cert.at) }))
+  const sentence = parts.join(' ')
+  return `${cert.version ? `${sentence}, ${t('fiche.meta.guaranteeVersion', { version: cert.version })}` : sentence}.`
 })
 
 /** Champ d'entrée typé, dérivé du cas d'exemple de l'aperçu. */
@@ -383,12 +393,20 @@ useHead(() => ({ title: title.value }))
                 :hint="engineTag.hint"
               />
             </li>
-            <li v-if="regimeTag">
+            <li v-if="guaranteeTag">
               <QualifiedTag
-                :axis="regimeTag.axis"
-                :value="regimeTag.value"
-                :tone="regimeTag.tone"
-                :hint="regimeTag.hint"
+                :axis="guaranteeTag.axis"
+                :value="guaranteeTag.value"
+                :tone="guaranteeTag.tone"
+                :hint="guaranteeTag.hint"
+              />
+            </li>
+            <li v-if="resultsTag">
+              <QualifiedTag
+                :axis="resultsTag.axis"
+                :value="resultsTag.value"
+                :tone="resultsTag.tone"
+                :hint="resultsTag.hint"
               />
             </li>
             <!-- <li class="fr-text--xs mb-0 fr-m-0 text-gray-500 ml-1">v{{ rule.version }}</li> -->
@@ -559,10 +577,10 @@ useHead(() => ({ title: title.value }))
                             v-if="input.definition"
                             class="text-gray-600"
                           > - {{ input.definition }}</span>
-                          <template v-if="input.evidenceSource">
+                          <template v-if="input.publisher">
                             <br>
                             <span class="fr-text--xs text-gray-600">
-                              {{ $t('fiche.description.attestedBy', { source: input.evidenceSource.label }) }}
+                              {{ $t('fiche.description.attestedBy', { source: input.publisher.label }) }}
                             </span>
                           </template>
                         </li>
@@ -711,26 +729,41 @@ useHead(() => ({ title: title.value }))
                     {{ rule.opposability === 'opposable' ? $t('opposability.bindingText') : $t('opposability.indicativeText') }}
                   </p>
                 </div>
+                <!-- Garantie du producteur (rdgf:certification, ADR-0002) -->
                 <div
-                  v-if="rule.certification && certifyingOrganism"
-                  class="border border-[#b8e6c5] rounded bg-[#f0fbf3] p-4 space-y-2"
+                  class="border rounded p-4 space-y-2"
+                  :class="rule.certification
+                    ? (rule.certification.level === 'certified' ? 'border-[#b8e6c5] bg-[#f0fbf3]' : 'border-[#b6cffb] bg-[#f4f6fe]')
+                    : 'border-gray-200 bg-gray-50'"
                 >
-                  <h3 class="flex items-center gap-2 fr-text--sm mb-0 font-bold m-0 text-[#18753c]">
+                  <p class="fr-text--xs mb-0 uppercase tracking-wide text-gray-500 m-0">
+                    {{ $t('fiche.meta.guaranteeTitle') }}
+                  </p>
+                  <h3
+                    class="flex items-center gap-2 fr-text--sm mb-0 font-bold m-0"
+                    :class="rule.certification
+                      ? (rule.certification.level === 'certified' ? 'text-[#18753c]' : 'text-[#0063cb]')
+                      : 'text-gray-700'"
+                  >
                     <span
-                      class="fr-icon-success-fill fr-icon--sm"
+                      :class="rule.certification
+                        ? (rule.certification.level === 'certified' ? 'fr-icon-success-fill' : 'fr-icon-git-repository-line')
+                        : 'fr-icon-information-line'"
+                      class="fr-icon--sm"
                       aria-hidden="true"
                     />
-                    {{ $t('fiche.meta.certifiedResults') }}
+                    {{ rule.certification
+                      ? (rule.certification.level === 'certified' ? $t('fiche.meta.guaranteeCertified') : $t('fiche.meta.guaranteeSelfAssessed'))
+                      : $t('fiche.meta.guaranteeNone') }}
                   </h3>
-                  <p class="fr-text--xs mb-0 text-gray-700 m-0">
-                    {{ $t('fiche.meta.certifiedBy') }} <strong>{{ certifyingOrganism.acronym ?? certifyingOrganism.name }}</strong>
-                    {{ $t('fiche.meta.certifiedOn', { date: formatLong(rule.certification.at) }) }}
-                  </p>
                   <p
-                    v-if="rule.certification.ref"
-                    class="fr-text--xs mb-0 text-gray-600 m-0"
+                    v-if="rule.certification"
+                    class="fr-text--xs mb-0 text-gray-700 m-0"
                   >
-                    {{ $t('fiche.meta.certificationRef', { ref: rule.certification.ref }) }}
+                    {{ guaranteeSentence }}
+                  </p>
+                  <p class="fr-text--xs mb-0 text-gray-600 m-0">
+                    {{ rule.certification ? (rule.certification.description ?? '') : $t('fiche.meta.guaranteeNoneText') }}
                   </p>
                 </div>
               </aside>
@@ -1120,9 +1153,7 @@ useHead(() => ({ title: title.value }))
                       class="fr-text--sm mb-0 text-gray-700 m-0"
                     >
                       {{ $t('fiche.tests.gapBefore') }}
-                      (<code class="fr-text--xs">{{ autoVerification.declaredNotAccepted.join(', ') }}</code>).
-                      {{ $t('fiche.tests.gapMiddle') }}
-                      <code class="fr-text--xs">{{ autoVerification.acceptedNotDeclared.slice(0, 3).join(', ') }}…</code>
+                      <code class="fr-text--xs">{{ autoVerification.driftInfo }}</code>.
                       {{ $t('fiche.tests.gapAfter') }}
                     </p>
                   </div>
@@ -1134,7 +1165,7 @@ useHead(() => ({ title: title.value }))
                     >
                       <RuleTestCase
                         :test="testCase"
-                        :verification="verificationByTestId[testCase.id]"
+                        :assertion="assertionForTest(testCase.id)"
                       />
                     </li>
                   </ul>

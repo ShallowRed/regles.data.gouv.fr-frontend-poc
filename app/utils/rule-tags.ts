@@ -5,7 +5,7 @@
  *
  * Les champs portent des clés de traduction : `useQualifiedTags()` les résout.
  */
-import type { CertificationRegime, Rule } from '~/types/rule'
+import type { CertificationLevel, Rule } from '~/types/rule'
 import { maturityMeta } from '~/utils/maturity'
 
 export interface QualifiedTagSpec {
@@ -48,21 +48,16 @@ const engineValueKey: Record<Rule['engine'], string> = {
   autre: 'tags.engine.autre',
 }
 
-const regimeSpec: Record<CertificationRegime, Omit<QualifiedTagSpec, 'axisKey'>> = {
-  frontiere: {
-    valueKey: 'tags.results.frontiere',
+const guaranteeSpec: Record<CertificationLevel, Omit<QualifiedTagSpec, 'axisKey'>> = {
+  'certified': {
+    valueKey: 'tags.guarantee.certified',
     tone: 'green',
-    hintKey: 'tags.results.hintFrontiere',
+    hintKey: 'tags.guarantee.hintCertified',
   },
-  implementation: {
-    valueKey: 'tags.results.implementation',
+  'self-assessed': {
+    valueKey: 'tags.guarantee.selfAssessed',
     tone: 'blue',
-    hintKey: 'tags.results.hintImplementation',
-  },
-  referencement: {
-    valueKey: 'tags.results.referencement',
-    tone: 'grey',
-    hintKey: 'tags.results.hintReferencement',
+    hintKey: 'tags.guarantee.hintSelfAssessed',
   },
 }
 
@@ -93,8 +88,17 @@ export function engineTagFor(rule: Rule): QualifiedTagSpec {
   }
 }
 
-/** Tag du régime de certification, rendu comme ses voisins. */
-export function certificationTagFor(rule: Rule): QualifiedTagSpec | null {
-  const regime = rule.certificationRegime
-  return regime ? { axisKey: 'tags.results.axis', ...regimeSpec[regime] } : null
+/** Tag de l'engagement du producteur (ADR-0002) ; aucun tag quand la règle est référencée. */
+export function guaranteeTagFor(rule: Rule): QualifiedTagSpec | null {
+  const level = rule.certification?.level
+  return level ? { axisKey: 'tags.guarantee.axis', ...guaranteeSpec[level] } : null
+}
+
+/** Tag établi par le registre depuis ses assertions EARL (ADR-0006) ; aucun tag sans exécution. */
+export function resultsTagFor(assertions: { total: number, failing: number }): QualifiedTagSpec | null {
+  if (assertions.total === 0)
+    return null
+  return assertions.failing === 0
+    ? { axisKey: 'tags.results.axis', valueKey: 'tags.results.tested', tone: 'green', hintKey: 'tags.results.hintTested' }
+    : { axisKey: 'tags.results.axis', valueKey: 'tags.results.gap', tone: 'yellow', hintKey: 'tags.results.hintGap' }
 }

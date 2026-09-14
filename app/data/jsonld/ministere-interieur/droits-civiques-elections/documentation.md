@@ -10,6 +10,10 @@ Vérification algorithmique de l'éligibilité au droit de vote en France (élec
 - **Autorité compétente** : Ministère de l'Intérieur
 - **Période de validité indicative** : `2024-01-01/` (ne couvre pas le droit transitoire : savoir quelle version s'applique est une règle, pas une métadonnée)
 
+## Garantie du producteur
+
+Règle référencée : le producteur ne s'engage pas sur les résultats. La fiche décrit la règle, sa base légale et son organisme.
+
 ## Base légale
 
 - [Code électoral](https://www.legifrance.gouv.fr/codes/id/LEGITEXT000006070239/) - Art. L.2 à L.7, L.O. 227-1

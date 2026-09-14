@@ -26,11 +26,11 @@ export type RuleDomain
     | 'citoyennete'
 
 /**
- * Niveau de maturité d'une règle.
- * - N0 : référencée (titre + organisme + texte légal)
- * - N1 : métadonnées CPRMV complètes
- * - N2 : code source publié et cas de tests
- * - N3 : exécutable (API ou widget intégrable)
+ * Niveau d'une règle, calculé par le registre (ADR-0003), jamais lu dans une fiche.
+ * - N0 : référencée (organisme et base légale)
+ * - N1 : documentée (version, description, entrées et sorties)
+ * - N2 : vérifiée (tests exécutés avec succès par le registre)
+ * - N3 : exécutable (canal d'exécution : API ou moteur embarqué)
  */
 export type MaturityLevel = 'N0' | 'N1' | 'N2' | 'N3'
 
@@ -50,38 +50,32 @@ export type RegulatoryPosition
     | 'rescrit-certifie'
 
 /**
- * Régime de certification d'une règle. Le catalogue assume plusieurs régimes
- * (variantes de schéma selon les propriétés de la règle) plutôt qu'une promesse uniforme.
- * - frontiere : règle packageable (propriétaire clair, dépendances peu profondes).
- *   L'administration certifie le comportement entrées → sorties sur des faits déclarés,
- *   à une version donnée (sémantique du rescrit). Les cas de tests sont l'artefact de certification.
- * - implementation : règle du cœur systémique (chaîne de dépendances transitive : SMIC,
- *   bases ressources…). L'unité cataloguée est « la règle telle que calculée par telle
- *   implémentation à tel snapshot » ; l'unité certifiable est le couple tests + snapshot.
- * - referencement : entrée simplement référencée (métadonnées descriptives, ni code ni tests publiés).
+ * Niveau d'engagement du producteur (`rdgf:certificationLevel`, ADR-0002).
+ * - certified : l'organisme répond des résultats calculés sur les faits déclarés, à la version indiquée.
+ * - self-assessed : l'organisme publie le code et les tests à un commit désigné.
+ * L'absence d'engagement signifie que la règle est référencée.
  */
-export type CertificationRegime = 'frontiere' | 'implementation' | 'referencement'
+export type CertificationLevel = 'certified' | 'self-assessed'
 
 /**
- * Nature d'une entrée à la frontière de la règle. Un badge « certifiée » doit dire ce qu'il
- * couvre : la certification porte sur les faits déclarés, pas sur la provenance amont.
- * - declaration : fait déclaré par l'usager, non vérifié.
- * - donnee-attestee : donnée administrative avec un propriétaire institutionnel
- *   (ex. RFR servi par la DGFiP via API Particulier). Logique Evidence de CCCEV.
- * - sortie-regle : résultat d'une autre règle ou paramètre législatif partagé (ex. SMIC).
- * - contexte : paramètre d'exécution qui change la règle appliquée (ex. type d'élection).
+ * Nature du fait d'une entrée (`rdgf:factKind`, ADR-0004). Un engagement « résultats certifiés »
+ * couvre les résultats calculés sur les faits déclarés ; la nature dit qui répond de chaque valeur.
+ * - declared : déclaré par la personne, non vérifié.
+ * - attested : attesté par une administration qui en répond, mobilisable par une API.
+ * - derived : sortie d'une autre règle ou paramètre partagé (SMIC).
+ * - context : choisit la règle appliquée (type d'élection).
  */
-export type BoundaryKind = 'declaration' | 'donnee-attestee' | 'sortie-regle' | 'contexte'
+export type FactKind = 'declared' | 'attested' | 'derived' | 'context'
 
 /** Entrée de la règle, classée à sa frontière. */
 export interface RuleBoundaryInput {
   id: string
   label: string
-  kind: BoundaryKind
+  kind: FactKind
   /** Définition juridique sourcée (reprise de cprmv:definition quand issue du profil data). */
   definition?: string
-  /** Pour une donnée attestée : qui l'atteste, et par quel canal. */
-  evidenceSource?: { label: string, url?: string }
+  /** Pour un fait attesté : l'organisme qui en répond (`dct:publisher`) et l'accès (`foaf:page`). */
+  publisher?: { label: string, url?: string }
   required?: boolean
   /** Structure composite d'origine quand la fiche déclare des shapes SHACL (« Ménage › Foyer fiscal »). */
   group?: string
@@ -97,29 +91,37 @@ export interface RuleOutput {
 }
 
 /**
- * Mapping opérationnel recensé. Le catalogue ne rédige pas de dictionnaire de
- * correspondances : il recense des mappings qui tournent (exercés par une CI qui casse
- * quand ils deviennent faux), avec propriétaire et statut.
+ * Correspondance opérationnelle recensée (`rdgf:operationalMapping`, ADR-0017). Le registre
+ * recense des projections en production, exercées par une intégration continue, avec leur
+ * mainteneur et l'état de cette intégration.
  */
 export interface OperationalMapping {
   label: string
-  /** Espace de départ (ex. « formulaire déclaratif aides-simplifiées »). */
+  /** Espace de départ (`rdgf:mapsFrom`). */
   from: string
-  /** Espace d'arrivée (ex. « entités/périodes OpenFisca France »). */
+  /** Espace d'arrivée (`rdgf:mapsTo`). */
   to: string
+  /** Artefact en production (`dct:source`). */
   artifactUrl: string
+  /** Mainteneur (`dct:publisher`). */
   maintainedBy: string
+  /** État de l'intégration continue (`adms:status`). */
   ciStatus?: 'passing' | 'failing' | 'unknown'
 }
 
-/** Certification d'un résultat par une administration. */
+/** Engagement du producteur (`rdgf:certification`, ADR-0002). */
 export interface Certification {
-  /** Administration qui certifie ; on garde un id léger pour éviter une dépendance circulaire. */
-  byOrganismId: string
-  /** Date de certification (ISO 8601). */
-  at: string
-  /** Référence du rescrit ou du document de certification, si applicable. */
-  ref?: string
+  level: CertificationLevel
+  /** Organisme qui s'engage (`prov:wasAttributedTo`), par identifiant du catalogue. */
+  byOrganismId?: string
+  /** Libellé de l'organisme quand il est lu dans la fiche. */
+  byLabel?: string
+  /** Date de l'engagement (`dct:issued`, ISO 8601). */
+  at?: string
+  /** Version couverte (`dct:conformsTo` › `dct:version`). */
+  version?: string
+  /** Périmètre en une phrase (`dct:description`). */
+  description?: string
 }
 
 export interface Rule {
@@ -159,11 +161,9 @@ export interface Rule {
   }
   /** Identifiants d'autres règles dont celle-ci dépend (variables partagées) */
   dependsOn?: string[]
-  /** Certification éventuelle (rescrit ou validation formelle). */
+  /** Engagement du producteur ; absent quand la règle est référencée. */
   certification?: Certification
-  /** Régime de certification applicable (variantes de schéma selon les propriétés de la règle). */
-  certificationRegime?: CertificationRegime
-  /** Frontière de la règle : entrées classées par nature (déclaration, donnée attestée, sortie de règle, contexte). */
+  /** Entrées de la règle, classées par nature de fait (déclaré, attesté, dérivé, contexte). */
   boundary?: RuleBoundaryInput[]
   /** Sorties produites, dont les sorties d'explicabilité. */
   outputs?: RuleOutput[]

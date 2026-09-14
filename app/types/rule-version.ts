@@ -1,6 +1,6 @@
 /**
- * Version historisée d'une règle.
- * Permet de tracer une divergence ou un changement (traçabilité juridique, revue collaborative, signalement de divergence).
+ * Version publiée d'une règle (`rdgf:versionEvent`, ADR-0008) : un événement daté par version,
+ * relié au texte qui l'a déclenchée.
  */
 export interface RuleVersion {
   id: string
@@ -11,8 +11,8 @@ export interface RuleVersion {
   publishedAt: string
   /** Résumé éditorial du changement */
   changelog: string
-  /** Type de changement principal */
-  kind: 'majeur' | 'mineur' | 'correctif' | 'editorial'
+  /** Nature du changement (`rdgf:changeKind`, ADR-0008). */
+  kind: 'major' | 'minor' | 'legal'
   /** Auteur ou organisme à l'origine du changement */
   author: string
   /**
