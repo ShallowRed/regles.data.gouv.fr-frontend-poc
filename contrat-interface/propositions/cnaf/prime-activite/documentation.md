@@ -3,17 +3,19 @@
 > Documentation générée depuis `metadata.jsonld` par `scripts/generate-fiche-doc.mjs` - ne pas éditer à la main.
 > Fiche source : `contrat-interface/propositions/cnaf/prime-activite/metadata.jsonld`
 
-Prestation du cœur socio-fiscal : sa chaîne de dépendances (SMIC, bases ressources, définitions de revenus) n'a pas de porteur unique. Elle est cataloguée en régime implémentation : le couple suite de tests + snapshot openfisca-france fait foi, pas la règle dans l'abstrait.
+Prestation du cœur socio-fiscal : sa chaîne de dépendances (SMIC, bases ressources, définitions de revenus) n'a pas de porteur unique. La fiche décrit la prime d'activité telle que la calcule openfisca-france à la version indiquée ; le couple suite de tests native et code à cette version constitue la référence.
 
 - **Identifiant** : `solidarite.prime-activite.openfisca-france`
+- **Version** : 169.15.0
 - **Autorité compétente** : Caisse nationale des allocations familiales
-- **Maturité** : N2 (échelle N0 référencée → N3 exécutable)
 
-## Régime de certification
+## Garantie du producteur
 
-**Régime implémentation.** Règle du cœur socio-fiscal : sa chaîne de dépendances (SMIC, bases ressources, définitions de revenus) n'a pas de porteur administratif unique. L'unité cataloguée est la règle telle que calculée par une implémentation donnée ; l'unité certifiable est le couple suite de tests + snapshot d'implémentation.
+**Code et tests publiés.** L'organisme publie le code et les tests à un commit désigné. Le profil exige un dépôt désigné à un commit et une suite de tests native référencée.
 
-Snapshot d'implémentation : [https://github.com/openfisca/openfisca-france](https://github.com/openfisca/openfisca-france) - référence : suivi continu (préciser un tag/SHA au moment de la certification).
+Engagement de communauté openfisca-france, version 169.15.0.
+
+Code et suite de tests native publiés à la version indiquée ; aucun engagement de la CNAF sur les résultats.
 
 ## Base légale
 
@@ -21,11 +23,11 @@ Snapshot d'implémentation : [https://github.com/openfisca/openfisca-france](htt
 
 ## Paramètres d'entrée
 
-| Paramètre | Type | Obligatoire | Nature de frontière | Définition |
-|-----------|------|-------------|---------------------|------------|
-| **Salaires des 3 derniers mois**<br>`salaire_de_base` | nombre décimal | obligatoire | déclaration (fait déclaré par l'usager, non vérifié) | Revenus d'activité déclarés par l'usager sur le trimestre de référence. |
-| **Revenu fiscal de référence**<br>`rfr` | nombre décimal | optionnel | donnée attestée (propriétaire institutionnel identifié) | Revenu fiscal de référence du foyer.<br>Attestée par : [DGFiP, mobilisable via API Particulier](https://particulier.api.gouv.fr) |
-| **Montant forfaitaire et SMIC**<br>`montant_forfaitaire` | nombre décimal | optionnel | sortie d'une autre règle ou paramètre législatif partagé | Paramètres législatifs partagés du cœur socio-fiscal, maintenus dans openfisca-france ; aucun porteur administratif unique. |
+| Paramètre | Type | Obligatoire | Nature du fait | Définition |
+|-----------|------|-------------|----------------|------------|
+| **Salaires des 3 derniers mois**<br>`salaire_de_base` | nombre décimal | obligatoire | fait déclaré par la personne, non vérifié | Revenus d'activité déclarés par l'usager sur le trimestre de référence. |
+| **Revenu fiscal de référence**<br>`rfr` | nombre décimal | optionnel | donnée attestée par une administration qui en répond | Revenu fiscal de référence du foyer.<br>Attestée par [Direction générale des Finances publiques](https://particulier.api.gouv.fr) |
+| **Montant forfaitaire et SMIC**<br>`montant_forfaitaire` | nombre décimal | optionnel | sortie d'une autre règle ou paramètre partagé | Paramètres législatifs partagés du cœur socio-fiscal, maintenus dans openfisca-france ; aucun porteur administratif unique. |
 
 ## Sorties
 
@@ -33,19 +35,26 @@ Snapshot d'implémentation : [https://github.com/openfisca/openfisca-france](htt
 
 ## Canaux d'accès
 
-- **Moteur de microsimulation (Python, exécution serveur)** : Calcul via openfisca-france (paquet Python) ; exposition API possible via openfisca-core web-api. ([lien](https://github.com/openfisca/openfisca-france))
+- **Moteur de microsimulation (Python, exécution serveur)** : Calcul via openfisca-france (paquet Python) ; exposition API possible via openfisca-core web-api.
 
 ## Cas de tests
 
-Les tests natifs font foi ; le catalogue publie leur enveloppe (intention, provenance, validation), jamais un format de situation commun.
+Le test natif constitue la référence ; la fiche publie son enveloppe (ce qu'il vérifie, origine, validation). Les résultats d'exécution du registre sont publiés à part, en assertions EARL.
 
-- **Intention** : Suite de tests native openfisca-france : variables périodisées et entités composées, non transposables dans un format plat sans perte de sens.
-  - provenance : communauté · validé par : Intégration continue openfisca-france · statut : valide · format natif : `openfisca-yaml`
-  - [Tests natifs (référence qui fait foi)](https://github.com/openfisca/openfisca-france/tree/master/tests)
+- **Suite de tests native openfisca-france**
+  - Variables périodisées et entités composées, dans le format YAML du moteur, non transposables dans un format plat sans perte de sens.
+  - origine : communauté · validé par : communauté openfisca-france · statut : valid · format natif : `openfisca-yaml`
+  - [Test natif de référence](https://github.com/openfisca/openfisca-france/tree/169.15.0/tests)
 
-## Mappings opérationnels recensés
+## Correspondances opérationnelles recensées
 
-Le catalogue recense des correspondances qui tournent (exercées par une CI), il n'en rédige aucune.
+Le registre recense des correspondances en production, exercées par une intégration continue ; il n'en rédige aucune.
 
 - **Situation déclarative → entités et périodes OpenFisca** : formulaire déclaratif aides-simplifiées (description plate) → entités individu / famille / foyer fiscal / ménage, variables périodisées
   - [artefact](https://github.com/betagouv/aides-simplifiees-app/blob/main/inertia/services/openfisca/dispatchers.ts) · maintenu par : aides-simplifiées (service en cours de fermeture) · statut CI : unknown
+
+## Code source
+
+- **Dépôt** : [openfisca-france](https://github.com/openfisca/openfisca-france/tree/169.15.0) (épinglé à une révision précise)
+- **Langage(s)** : Python
+- Modèle socio-fiscal français pour OpenFisca ; la prime d'activité est la variable `ppa`.

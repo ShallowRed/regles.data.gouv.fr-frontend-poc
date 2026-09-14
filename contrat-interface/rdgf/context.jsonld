@@ -1,0 +1,63 @@
+{
+  "@context": {
+    "@version": 1.1,
+    "cpsv": "http://purl.org/vocab/cpsv#",
+    "cv": "http://data.europa.eu/m8g/",
+    "dct": "http://purl.org/dc/terms/",
+    "eli": "http://data.europa.eu/eli/ontology#",
+    "skos": "http://www.w3.org/2004/02/skos/core#",
+    "schema": "http://schema.org/",
+    "foaf": "http://xmlns.com/foaf/0.1/",
+    "org": "http://www.w3.org/ns/org#",
+    "prov": "http://www.w3.org/ns/prov#",
+    "adms": "http://www.w3.org/ns/adms#",
+    "earl": "http://www.w3.org/ns/earl#",
+    "sh": "http://www.w3.org/ns/shacl#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "cprmv": "https://standaarden.open-regels.nl/standards/cprmv/0.4.1#",
+    "rdgf": "https://regles.data.gouv.fr/def/rdgf#",
+    "id": "@id",
+    "type": "@type",
+    "title": { "@id": "dct:title", "@language": "fr" },
+    "description": { "@id": "dct:description", "@language": "fr" },
+    "cprmv:type": { "@type": "@id" },
+    "sh:datatype": { "@type": "@id" },
+    "dct:issued": { "@type": "xsd:date" },
+    "dct:date": { "@type": "xsd:date" },
+    "dct:source": { "@type": "@id" },
+    "dct:publisher": { "@type": "@id" },
+    "dct:conformsTo": { "@type": "@id" },
+    "prov:wasAttributedTo": { "@type": "@id" },
+    "foaf:page": { "@type": "@id" },
+    "rdgf:certification": { "@type": "@id" },
+    "rdgf:certificationLevel": {
+      "@type": "@vocab",
+      "@context": { "@vocab": "https://regles.data.gouv.fr/def/rdgf/certificationLevel/" }
+    },
+    "rdgf:factKind": {
+      "@type": "@vocab",
+      "@context": { "@vocab": "https://regles.data.gouv.fr/def/rdgf/factKind/" }
+    },
+    "rdgf:testCase": { "@type": "@id", "@container": "@set" },
+    "rdgf:origin": {
+      "@type": "@vocab",
+      "@context": { "@vocab": "https://regles.data.gouv.fr/def/rdgf/origin/" }
+    },
+    "rdgf:tolerance": { "@type": "xsd:string" },
+    "rdgf:operationalMapping": { "@type": "@id", "@container": "@set" },
+    "rdgf:mapsFrom": { "@type": "xsd:string" },
+    "rdgf:mapsTo": { "@type": "xsd:string" },
+    "rdgf:versionEvent": { "@type": "@id", "@container": "@set" },
+    "rdgf:changeKind": {
+      "@type": "@vocab",
+      "@context": { "@vocab": "https://regles.data.gouv.fr/def/rdgf/changeKind/" }
+    },
+    "rdgf:triggeredBy": { "@type": "@id" },
+    "rdgf:engineProfile": { "@type": "@json" },
+    "earl:assertor": { "@type": "@id" },
+    "earl:subject": { "@type": "@id" },
+    "earl:test": { "@type": "@id" },
+    "earl:outcome": { "@type": "@vocab" },
+    "earl:mode": { "@type": "@vocab" }
+  }
+}

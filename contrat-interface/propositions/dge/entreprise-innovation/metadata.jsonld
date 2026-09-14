@@ -1,5 +1,6 @@
 {
   "@context": {
+    "@version": 1.1,
     "cpsv": "http://purl.org/vocab/cpsv#",
     "cv": "http://data.europa.eu/m8g/",
     "dct": "http://purl.org/dc/terms/",
@@ -8,14 +9,38 @@
     "schema": "http://schema.org/",
     "foaf": "http://xmlns.com/foaf/0.1/",
     "org": "http://www.w3.org/ns/org#",
+    "prov": "http://www.w3.org/ns/prov#",
+    "adms": "http://www.w3.org/ns/adms#",
+    "sh": "http://www.w3.org/ns/shacl#",
     "xsd": "http://www.w3.org/2001/XMLSchema#",
-    "cprmv": "https://regels.overheid.nl/def/cprmv#",
-    "rdgf": "https://regles.data.gouv.fr/def/catalogue#",
+    "cprmv": "https://standaarden.open-regels.nl/standards/cprmv/0.4.1#",
+    "rdgf": "https://regles.data.gouv.fr/def/rdgf#",
     "id": "@id",
     "type": "@type",
     "title": { "@id": "dct:title", "@language": "fr" },
     "description": { "@id": "dct:description", "@language": "fr" },
-    "cprmv:type": { "@id": "https://regels.overheid.nl/def/cprmv#type", "@type": "@id" }
+    "cprmv:type": { "@type": "@id" },
+    "sh:datatype": { "@type": "@id" },
+    "dct:issued": { "@type": "xsd:date" },
+    "dct:date": { "@type": "xsd:date" },
+    "dct:source": { "@type": "@id" },
+    "dct:publisher": { "@type": "@id" },
+    "dct:conformsTo": { "@type": "@id" },
+    "prov:wasAttributedTo": { "@type": "@id" },
+    "foaf:page": { "@type": "@id" },
+    "rdgf:certification": { "@type": "@id" },
+    "rdgf:certificationLevel": { "@type": "@vocab", "@context": { "@vocab": "https://regles.data.gouv.fr/def/rdgf/certificationLevel/" } },
+    "rdgf:factKind": { "@type": "@vocab", "@context": { "@vocab": "https://regles.data.gouv.fr/def/rdgf/factKind/" } },
+    "rdgf:testCase": { "@type": "@id", "@container": "@set" },
+    "rdgf:origin": { "@type": "@vocab", "@context": { "@vocab": "https://regles.data.gouv.fr/def/rdgf/origin/" } },
+    "rdgf:tolerance": { "@type": "xsd:string" },
+    "rdgf:operationalMapping": { "@type": "@id", "@container": "@set" },
+    "rdgf:mapsFrom": { "@type": "xsd:string" },
+    "rdgf:mapsTo": { "@type": "xsd:string" },
+    "rdgf:versionEvent": { "@type": "@id", "@container": "@set" },
+    "rdgf:changeKind": { "@type": "@vocab", "@context": { "@vocab": "https://regles.data.gouv.fr/def/rdgf/changeKind/" } },
+    "rdgf:triggeredBy": { "@type": "@id" },
+    "rdgf:engineProfile": { "@type": "@json" }
   },
   "@graph": [
     {
@@ -23,6 +48,7 @@
       "type": "cpsv:PublicService",
 
       "dct:identifier": "fiscalite.entreprise-innovation.v1",
+      "dct:version": "1.0.0",
       "title": "Aides fiscales à l'innovation - CIR, CII, CICo, JEI, JEU, JEC",
       "description": "Éligibilité et montant des six dispositifs fiscaux de soutien à l'innovation des entreprises. Modélisation Publicodes coconstruite avec un expert métier de la DGFiP, exposée en iframe sur entreprendre.service-public.fr (DILA).",
 
@@ -52,7 +78,7 @@
           "cprmv:definition": "Activité commerciale, industrielle, agricole ou artisanale (conditionne l'éligibilité au CIR, art. 244 quater B).",
           "cprmv:type": "xsd:string",
           "schema:valueRequired": true,
-          "rdgf:boundaryKind": "declaration"
+          "rdgf:factKind": "declared"
         },
         {
           "id": "https://regles.data.gouv.fr/regles/dge/entreprise-innovation/v1#input-regimeFiscal",
@@ -62,7 +88,7 @@
           "cprmv:definition": "Imposition au régime réel ou condition d'exonération (art. 244 quater B).",
           "cprmv:type": "xsd:string",
           "schema:valueRequired": true,
-          "rdgf:boundaryKind": "declaration"
+          "rdgf:factKind": "declared"
         },
         {
           "id": "https://regles.data.gouv.fr/regles/dge/entreprise-innovation/v1#input-depensesRecherche",
@@ -72,7 +98,7 @@
           "cprmv:definition": "Assiette du crédit d'impôt : 30 % jusqu'à 100 M€ puis 5 % en métropole, 50 % dans les DOM.",
           "cprmv:type": "xsd:decimal",
           "schema:valueRequired": true,
-          "rdgf:boundaryKind": "declaration"
+          "rdgf:factKind": "declared"
         }
       ],
 
@@ -94,25 +120,60 @@
 
       "dct:subject": ["innovation", "cir", "cii", "jei", "credit-impot", "entreprises"],
 
-      "rdgf:maturity": "N3",
-      "rdgf:certificationRegime": "frontiere",
+      "rdgf:certification": {
+        "type": "rdgf:Certification",
+        "rdgf:certificationLevel": "certified",
+        "prov:wasAttributedTo": { "id": "https://regles.data.gouv.fr/regles/dge/entreprise-innovation/v1#organisation" },
+        "dct:conformsTo": { "id": "https://regles.data.gouv.fr/regles/dge/entreprise-innovation/v1", "dct:version": "1.0.0" },
+        "description": "Résultats certifiés sur les faits déclarés, à la version indiquée : règles coconstruites avec un expert métier de la DGFiP."
+      },
+
+      "rdgf:testCase": [
+        {
+          "id": "https://regles.data.gouv.fr/regles/dge/entreprise-innovation/v1#test-cir-bareme-metropole-100k",
+          "type": "rdgf:TestCase",
+          "title": "Industrielle au réel, 100 000 € de dépenses",
+          "description": "Entreprise industrielle au régime réel : 100 000 € de dépenses de recherche en métropole ouvrent un crédit de 30 % (première tranche du barème).",
+          "rdgf:origin": "community",
+          "dct:date": "2026-07-09",
+          "adms:status": "valid",
+          "dct:format": "publicodes-yaml",
+          "dct:source": "https://github.com/betagouv/publicodes-entreprise-innovation/blob/fc8e9a8ac572b03d75504a2aba39d5633c0b25ea/src/dispositifs/cir.publicodes",
+          "cv:hasLegalResource": { "id": "https://www.legifrance.gouv.fr/codes/id/LEGITEXT000006069577/" },
+          "rdgf:tolerance": "0.01"
+        },
+        {
+          "id": "https://regles.data.gouv.fr/regles/dge/entreprise-innovation/v1#test-cir-non-eligible-artisanale-bnc",
+          "type": "rdgf:TestCase",
+          "title": "Artisanale en BNC : non éligible",
+          "description": "Une activité artisanale imposée en BNC est hors du champ du CIR ; la sortie « explications » motive le refus.",
+          "rdgf:origin": "community",
+          "dct:date": "2026-07-09",
+          "adms:status": "valid",
+          "dct:format": "publicodes-yaml",
+          "dct:source": "https://github.com/betagouv/publicodes-entreprise-innovation/blob/fc8e9a8ac572b03d75504a2aba39d5633c0b25ea/src/dispositifs/cir.publicodes",
+          "cv:hasLegalResource": { "id": "https://www.legifrance.gouv.fr/codes/id/LEGITEXT000006069577/" }
+        }
+      ],
+
       "rdgf:operationalMapping": [
         {
           "type": "rdgf:OperationalMapping",
           "title": "Formulaire déclaratif → variables Publicodes",
-          "rdgf:from": "survey-schema aides-simplifiées (entreprise-innovation.json)",
-          "rdgf:to": "règles publicodes-entreprise-innovation",
-          "rdgf:artifact": { "id": "https://github.com/betagouv/aides-simplifiees-app/blob/main/public/forms/entreprise-innovation.json" },
-          "rdgf:maintainedBy": "aides-simplifiées (service en cours de fermeture)",
-          "rdgf:ciStatus": "unknown"
+          "rdgf:mapsFrom": "survey-schema aides-simplifiées (entreprise-innovation.json)",
+          "rdgf:mapsTo": "règles publicodes-entreprise-innovation",
+          "dct:source": "https://github.com/betagouv/aides-simplifiees-app/blob/main/public/forms/entreprise-innovation.json",
+          "dct:publisher": { "id": "https://regles.data.gouv.fr/regles/dge/entreprise-innovation/v1#agent-aides-simplifiees" },
+          "adms:status": "unknown"
         }
       ],
+
       "rdgf:versionEvent": [
         {
           "type": "rdgf:VersionEvent",
-          "rdgf:version": "main (2025-09-17)",
-          "rdgf:date": "2025-09-17",
-          "rdgf:kind": "majeur",
+          "dct:version": "1.0.0",
+          "dct:issued": "2025-09-17",
+          "rdgf:changeKind": "major",
           "description": "Publication du dépôt betagouv : un fichier Publicodes par dispositif, coconstruits avec un expert métier DGFiP.",
           "rdgf:triggeredBy": { "id": "https://www.legifrance.gouv.fr/codes/id/LEGITEXT000006069577/" }
         }
@@ -127,12 +188,19 @@
     },
 
     {
+      "id": "https://regles.data.gouv.fr/regles/dge/entreprise-innovation/v1#agent-aides-simplifiees",
+      "type": "foaf:Organization",
+      "skos:prefLabel": { "@value": "aides-simplifiées (service en cours de fermeture)", "@language": "fr" },
+      "foaf:page": "https://github.com/betagouv/aides-simplifiees-app"
+    },
+
+    {
       "id": "https://regles.data.gouv.fr/regles/dge/entreprise-innovation/v1#channel",
       "type": "cv:Channel",
       "dct:identifier": "entreprise-innovation-channel-publicodes",
       "dct:type": { "@type": "skos:Concept", "skos:prefLabel": { "@value": "Bibliothèque de règles Publicodes (dépôt git)", "@language": "fr" } },
       "description": "Règles YAML Publicodes exécutables côté client (navigateur) ou serveur via le paquet publicodes.",
-      "foaf:page": { "id": "https://github.com/betagouv/publicodes-entreprise-innovation" },
+      "foaf:page": "https://github.com/betagouv/publicodes-entreprise-innovation",
       "cv:ownedBy": { "id": "https://regles.data.gouv.fr/regles/dge/entreprise-innovation/v1#organisation" }
     },
 

@@ -1,6 +1,6 @@
 # Contrat d'interface front ↔ data - profil de métadonnées
 
-> **Statut : proposition v0.** Ce document vit côté POC front le temps de la discussion ; sa cible est le dépôt `datagouv/regles.data.gouv.fr`, qui reste la source de vérité des fiches. Il décrit le profil tel que le front le lit aujourd'hui. Les décisions qui fixent la version suivante du vocabulaire `rdgf:` sont consignées dans [decisions/](decisions/) ; la section 6 sera réécrite quand elles seront appliquées aux fiches et à l'adaptateur.
+> **Statut : proposition v1.** Ce document est écrit côté POC front le temps de la discussion ; sa cible est le dépôt `datagouv/regles.data.gouv.fr`, qui reste la source de vérité des fiches. Il décrit le profil tel que le front le lit aujourd'hui. Chaque point est décidé dans [decisions/](decisions/) ; le vocabulaire `rdgf:` est transcrit dans [rdgf/](rdgf/) (contexte partagé et Turtle SKOS).
 
 Le contrat tient en trois pièces :
 
@@ -8,7 +8,7 @@ Le contrat tient en trois pièces :
 2. **Une convention de slugs et d'URI** - sans espaces ni accents (section 4).
 3. **Un index de catalogue généré** - le front ne crawle pas une arborescence (section 5).
 
-Le dépôt data apporte la conformité SEMIC (CPSV-AP, CCCEV, sous-ensemble descriptif de CPRMV) ; le front apporte la couche confiance, proposée en extension JSON-LD (section 6). Les deux fiches de [propositions/](propositions/) montrent le profil complet sur des cas réels.
+Le dépôt data apporte la conformité SEMIC (CPSV-AP, CCCEV, sous-ensemble descriptif de CPRMV) ; le registre apporte la surcouche `rdgf:` (section 6) : l'engagement du producteur, l'origine de la valeur de chaque entrée, l'enveloppe des cas de tests, les correspondances opérationnelles et l'historique des versions. Les deux fiches de [propositions/](propositions/) montrent le profil complet sur des cas réels.
 
 ## 1. Socle
 
@@ -61,48 +61,47 @@ Relevés par `rapport-conformite.md`, généré par `scripts/sync-data-repo.mjs`
 
 Les deux fiches de [propositions/](propositions/) passent les shapes officielles (`conforms: true`) ; les écarts des fiches réelles (hasInput, `cv:ownedBy` → `org:Organization`, `dct:spatial`, langues, composition) sont matière à co-écriture avec le dépôt data.
 
-## 3. Régimes de certification
+## 3. Garantie du producteur
 
-Le profil admet des variantes selon `rdgf:certificationRegime` :
+L'engagement du producteur est un nœud `rdgf:certification` ([ADR-0002](decisions/ADR-0002-certification.md)). Son absence signifie que la règle est référencée. Le profil exige, selon le niveau :
 
-| Régime | Quand | Ce que le profil exige en plus |
+| `rdgf:certificationLevel` | Ce que l'organisme dit | Ce que le profil exige en plus |
 |---|---|---|
-| `frontiere` | règle packageable : autorité claire, dépendances peu profondes | nature des entrées (section 6), cas de tests avec enveloppe |
-| `implementation` | cœur socio-fiscal : chaîne de dépendances sans porteur unique | snapshot d'implémentation (dépôt et SHA), suite de tests native référencée |
-| `referencement` | ni code ni tests publiés | socle descriptif seul |
+| `certified` | « je réponds des résultats sur les faits déclarés, à cette version » | `rdgf:factKind` sur chaque entrée, au moins un `rdgf:testCase` avec enveloppe |
+| `self-assessed` | « je publie le code et les tests, à ce commit » | un `schema:SoftwareSourceCode` désigné à un commit ou un tag, une suite native référencée par `dct:source` d'un `rdgf:testCase` |
+| (absent) | règle référencée | socle descriptif seul |
+
+Le niveau de la règle (référencée, documentée, vérifiée, exécutable) est calculé par le registre depuis la fiche et ses exécutions ([ADR-0003](decisions/ADR-0003-niveau-derive.md)) ; il n'apparaît pas dans la fiche.
 
 ## 4. Conventions de nommage
 
 - **Arborescence** : `site/<org-slug>/<rule-slug>/metadata.jsonld`, slugs kebab-case ASCII.
-- **Identifiant** : `<domaine>.<slug>.<variante>` (`civique.droit-vote.v1`) ; pour le régime implémentation, la variante nomme l'implémentation (`solidarite.prime-activite.openfisca-france`).
+- **Identifiant** : `<domaine>.<slug>.<variante>` (`civique.droit-vote.v1`) ; pour une règle décrite telle que la calcule une implémentation, la variante nomme cette implémentation (`solidarite.prime-activite.openfisca-france`).
 - **URI canonique de service** : `https://regles.data.gouv.fr/regles/<org-slug>/<rule-slug>/<variante>`. Les URI GitHub restent en `dct:source` et `schema:codeRepository`.
-- **Trois axes de version** : l'URI porte la lignée (`/v1`, ou la variante d'implémentation) ; `dct:version` le semver dans la lignée ; `rdgf:versionEvent` l'historique daté relié aux textes déclencheurs. Une rupture de frontière crée une nouvelle URI ; deux implémentations de la même règle sont deux fiches reliées par `cv:relatedService`.
+- **Trois axes de version** : l'URI contient la lignée (`/v1`, ou la variante d'implémentation) ; `dct:version` le semver dans la lignée ; `rdgf:versionEvent` l'historique daté relié aux textes déclencheurs. Une rupture d'entrées ou de sorties crée une nouvelle URI ; deux implémentations de la même règle sont deux fiches reliées par `cv:relatedService`.
 - **Entrées et sorties adressables** : un `@id` de fragment (`<uri-service>#input-<identifiant>`) plutôt qu'un blank node.
 
 ## 5. Index de catalogue (`catalog.json`)
 
 Généré côté front par `scripts/sync-data-repo.mjs` (`pnpm sync:data`), à terme côté dépôt data en CI. Champs par entrée : `organisation`, `organisationSlug`, `slug`, `title`, `identifier`, `version`, `languages`, `sourcePath`, `conformite`. En-tête : commit source, date. Le front ne lit que l'index et les fiches qu'il référence. `title` est une chaîne quand la fiche n'a qu'une langue, un objet `{ "fr": "…", "en": "…" }` sinon.
 
-## 6. Extensions « couche confiance » (namespace `rdgf:`)
+## 6. Surcouche `rdgf:`
 
-Namespace `"rdgf": "https://regles.data.gouv.fr/def/catalogue#"`. Ce sont les champs que le front affiche et que le profil SEMIC ne porte pas ; leur absence sur une fiche apparaît dans `profileGaps`.
+Namespace `https://regles.data.gouv.fr/def/rdgf#`, contexte partagé et définitions dans [rdgf/](rdgf/) ([ADR-0009](decisions/ADR-0009-publication.md)). Les énumérations sont des concepts SKOS que le contexte rend lisibles comme des chaînes : une fiche écrit `"rdgf:factKind": "attested"`. L'absence d'un terme sur une fiche apparaît dans `profileGaps`, sauf `rdgf:certification` dont l'absence signifie « référencée ».
 
-| Propriété | Porte sur | Valeurs | Rôle |
+| Terme | Sur | Contenu | Décision |
 |---|---|---|---|
-| `rdgf:maturity` | service | `N0` à `N3` | active les services progressivement |
-| `rdgf:certificationRegime` | service | `frontiere`, `implementation`, `referencement` | section 3 |
-| `rdgf:boundaryKind` | `cprmv:Parameter` | `declaration`, `donnee-attestee`, `sortie-regle`, `contexte` | dit ce que couvre un badge « certifiée » |
-| `rdgf:evidenceSource` | `cprmv:Parameter` | nœud { label, url } | ancrage d'une donnée attestée à son propriétaire institutionnel |
-| `rdgf:testCase` | service | nœud { `intent`, `provenance`, `validatedBy`, `validatedAt`, `legalAnchor`, `tolerance`, `status`, `nativeFormat`, `nativeRef` } | le test natif fait foi, le catalogue norme l'enveloppe |
-| `rdgf:operationalMapping` | service | nœud { `from`, `to`, `artifact`, `maintainedBy`, `ciStatus` } | recense des correspondances qui tournent |
-| `rdgf:implementationSnapshot` | service (régime `implementation`) | nœud { `repository`, `ref` } | l'unité certifiable du régime implémentation |
-| `rdgf:engineProfile` | service | littéral JSON (`"@type": "@json"`) | les opinions du moteur (entités, périodes) restent locales et opaques au catalogue |
-| `rdgf:versionEvent` | service | nœud { `version`, `date`, `kind`, `triggeredBy` → ELI } | historique lié aux textes déclencheurs |
+| `rdgf:certification` | service | nœud `rdgf:Certification` : `rdgf:certificationLevel` (`certified`, `self-assessed`), `prov:wasAttributedTo`, `dct:issued`, `dct:conformsTo` › `dct:version`, `description` | [ADR-0002](decisions/ADR-0002-certification.md) |
+| `rdgf:factKind` | `cv:Evidence` | `declared`, `attested`, `derived`, `context` ; pour un fait attesté, l'organisme en `dct:publisher` et l'accès en `foaf:page` | [ADR-0004](decisions/ADR-0004-nature-des-entrees.md) |
+| `rdgf:testCase` | service | nœud `rdgf:TestCase` : `title`, `description`, `rdgf:origin` (`administration`, `case-law`, `circular`, `anonymised-case`, `community`), `prov:wasAttributedTo`, `dct:date`, `adms:status` (`valid`, `pending`, `failing`), `dct:format`, `dct:source` (le test natif), `cv:hasLegalResource`, `rdgf:tolerance` | [ADR-0006](decisions/ADR-0006-cas-de-tests.md) |
+| `rdgf:operationalMapping` | service | nœud `rdgf:OperationalMapping` : `title`, `rdgf:mapsFrom`, `rdgf:mapsTo`, `dct:source`, `dct:publisher`, `adms:status` | [ADR-0017](decisions/ADR-0017-correspondances-recensees.md) |
+| `rdgf:versionEvent` | service | nœud `rdgf:VersionEvent` : `dct:version`, `dct:issued`, `rdgf:changeKind` (`major`, `minor`, `legal`), `rdgf:triggeredBy` → subdivision ELI, `description` | [ADR-0008](decisions/ADR-0008-versions.md) |
+| `rdgf:engineProfile` | service | littéral JSON (`"@type": "@json"`) : le modèle de situations du moteur, transmis tel quel | [ADR-0001](decisions/ADR-0001-perimetre-rdgf.md) |
 
-Les valeurs d'énumération sont des chaînes nues, consommables en JSON sans résolution et contraignables par `sh:in`.
+Les résultats d'exécution du registre ne sont pas dans les fiches : `scripts/verify-rules.mjs` écrit une assertion EARL par cas rejoué et par contrôle de dérive fiche/API dans `app/data/verification.json` ([ADR-0006](decisions/ADR-0006-cas-de-tests.md)). Le badge « résultats testés » et le niveau de la règle en sont calculés.
 
 ## 7. Processus
 
 1. Le dépôt data reste la source de vérité des fiches ; le front les consomme via `pnpm sync:data` et n'édite jamais une fiche vendorée.
-2. Les surcouches du front sont temporaires : dès que le profil `rdgf:` est accepté, elles migrent dans les fiches et l'adaptateur les lit. `profileGaps` doit tendre vers zéro, c'est l'indicateur de convergence du contrat (`pnpm check:contrat`).
-3. Validation : contrôles structurels du script, puis shapes SHACL CPSV-AP 3.2.0 en CI du dépôt data, étendues au namespace `rdgf:` une fois le profil stabilisé.
+2. L'adaptateur lit la surcouche `rdgf:` quand une fiche la contient ; les qualifications encore écrites côté front (mocks) migrent dans les fiches à mesure que le dépôt data les adopte. `profileGaps` doit tendre vers zéro, c'est l'indicateur de convergence du contrat (`pnpm check:contrat`, qui vérifie aussi que toute clé `rdgf:` est déclarée dans le contexte partagé, que les valeurs appartiennent à leur schéma et que les exigences du niveau d'engagement sont remplies).
+3. Validation : contrôles structurels du script, puis shapes SHACL CPSV-AP 3.2.0 en CI du dépôt data, étendues aux invariants `rdgf:` ([ADR-0019](decisions/ADR-0019-validation.md), proposée).

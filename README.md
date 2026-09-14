@@ -47,7 +47,7 @@ app/
 
 Le dossier [contrat-interface/](contrat-interface/) porte la proposition de contrat entre ce
 front et le dépôt data de Quentin : profil de métadonnées (socle CPSV-AP constaté +
-extensions « couche confiance » `rdgf:`), conventions de slugs/URI, spécification de l'index,
+surcouche `rdgf:` décidée en ADR), conventions de slugs/URI, spécification de l'index,
 rapport de conformité généré, et deux fiches de proposition sur des cas réels.
 
 ```bash

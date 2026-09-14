@@ -96,10 +96,7 @@ général : l'âge au sens de l'article L.3), un type (nombre entier, oui/non...
 obligatoire ou optionnel. C'est la partie de la fiche qui rend un simulateur constructible sans
 lire le code.
 
-Dans les fiches les plus complètes, chaque entrée est aussi classée selon sa **nature de
-frontière** : fait simplement déclaré par l'usager, donnée attestée par une administration (le
-revenu fiscal de référence, que la DGFiP peut servir directement), ou sortie d'une autre règle.
-On y revient plus bas, car c'est le cœur de ce qu'un badge de confiance couvre réellement.
+Dans les fiches les plus complètes, chaque entrée indique aussi la **nature de son fait** (`rdgf:factKind`) : fait déclaré par la personne, donnée attestée par une administration (le revenu fiscal de référence, que la DGFiP peut servir directement), sortie d'une autre règle, ou paramètre de contexte. On y revient plus bas, car c'est ce qui délimite ce qu'un engagement sur les résultats couvre.
 
 ```jsonc
 "cpsv:produces": [
@@ -152,61 +149,35 @@ traductions viendront de la fiche comme pour les deux autres.
 
 ## Ce que la fiche promet, et ce qu'elle ne promet pas
 
-Le profil de métadonnées suit une règle stricte d'honnêteté : **un champ manquant est un champ
-omis, jamais une valeur inventée**. Si une fiche n'affiche pas de cas de tests, c'est qu'il n'y
-en a pas de publiés. La liste des écarts entre une fiche et le profil complet est publique
-(rapport de conformité généré à chaque synchronisation).
+Le profil de métadonnées suit une règle stricte : **un champ manquant est un champ omis, jamais une valeur inventée**. Si une fiche n'affiche pas de cas de tests, c'est qu'il n'y en a pas de publiés. La liste des écarts entre une fiche et le profil complet est publique (rapport de conformité généré à chaque synchronisation).
 
 Ce que la fiche promet :
 
 - une identité pérenne, une autorité qui répond, une base légale article par article ;
-- des entrées définies juridiquement, avec leur nature (déclarée, attestée, calculée) ;
-- un pointeur vers le code et les tests, à version fixée.
+- des entrées définies juridiquement, avec la nature de leur fait (déclaré, attesté, dérivé, contexte) ;
+- un pointeur vers le code et les tests, à un commit désigné.
 
 Ce qu'elle ne promet volontairement pas :
 
-- **un format universel de situations de test**. Décrire « une famille avec deux enfants dont les
-  revenus ont changé en cours d'année » exige le modèle du moteur de calcul (ses entités, ses
-  périodes). Le catalogue référence les tests dans leur format natif, qui fait foi, et norme
-  seulement leur enveloppe : qui a validé ce cas, quand, sur quel texte ;
-- **une traduction automatique entre moteurs**. Les correspondances entre notions administratives
-  (le « couple » de la CAF n'est pas celui de la DGFiP) sont recensées quand elles existent et
-  tournent en production, jamais rédigées sur papier par le catalogue ;
-- **une garantie sur l'amont des données**. C'est l'objet des régimes de certification.
+- **un format universel de situations de test**. Décrire « une famille avec deux enfants dont les revenus ont changé en cours d'année » exige le modèle du moteur de calcul (ses entités, ses périodes). Le registre référence les tests dans leur format natif, qui constitue la référence, et norme seulement leur enveloppe : ce que le cas vérifie, son origine, qui l'a validé, quand, sur quel texte ;
+- **une traduction automatique entre moteurs**. Les correspondances entre notions administratives (le « couple » de la CAF n'est pas celui de la DGFiP) sont recensées quand elles existent et tournent en production, jamais rédigées par le registre ;
+- **une garantie sur l'amont des données**. C'est l'objet de la garantie du producteur et de la nature des faits.
 
-## Les trois régimes de certification
+## La garantie du producteur
 
-Toutes les règles ne peuvent pas être garanties de la même façon, et le catalogue préfère trois
-promesses tenables à une promesse uniforme intenable.
+Une fiche peut contenir un engagement du producteur, `rdgf:certification` : qui s'engage, depuis quand, sur quelle version, et à quel niveau. Le registre affiche cet engagement sous le titre « Garantie du producteur ». Deux niveaux existent.
 
-**Le régime frontière** s'applique aux règles bien délimitées : une autorité claire, peu de
-dépendances (le droit de vote, une aide sectorielle). L'analogie exacte est le **rescrit
-fiscal** : quand l'administration vous répond par rescrit, elle s'engage sur la réponse donnée
-*aux faits que vous avez déclarés*, pas sur la véracité de vos déclarations. Ici, de même,
-l'administration certifie : « à telle version, pour telles entrées déclarées, la règle produit
-tels résultats ». Les cas de tests publiés sont la matérialisation de cet engagement, comme la
-collection des réponses types.
+**Résultats certifiés** (`certified`). L'organisme répond des résultats calculés sur les faits déclarés, à la version indiquée. L'analogie est le **rescrit fiscal** : quand l'administration répond par rescrit, elle s'engage sur la réponse donnée *aux faits que vous avez déclarés*, pas sur la véracité de vos déclarations. Le profil exige alors que chaque entrée indique la nature de son fait et que la fiche contienne des cas de tests avec enveloppe : ces cas sont la matérialisation de l'engagement, comme la collection des réponses types.
 
-**Le régime implémentation** s'applique au cœur socio-fiscal (prime d'activité, RSA...), où le
-calcul dépend d'une chaîne de paramètres partagés (SMIC, bases ressources, définitions de
-revenus) dont personne n'est propriétaire en entier. Pensez à un **logiciel de paie certifié** :
-personne ne certifie « le calcul du bulletin de paie » dans l'absolu, on certifie que tel
-logiciel, à telle version, passe telle batterie de tests. La fiche dit donc honnêtement : « la
-prime d'activité *telle que calculée par openfisca-france* à tel instantané », et ce qui est
-certifiable est le couple suite de tests + version.
+**Code et tests publiés** (`self-assessed`). L'organisme publie le code et les tests à un commit désigné, sans répondre des résultats dans l'absolu. C'est le cas du cœur socio-fiscal (prime d'activité, RSA), où le calcul dépend d'une chaîne de paramètres partagés (SMIC, bases ressources, définitions de revenus) dont personne n'est propriétaire en entier. La fiche dit : « la prime d'activité *telle que calculée par openfisca-france* à telle version », et ce qui est vérifiable est le couple suite de tests et code à cette version, comme pour un logiciel de paie dont on certifie qu'une version passe une batterie de tests.
 
-**Le régime référencement** est l'entrée de gamme assumée : la règle existe, voici qui la porte
-et où elle est écrite, sans code ni tests publiés. Une **fiche d'annuaire**, en somme. C'est le
-même choix que schema.data.gouv.fr avec ses schémas en mode « documentation seule » : accueillir
-l'hétérogène sans faire semblant de tout garantir.
+**Sans engagement**, la règle est **référencée** : elle existe, voici qui la porte, sa base légale et où elle est écrite. C'est le même choix que schema.data.gouv.fr avec ses schémas en mode « documentation seule » : accueillir l'hétérogène sans faire semblant de tout garantir.
 
-Le régime figure dans la fiche (`rdgf:certificationRegime`), et la nature de frontière de chaque
-entrée dit précisément ce que couvre un éventuel badge : certifier le calcul du droit de vote ne
-certifie pas que la personne est réellement inscrite sur les listes électorales. Le badge couvre
-le calcul, la frontière dit où s'arrête sa responsabilité. C'est moins spectaculaire qu'un
-« certifié » sans réserve ; c'est surtout tenable, et c'est la condition pour qu'un réutilisateur
-exigeant (un service public en ligne qui refuse d'afficher un montant faux) puisse s'appuyer sur
-le catalogue.
+La nature du fait de chaque entrée dit précisément ce que couvre l'engagement : certifier le calcul du droit de vote ne certifie pas que la personne est réellement inscrite sur les listes électorales. L'engagement couvre le calcul, la nature des faits dit où s'arrête la responsabilité du producteur.
+
+## Ce que le registre établit lui-même
+
+L'engagement est déclaré par le producteur. Le registre ajoute ce qu'il constate : il exécute les cas de tests publiés contre le code ou l'API désignés et publie, pour chaque cas, une assertion datée au format EARL (le vocabulaire W3C des résultats de test) : ce qui a été testé, sur quel commit, avec quel résultat. Le badge « résultats testés » et le niveau de la règle (référencée, documentée, vérifiée, exécutable) sont calculés à partir de ces assertions et du contenu de la fiche, jamais déclarés par le producteur. Un écart entre le résultat obtenu et le résultat attendu s'affiche sur la fiche.
 
 ## Pour aller plus loin
 

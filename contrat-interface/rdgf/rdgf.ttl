@@ -1,0 +1,206 @@
+@prefix rdgf: <https://regles.data.gouv.fr/def/rdgf#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix cpsv: <http://purl.org/vocab/cpsv#> .
+@prefix cv: <http://data.europa.eu/m8g/> .
+@prefix eli: <http://data.europa.eu/eli/ontology#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix adms: <http://www.w3.org/ns/adms#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix schema: <http://schema.org/> .
+
+<https://regles.data.gouv.fr/def/rdgf> a owl:Ontology ;
+  dct:title "Vocabulaire du registre des règles (rdgf)"@fr, "Rules registry vocabulary (rdgf)"@en ;
+  dct:description "Surcouche du registre sur CPSV-AP, CCCEV et ELI : l'engagement du producteur, l'origine de la valeur de chaque entrée, l'enveloppe des cas de tests, les correspondances opérationnelles et l'historique des versions. Décisions dans contrat-interface/decisions/."@fr ;
+  owl:versionInfo "1.0.0" ;
+  dct:issued "2026-09-12"^^xsd:date ;
+  dct:publisher <https://regles.data.gouv.fr> .
+
+# ── Engagement du producteur (ADR-0002) ─────────────────────────────────────
+
+rdgf:Certification a owl:Class ;
+  rdfs:label "Engagement du producteur"@fr, "Producer guarantee"@en ;
+  skos:definition "Engagement d'un organisme sur une règle : ce dont il répond, à quelle version, depuis quand. Son absence signifie que la règle est référencée."@fr .
+
+rdgf:certification a owl:ObjectProperty ;
+  rdfs:label "engagement"@fr, "guarantee"@en ;
+  rdfs:domain cpsv:PublicService ;
+  rdfs:range rdgf:Certification .
+
+rdgf:certificationLevel a owl:ObjectProperty ;
+  rdfs:label "niveau d'engagement"@fr, "guarantee level"@en ;
+  rdfs:domain rdgf:Certification ;
+  rdfs:range skos:Concept ;
+  rdfs:comment "Concept du schéma rdgf:certificationLevelScheme. L'organisme est en prov:wasAttributedTo, la date en dct:issued, la version couverte en dct:conformsTo."@fr .
+
+rdgf:certificationLevelScheme a skos:ConceptScheme ;
+  skos:prefLabel "Niveaux d'engagement"@fr, "Guarantee levels"@en ;
+  skos:hasTopConcept <https://regles.data.gouv.fr/def/rdgf/certificationLevel/certified>, <https://regles.data.gouv.fr/def/rdgf/certificationLevel/self-assessed> .
+
+<https://regles.data.gouv.fr/def/rdgf/certificationLevel/certified> a skos:Concept ;
+  skos:inScheme rdgf:certificationLevelScheme ;
+  skos:notation "certified" ;
+  skos:prefLabel "résultats certifiés"@fr, "certified results"@en ;
+  skos:definition "L'organisme répond des résultats calculés sur les faits déclarés, à la version indiquée. Le profil exige la nature de chaque entrée et des cas de tests avec enveloppe."@fr .
+
+<https://regles.data.gouv.fr/def/rdgf/certificationLevel/self-assessed> a skos:Concept ;
+  skos:inScheme rdgf:certificationLevelScheme ;
+  skos:notation "self-assessed" ;
+  skos:prefLabel "code et tests publiés"@fr, "self-assessed"@en ;
+  skos:definition "L'organisme publie le code et les tests à un commit désigné. Le profil exige un dépôt désigné à un commit et une suite de tests native référencée."@fr .
+
+# ── Nature des entrées (ADR-0004) ───────────────────────────────────────────
+
+rdgf:factKind a owl:ObjectProperty ;
+  rdfs:label "nature du fait"@fr, "kind of fact"@en ;
+  rdfs:domain cv:Evidence ;
+  rdfs:range skos:Concept ;
+  rdfs:comment "Concept du schéma rdgf:factKindScheme. Pour un fait attesté, l'organisme qui en répond est en dct:publisher et l'accès en foaf:page."@fr .
+
+rdgf:factKindScheme a skos:ConceptScheme ;
+  skos:prefLabel "Natures de fait"@fr, "Kinds of fact"@en ;
+  skos:hasTopConcept <https://regles.data.gouv.fr/def/rdgf/factKind/declared>, <https://regles.data.gouv.fr/def/rdgf/factKind/attested>, <https://regles.data.gouv.fr/def/rdgf/factKind/derived>, <https://regles.data.gouv.fr/def/rdgf/factKind/context> .
+
+<https://regles.data.gouv.fr/def/rdgf/factKind/declared> a skos:Concept ;
+  skos:inScheme rdgf:factKindScheme ;
+  skos:notation "declared" ;
+  skos:prefLabel "fait déclaré"@fr, "declared fact"@en ;
+  skos:definition "Déclaré par la personne, non vérifié."@fr .
+
+<https://regles.data.gouv.fr/def/rdgf/factKind/attested> a skos:Concept ;
+  skos:inScheme rdgf:factKindScheme ;
+  skos:notation "attested" ;
+  skos:prefLabel "donnée attestée"@fr, "attested data"@en ;
+  skos:definition "Attesté par une administration qui en répond, mobilisable par une API."@fr .
+
+<https://regles.data.gouv.fr/def/rdgf/factKind/derived> a skos:Concept ;
+  skos:inScheme rdgf:factKindScheme ;
+  skos:notation "derived" ;
+  skos:prefLabel "sortie d'une autre règle"@fr, "output of another rule"@en ;
+  skos:definition "Résultat d'une autre règle ou paramètre partagé, comme le SMIC."@fr .
+
+<https://regles.data.gouv.fr/def/rdgf/factKind/context> a skos:Concept ;
+  skos:inScheme rdgf:factKindScheme ;
+  skos:notation "context" ;
+  skos:prefLabel "paramètre de contexte"@fr, "context parameter"@en ;
+  skos:definition "Choisit la règle appliquée, par exemple le type d'élection."@fr .
+
+# ── Enveloppe des cas de tests (ADR-0006) ───────────────────────────────────
+
+rdgf:TestCase a owl:Class ;
+  rdfs:label "Cas de test"@fr, "Test case"@en ;
+  skos:definition "Enveloppe d'un cas de test écrit dans le format de son moteur : ce qu'il vérifie (dct:title), son origine, son validateur (prov:wasAttributedTo), sa date (dct:date), son statut (adms:status), son format (dct:format), le test natif (dct:source), le texte visé (cv:hasLegalResource), sa tolérance."@fr .
+
+rdgf:testCase a owl:ObjectProperty ;
+  rdfs:label "cas de test"@fr, "test case"@en ;
+  rdfs:domain cpsv:PublicService ;
+  rdfs:range rdgf:TestCase .
+
+rdgf:origin a owl:ObjectProperty ;
+  rdfs:label "origine"@fr, "origin"@en ;
+  rdfs:domain rdgf:TestCase ;
+  rdfs:range skos:Concept ;
+  rdfs:comment "Concept du schéma rdgf:originScheme."@fr .
+
+rdgf:tolerance a owl:DatatypeProperty ;
+  rdfs:label "tolérance"@fr, "tolerance"@en ;
+  rdfs:domain rdgf:TestCase ;
+  rdfs:range xsd:string ;
+  skos:definition "Écart accepté entre le résultat obtenu et le résultat attendu, si numérique."@fr .
+
+rdgf:originScheme a skos:ConceptScheme ;
+  skos:prefLabel "Origines d'un cas de test"@fr, "Test case origins"@en ;
+  skos:hasTopConcept <https://regles.data.gouv.fr/def/rdgf/origin/administration>, <https://regles.data.gouv.fr/def/rdgf/origin/case-law>, <https://regles.data.gouv.fr/def/rdgf/origin/circular>, <https://regles.data.gouv.fr/def/rdgf/origin/anonymised-case>, <https://regles.data.gouv.fr/def/rdgf/origin/community> .
+
+<https://regles.data.gouv.fr/def/rdgf/origin/administration> a skos:Concept ;
+  skos:inScheme rdgf:originScheme ; skos:notation "administration" ;
+  skos:prefLabel "administration compétente"@fr, "competent administration"@en .
+
+<https://regles.data.gouv.fr/def/rdgf/origin/case-law> a skos:Concept ;
+  skos:inScheme rdgf:originScheme ; skos:notation "case-law" ;
+  skos:prefLabel "jurisprudence"@fr, "case law"@en .
+
+<https://regles.data.gouv.fr/def/rdgf/origin/circular> a skos:Concept ;
+  skos:inScheme rdgf:originScheme ; skos:notation "circular" ;
+  skos:prefLabel "circulaire"@fr, "circular"@en .
+
+<https://regles.data.gouv.fr/def/rdgf/origin/anonymised-case> a skos:Concept ;
+  skos:inScheme rdgf:originScheme ; skos:notation "anonymised-case" ;
+  skos:prefLabel "dossier réel anonymisé"@fr, "anonymised real case"@en .
+
+<https://regles.data.gouv.fr/def/rdgf/origin/community> a skos:Concept ;
+  skos:inScheme rdgf:originScheme ; skos:notation "community" ;
+  skos:prefLabel "communauté"@fr, "community"@en .
+
+# ── Correspondances opérationnelles (ADR-0017) ──────────────────────────────
+
+rdgf:OperationalMapping a owl:Class ;
+  rdfs:label "Correspondance opérationnelle"@fr, "Operational mapping"@en ;
+  skos:definition "Projection en production entre le format d'un service et les entrées d'une règle : ce qu'elle projette (rdgf:mapsFrom, rdgf:mapsTo), l'artefact (dct:source), le mainteneur (dct:publisher), l'état de son intégration continue (adms:status)."@fr .
+
+rdgf:operationalMapping a owl:ObjectProperty ;
+  rdfs:label "correspondance opérationnelle"@fr, "operational mapping"@en ;
+  rdfs:domain cpsv:PublicService ;
+  rdfs:range rdgf:OperationalMapping .
+
+rdgf:mapsFrom a owl:DatatypeProperty ;
+  rdfs:label "projette depuis"@fr, "maps from"@en ;
+  rdfs:domain rdgf:OperationalMapping ; rdfs:range xsd:string .
+
+rdgf:mapsTo a owl:DatatypeProperty ;
+  rdfs:label "projette vers"@fr, "maps to"@en ;
+  rdfs:domain rdgf:OperationalMapping ; rdfs:range xsd:string .
+
+# ── Historique des versions (ADR-0008) ──────────────────────────────────────
+
+rdgf:VersionEvent a owl:Class ;
+  rdfs:label "Événement de version"@fr, "Version event"@en ;
+  skos:definition "Une version publiée de la règle : son numéro (dct:version), sa date de publication (dct:issued), la nature du changement, le texte déclencheur, une description."@fr .
+
+rdgf:versionEvent a owl:ObjectProperty ;
+  rdfs:label "événement de version"@fr, "version event"@en ;
+  rdfs:domain cpsv:PublicService ;
+  rdfs:range rdgf:VersionEvent .
+
+rdgf:changeKind a owl:ObjectProperty ;
+  rdfs:label "nature du changement"@fr, "kind of change"@en ;
+  rdfs:domain rdgf:VersionEvent ;
+  rdfs:range skos:Concept ;
+  rdfs:comment "Concept du schéma rdgf:changeKindScheme."@fr .
+
+rdgf:triggeredBy a owl:ObjectProperty ;
+  rdfs:label "déclenché par"@fr, "triggered by"@en ;
+  rdfs:domain rdgf:VersionEvent ;
+  rdfs:range eli:LegalResourceSubdivision ;
+  skos:definition "Subdivision du texte qui a motivé la version ; sa propre eli:version_date permet de mesurer une rétroactivité."@fr .
+
+rdgf:changeKindScheme a skos:ConceptScheme ;
+  skos:prefLabel "Natures de changement"@fr, "Kinds of change"@en ;
+  skos:hasTopConcept <https://regles.data.gouv.fr/def/rdgf/changeKind/major>, <https://regles.data.gouv.fr/def/rdgf/changeKind/minor>, <https://regles.data.gouv.fr/def/rdgf/changeKind/legal> .
+
+<https://regles.data.gouv.fr/def/rdgf/changeKind/major> a skos:Concept ;
+  skos:inScheme rdgf:changeKindScheme ; skos:notation "major" ;
+  skos:prefLabel "majeur"@fr, "major"@en ;
+  skos:definition "Les entrées ou les sorties deviennent incompatibles ; la lignée change d'URI."@fr .
+
+<https://regles.data.gouv.fr/def/rdgf/changeKind/minor> a skos:Concept ;
+  skos:inScheme rdgf:changeKindScheme ; skos:notation "minor" ;
+  skos:prefLabel "mineur"@fr, "minor"@en ;
+  skos:definition "Correction ou ajout compatible, sans changement du droit appliqué."@fr .
+
+<https://regles.data.gouv.fr/def/rdgf/changeKind/legal> a skos:Concept ;
+  skos:inScheme rdgf:changeKindScheme ; skos:notation "legal" ;
+  skos:prefLabel "réglementaire"@fr, "legal"@en ;
+  skos:definition "Le droit appliqué change ; le texte déclencheur est en rdgf:triggeredBy."@fr .
+
+# ── Modèle du moteur (ADR-0001) ─────────────────────────────────────────────
+
+rdgf:engineProfile a owl:DatatypeProperty ;
+  rdfs:label "modèle du moteur"@fr, "engine profile"@en ;
+  rdfs:domain cpsv:PublicService ;
+  rdfs:range rdf:JSON ;
+  skos:definition "Description des situations dans les termes du moteur (entités, périodes), transmise telle quelle par le registre."@fr .

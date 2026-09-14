@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * Génère une documentation markdown lisible par un humain depuis une fiche
- * metadata.jsonld (profil CPSV-AP + sous-ensemble CPRMV + extensions rdgf:).
+ * metadata.jsonld (profil CPSV-AP + sous-ensemble CPRMV + surcouche rdgf:, cf.
+ * contrat-interface/decisions/).
  *
  * Préfiguration de l'étape « doc générée » de la future moulinette, sur le
  * modèle de schema.data.gouv.fr (datagouvfr_data_pipelines/schema/utils/
@@ -47,40 +48,43 @@ const XSD_FR = {
   'xsd:date': 'date',
 }
 
-const BOUNDARY_FR = {
-  'declaration': 'déclaration (fait déclaré par l\'usager, non vérifié)',
-  'donnee-attestee': 'donnée attestée (propriétaire institutionnel identifié)',
-  'sortie-regle': 'sortie d\'une autre règle ou paramètre législatif partagé',
-  'contexte': 'contexte d\'exécution (change la règle appliquée)',
+const FACT_KIND_FR = {
+  declared: 'fait déclaré par la personne, non vérifié',
+  attested: 'donnée attestée par une administration qui en répond',
+  derived: 'sortie d\'une autre règle ou paramètre partagé',
+  context: 'paramètre de contexte (choisit la règle appliquée)',
 }
 
-const REGIME_FR = {
-  frontiere: {
-    label: 'frontière',
-    explain: 'L\'administration certifie le comportement entrées → sorties sur des faits déclarés, '
-      + 'à une version donnée. C\'est la sémantique du rescrit : l\'engagement porte sur les faits '
-      + 'déclarés, pas sur leur provenance amont. Les cas de tests publiés sont l\'artefact de cette certification.',
+const CERTIFICATION_FR = {
+  'certified': {
+    label: 'résultats certifiés',
+    explain: 'L\'organisme répond des résultats calculés sur les faits déclarés, à la version indiquée. '
+      + 'Le profil exige la nature de chaque entrée et des cas de tests avec enveloppe.',
   },
-  implementation: {
-    label: 'implémentation',
-    explain: 'Règle du cœur socio-fiscal : sa chaîne de dépendances (SMIC, bases ressources, définitions '
-      + 'de revenus) n\'a pas de porteur administratif unique. L\'unité cataloguée est la règle telle que '
-      + 'calculée par une implémentation donnée ; l\'unité certifiable est le couple suite de tests + '
-      + 'snapshot d\'implémentation.',
-  },
-  referencement: {
-    label: 'référencement',
-    explain: 'Entrée simplement référencée : métadonnées descriptives, sans code ni tests publiés. '
-      + 'C\'est le premier barreau de l\'échelle de maturité du catalogue.',
+  'self-assessed': {
+    label: 'code et tests publiés',
+    explain: 'L\'organisme publie le code et les tests à un commit désigné. Le profil exige un dépôt '
+      + 'désigné à un commit et une suite de tests native référencée.',
   },
 }
 
-const PROVENANCE_FR = {
+const ORIGIN_FR = {
   'administration': 'administration compétente',
-  'communaute': 'communauté',
-  'jurisprudence': 'jurisprudence',
-  'circulaire': 'circulaire',
-  'cas-reel-anonymise': 'cas réel anonymisé',
+  'community': 'communauté',
+  'case-law': 'jurisprudence',
+  'circular': 'circulaire',
+  'anonymised-case': 'dossier réel anonymisé',
+}
+
+const CHANGE_KIND_FR = { major: 'majeur', minor: 'mineur', legal: 'réglementaire' }
+
+/** Libellé d'un agent référencé par identifiant dans le graphe, sinon l'identifiant ou le littéral. */
+function agentLabel(ref, graph) {
+  const id = typeof ref === 'string' ? ref : nodeId(ref)
+  if (!id)
+    return literal(ref)
+  const node = graph.find(n => n.id === id || n['@id'] === id)
+  return (node ? literal(node['skos:prefLabel']) ?? title(node) : undefined) ?? id
 }
 
 const md = s => String(s).replace(/\|/g, '\\|').replace(/\n/g, ' ')
@@ -120,9 +124,6 @@ export function generateFicheDoc(doc, { sourcePath } = {}) {
     identity.push(`- **Version** : ${version}`)
   if (orgLabel)
     identity.push(`- **Autorité compétente** : ${orgLabel}`)
-  const maturity = literal(parent?.['rdgf:maturity'])
-  if (maturity)
-    identity.push(`- **Maturité** : ${maturity} (échelle N0 référencée → N3 exécutable)`)
   const valid = literal(parent?.['dct:valid'])
   if (valid)
     identity.push(`- **Période de validité indicative** : \`${valid}\` (ne couvre pas le droit transitoire : savoir quelle version s'applique est une règle, pas une métadonnée)`)
@@ -133,18 +134,32 @@ export function generateFicheDoc(doc, { sourcePath } = {}) {
   if (identity.length)
     push(...identity, '')
 
-  // ── Régime de certification ───────────────────────────────────────────────
-  const regime = literal(parent?.['rdgf:certificationRegime'])
-  if (regime) {
-    const info = REGIME_FR[regime]
-    push('## Régime de certification', '')
-    push(info ? `**Régime ${info.label}.** ${info.explain}` : `Régime déclaré : \`${regime}\`.`, '')
-    const snapshot = parent?.['rdgf:implementationSnapshot']
-    if (snapshot) {
-      const repo = literal(snapshot['schema:codeRepository']) ?? nodeId(snapshot['schema:codeRepository'])
-      const ref = literal(snapshot['rdgf:ref'])
-      push(`Snapshot d'implémentation : ${repo ? `[${repo}](${repo})` : '(dépôt non renseigné)'}${ref ? ` - référence : ${ref}` : ''}.`, '')
-    }
+  // ── Garantie du producteur (rdgf:certification, ADR-0002) ────────────────
+  const certification = parent?.['rdgf:certification']
+  push('## Garantie du producteur', '')
+  if (certification) {
+    const level = literal(certification['rdgf:certificationLevel'])
+    const info = CERTIFICATION_FR[level]
+    push(info ? `**${info.label[0].toUpperCase()}${info.label.slice(1)}.** ${info.explain}` : `Niveau déclaré : \`${level}\`.`, '')
+    const facts = []
+    const by = agentLabel(certification['prov:wasAttributedTo'], graph)
+    if (by)
+      facts.push(`Engagement de ${by}`)
+    const issued = literal(certification['dct:issued'])
+    if (issued)
+      facts.push(`le ${issued}`)
+    const conformsTo = certification['dct:conformsTo']
+    const coveredVersion = conformsTo ? literal(conformsTo['dct:version']) : undefined
+    if (coveredVersion)
+      facts.push(`version ${coveredVersion}`)
+    if (facts.length)
+      push(`${facts.join(', ')}.`, '')
+    const scope = description(certification)
+    if (scope)
+      push(scope, '')
+  }
+  else {
+    push('Règle référencée : le producteur ne s\'engage pas sur les résultats. La fiche décrit la règle, sa base légale et son organisme.', '')
   }
 
   // ── Base légale ───────────────────────────────────────────────────────────
@@ -176,9 +191,9 @@ export function generateFicheDoc(doc, { sourcePath } = {}) {
     const inputs = serviceInputs(leaf)
     if (inputs.length) {
       push(multi ? '### Paramètres d\'entrée' : '## Paramètres d\'entrée', '')
-      const qualified = inputs.some(p => literal(p['rdgf:boundaryKind']))
+      const qualified = inputs.some(p => literal(p['rdgf:factKind']))
       const header = qualified
-        ? '| Paramètre | Type | Obligatoire | Nature de frontière | Définition |'
+        ? '| Paramètre | Type | Obligatoire | Nature du fait | Définition |'
         : '| Paramètre | Type | Obligatoire | Définition |'
       push(header, header.replace(/[^|]/g, '-'))
       // Structures composites (shapes SHACL) : une ligne par champ feuille, avec le fil
@@ -203,20 +218,20 @@ export function generateFicheDoc(doc, { sourcePath } = {}) {
         const id = param['dct:identifier'] ?? ''
         const label = title(param)
         const name = label ? `**${md(label)}**<br>\`${id}\`` : `\`${id}\``
-        const type = XSD_FR[param['cprmv:type']] ?? param['cprmv:type'] ?? ''
+        const datatype = param['sh:datatype'] ?? param['cprmv:type']
+        const type = XSD_FR[datatype] ?? datatype ?? ''
         const required = param['schema:valueRequired'] === true
           ? 'obligatoire'
           : `optionnel${param['schema:defaultValue'] !== undefined ? ` (défaut : \`${param['schema:defaultValue']}\`)` : ''}`
         let definition = literal(param['cprmv:definition']) ?? ''
-        const evidence = param['rdgf:evidenceSource']
-        if (evidence) {
-          const evLabel = title(evidence)
-          const evUrl = nodeId(evidence['foaf:page'])
-          definition += `${definition ? '<br>' : ''}Attestée par : ${evUrl ? `[${md(evLabel ?? evUrl)}](${evUrl})` : md(evLabel ?? '')}`
+        const publisher = agentLabel(param['dct:publisher'], graph)
+        if (publisher) {
+          const page = nodeId(param['foaf:page']) ?? (typeof param['foaf:page'] === 'string' ? param['foaf:page'] : undefined)
+          definition += `${definition ? '<br>' : ''}Attestée par ${page ? `[${md(publisher)}](${page})` : md(publisher)}`
         }
         const cells = [name, md(type), required]
         if (qualified)
-          cells.push(md(BOUNDARY_FR[literal(param['rdgf:boundaryKind'])] ?? literal(param['rdgf:boundaryKind']) ?? ''))
+          cells.push(md(FACT_KIND_FR[literal(param['rdgf:factKind'])] ?? literal(param['rdgf:factKind']) ?? ''))
         cells.push(md(definition))
         push(`| ${cells.join(' | ')} |`)
       }
@@ -249,60 +264,63 @@ export function generateFicheDoc(doc, { sourcePath } = {}) {
     push('')
   }
 
-  // ── Cas de tests (enveloppe rdgf:) ────────────────────────────────────────
+  // ── Cas de tests (enveloppe rdgf:TestCase, ADR-0006) ─────────────────────
   const testCases = [...new Set(parent && !leaves.includes(parent) ? [...leaves, parent] : leaves)]
     .flatMap(l => asArray(l['rdgf:testCase']))
   if (testCases.length) {
     push('## Cas de tests', '')
-    push('Les tests natifs font foi ; le catalogue publie leur enveloppe (intention, provenance, validation), jamais un format de situation commun.', '')
+    push('Le test natif constitue la référence ; la fiche publie son enveloppe (ce qu\'il vérifie, origine, validation). Les résultats d\'exécution du registre sont publiés à part, en assertions EARL.', '')
     for (const test of testCases) {
-      const intent = literal(test['rdgf:intent'])
-      if (intent)
-        push(`- **Intention** : ${intent}`)
+      const label = title(test)
+      if (label)
+        push(`- **${md(label)}**`)
+      const testDesc = description(test)
+      if (testDesc)
+        push(`  - ${testDesc}`)
       const envelope = []
-      const provenance = literal(test['rdgf:provenance'])
-      if (provenance)
-        envelope.push(`provenance : ${PROVENANCE_FR[provenance] ?? provenance}`)
-      const validatedBy = literal(test['rdgf:validatedBy'])
+      const origin = literal(test['rdgf:origin'])
+      if (origin)
+        envelope.push(`origine : ${ORIGIN_FR[origin] ?? origin}`)
+      const validatedBy = agentLabel(test['prov:wasAttributedTo'], graph)
       if (validatedBy)
         envelope.push(`validé par : ${validatedBy}`)
-      const validatedAt = literal(test['rdgf:validatedAt'])
+      const validatedAt = literal(test['dct:date'])
       if (validatedAt)
         envelope.push(`le ${validatedAt}`)
-      const status = literal(test['rdgf:status'])
+      const status = literal(test['adms:status'])
       if (status)
         envelope.push(`statut : ${status}`)
-      const legalAnchor = literal(test['rdgf:legalAnchor'])
-      if (legalAnchor)
-        envelope.push(`ancre légale : ${legalAnchor}`)
+      const legal = nodeId(test['cv:hasLegalResource']) ?? literal(test['cv:hasLegalResource'])
+      if (legal)
+        envelope.push(`texte visé : ${legal}`)
       const tolerance = literal(test['rdgf:tolerance'])
       if (tolerance)
         envelope.push(`tolérance : ${tolerance}`)
-      const nativeFormat = literal(test['rdgf:nativeFormat'])
-      if (nativeFormat)
-        envelope.push(`format natif : \`${nativeFormat}\``)
+      const format = literal(test['dct:format'])
+      if (format)
+        envelope.push(`format natif : \`${format}\``)
       if (envelope.length)
         push(`  - ${envelope.join(' · ')}`)
-      const nativeRef = nodeId(test['rdgf:nativeRef'])
+      const nativeRef = nodeId(test['dct:source']) ?? literal(test['dct:source'])
       if (nativeRef)
-        push(`  - [Tests natifs (référence qui fait foi)](${nativeRef})`)
+        push(`  - [Test natif de référence](${nativeRef})`)
     }
     push('')
   }
 
-  // ── Mappings opérationnels ────────────────────────────────────────────────
+  // ── Correspondances opérationnelles (rdgf:operationalMapping, ADR-0017) ───
   const mappings = asArray(parent?.['rdgf:operationalMapping'])
   if (mappings.length) {
-    push('## Mappings opérationnels recensés', '')
-    push('Le catalogue recense des correspondances qui tournent (exercées par une CI), il n\'en rédige aucune.', '')
+    push('## Correspondances opérationnelles recensées', '')
+    push('Le registre recense des correspondances en production, exercées par une intégration continue ; il n\'en rédige aucune.', '')
     for (const mapping of mappings) {
       const label = title(mapping)
-      const from = literal(mapping['rdgf:from'])
-      const to = literal(mapping['rdgf:to'])
-      const artifact = nodeId(mapping['rdgf:artifact'])
-      const maintainedBy = literal(mapping['rdgf:maintainedBy'])
-      const ciStatus = literal(mapping['rdgf:ciStatus'])
-      push(`- **${label ?? 'Mapping'}**${from && to ? ` : ${from} → ${to}` : ''}`)
+      const from = literal(mapping['rdgf:mapsFrom'])
+      const to = literal(mapping['rdgf:mapsTo'])
+      const artifact = nodeId(mapping['dct:source']) ?? literal(mapping['dct:source'])
+      const maintainedBy = agentLabel(mapping['dct:publisher'], graph)
+      const ciStatus = literal(mapping['adms:status'])
+      push(`- **${label ?? 'Correspondance'}**${from && to ? ` : ${from} → ${to}` : ''}`)
       const detail = []
       if (artifact)
         detail.push(`[artefact](${artifact})`)
@@ -316,17 +334,17 @@ export function generateFicheDoc(doc, { sourcePath } = {}) {
     push('')
   }
 
-  // ── Historique de versions ────────────────────────────────────────────────
+  // ── Historique de versions (rdgf:versionEvent, ADR-0008) ─────────────────
   const events = asArray(parent?.['rdgf:versionEvent'])
   if (events.length) {
     push('## Historique de versions', '')
     for (const event of events) {
-      const eventVersion = literal(event['rdgf:version'])
-      const date = literal(event['rdgf:date'])
-      const kind = literal(event['rdgf:kind'])
+      const eventVersion = literal(event['dct:version'])
+      const date = literal(event['dct:issued'])
+      const kind = literal(event['rdgf:changeKind'])
       const eventDesc = description(event)
-      const trigger = nodeId(event['rdgf:triggeredBy'])
-      push(`- **${eventVersion ?? date ?? ''}**${date && eventVersion ? ` (${date})` : ''}${kind ? ` - ${kind}` : ''}${eventDesc ? ` : ${eventDesc}` : ''}${trigger ? ` ([texte déclencheur](${trigger}))` : ''}`)
+      const trigger = nodeId(event['rdgf:triggeredBy']) ?? literal(event['rdgf:triggeredBy'])
+      push(`- **${eventVersion ?? date ?? ''}**${date && eventVersion ? ` (${date})` : ''}${kind ? ` - ${CHANGE_KIND_FR[kind] ?? kind}` : ''}${eventDesc ? ` : ${eventDesc}` : ''}${trigger ? ` ([texte déclencheur](${trigger}))` : ''}`)
     }
     push('')
   }
