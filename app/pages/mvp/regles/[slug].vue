@@ -539,6 +539,7 @@ useHead(() => ({ title: title.value }))
                 <details
                   v-if="boundaryGroups.length"
                   class="space-y-3"
+                  open
                 >
                   <summary class="fr-h6 m-0 cursor-pointer">
                     {{ $t('fiche.description.boundary') }}
