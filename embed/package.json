@@ -1,0 +1,11 @@
+{
+  "name": "@shallowred/regle-formulaire",
+  "type": "module",
+  "version": "0.1.1",
+  "description": "Custom element that renders the input form of a rule from the JSON Schema of its calculation service",
+  "exports": {
+    ".": "./dist/regle-formulaire.js",
+    "./style.css": "./dist/regle-formulaire.css"
+  },
+  "files": ["dist"]
+}

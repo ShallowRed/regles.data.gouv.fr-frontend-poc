@@ -17,7 +17,9 @@
     "check:contrat": "node --experimental-strip-types scripts/check-contrat.mjs",
     "docs:fiches": "node scripts/generate-fiche-doc.mjs app/data/jsonld/*/*/metadata.jsonld contrat-interface/propositions/*/*/metadata.jsonld",
     "verify:rules": "node --experimental-strip-types scripts/verify-rules.mjs",
-    "lint:copy": "node scripts/check-copy.mjs"
+    "lint:copy": "node scripts/check-copy.mjs",
+    "embed:build": "vite build --config embed/vite.config.ts",
+    "embed:pack": "pnpm run embed:build && pnpm --dir embed pack --pack-destination dist"
   },
   "dependencies": {
     "@datagouv/regles-site-gouv-fr": "https://github.com/datagouv/regles.data.gouv.fr/releases/download/v0.0.1/datagouv-regles-site-gouv-fr-0.0.1.tgz",
