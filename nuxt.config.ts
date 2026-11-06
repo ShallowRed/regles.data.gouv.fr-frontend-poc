@@ -3,6 +3,10 @@ import process from 'node:process'
 import { defineNuxtConfig } from 'nuxt/config'
 
 export default defineNuxtConfig({
+  extends: ['@datagouv/regles-site-gouv-fr'],
+  records: { dir: '../regles.data.gouv.fr/data' },
+  pages: { pattern: ['**/*.vue'] },
+  runtimeConfig: { public: { datapiUrl: 'http://localhost:8000' } },
   compatibilityDate: '2026-05-21',
   devtools: { enabled: true },
   future: {
@@ -14,8 +18,6 @@ export default defineNuxtConfig({
     { path: '~/components', pathPrefix: false },
   ],
   css: [
-    '@gouvfr/dsfr/dist/dsfr.main.min.css',
-    '@gouvfr/dsfr/dist/utility/utility.main.min.css',
     '~/assets/css/main.css',
   ],
   app: {
@@ -49,7 +51,7 @@ export default defineNuxtConfig({
     prerender: {
       crawlLinks: true,
       // Unlisted page: no link points to it, so the crawler cannot reach it.
-      routes: ['/mvp/api-service'],
+      routes: ['/mvp/api-service', '/essayer/civique-droit-vote', '/essayer/prestagri-quotient-familial'],
     },
   },
   typescript: {

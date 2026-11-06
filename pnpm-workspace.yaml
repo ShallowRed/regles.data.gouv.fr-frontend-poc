@@ -1,0 +1,10 @@
+overrides:
+  '@datagouv/regles-web': https://github.com/datagouv/regles.data.gouv.fr/releases/download/v0.0.1/datagouv-regles-web-0.0.1.tgz
+  '@datagouv/regles-core': https://github.com/datagouv/regles.data.gouv.fr/releases/download/v0.0.1/datagouv-regles-core-0.0.1.tgz
+
+allowBuilds:
+  esbuild: true
+  "@parcel/watcher": true
+  "@gouvfr/dsfr": false
+
+blockExoticSubdeps: false
