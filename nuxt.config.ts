@@ -4,9 +4,9 @@ import { defineNuxtConfig } from 'nuxt/config'
 
 export default defineNuxtConfig({
   extends: ['@datagouv/regles-site-gouv-fr'],
-  records: { dir: '../regles.data.gouv.fr/data' },
+  records: { dir: '.registry' },
   pages: { pattern: ['**/*.vue'] },
-  runtimeConfig: { public: { datapiUrl: 'http://localhost:8000' } },
+  runtimeConfig: { public: { datapiUrl: 'http://localhost:8010' } },
   compatibilityDate: '2026-05-21',
   devtools: { enabled: true },
   future: {

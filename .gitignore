@@ -24,3 +24,6 @@ docs/**
 # Contexte Claude Code local (workspace perso garden) — non versionné
 *.local.md
 .claude/settings.local.json
+
+# Records of the published registry, written by pnpm run registry:fetch
+.registry
