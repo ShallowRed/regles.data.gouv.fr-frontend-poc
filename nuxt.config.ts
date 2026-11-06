@@ -51,7 +51,7 @@ export default defineNuxtConfig({
     prerender: {
       crawlLinks: true,
       // Unlisted page: no link points to it, so the crawler cannot reach it.
-      routes: ['/mvp/api-service', '/essayer/civique-droit-vote', '/essayer/prestagri-quotient-familial'],
+      routes: ['/mvp/api-service', '/essayer/civique-droit-vote', '/essayer/prestagri-quotient-familial', '/essayer/openfisca-france-pass-culture'],
     },
   },
   typescript: {
